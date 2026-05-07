@@ -1,0 +1,20 @@
+[Unit]
+Description=PiClaw Agent Workspace
+After=network-online.target
+
+[Container]
+Image=ghcr.io/rcarmo/piclaw:latest
+ContainerName=piclaw
+Network=ai-rig.network
+# Environment variables use this syntax
+Environment=PICLAW_WEB_PORT=8080
+# Quadlets handle init natively via systemd, but we can pass the flag to podman
+RunInit=true
+Volume=/path/to/piclaw/home:/config:Z
+Volume=/path/to/piclaw/workspace:/workspace:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,15 @@
+[Unit]
+Description=SillyTavern Roleplay UI
+After=network-online.target
+
+[Container]
+Image=ghcr.io/sillytavern/sillytavern:latest
+ContainerName=sillytavern
+Network=ai-rig.network
+Volume=/path/to/st/data:/home/node/app/config:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
