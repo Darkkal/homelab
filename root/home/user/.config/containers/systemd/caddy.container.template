@@ -5,8 +5,8 @@ After=koboldcpp.service sillytavern.service piclaw.service
 
 [Container]
 Image=docker.io/library/caddy:latest
-ContainerName=routing-proxy
-Network=ai-rig.network
+ContainerName=caddy
+Network=${NETWORK_NAME}.network
 PublishPort=80:80
 Volume=/path/to/caddy/Caddyfile:/etc/caddy/Caddyfile:Z
 
