@@ -34,3 +34,4 @@ The sequence is as follows:
 2. Use `envsubst` to substitute environment variables in the container templates.
 3. Install avahi tools and set up the avahi service.
 4. Apply the aliases for the container endpoints.
+5. Setup privileged port for caddy and setup caddy which depends on the application services.
