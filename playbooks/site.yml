@@ -1,0 +1,38 @@
+---
+- name: Configure base system for all homelab hosts
+  hosts: all
+  roles:
+    - base
+
+- name: Configure NVIDIA runtime on inference hosts
+  hosts: inference_hosts
+  roles:
+    - nvidia
+
+- name: Deploy inference Quadlets
+  hosts: inference_hosts
+  roles:
+    - role: quadlets
+      vars:
+        quadlet_services:
+          - koboldcpp
+
+- name: Deploy service Quadlets and supporting infrastructure
+  hosts: service_hosts
+  roles:
+    - avahi
+    - caddy
+    - role: quadlets
+      vars:
+        quadlet_services:
+          - sillytavern
+          - piclaw
+          - forgejo
+
+- name: Deploy Caddy reverse proxy
+  hosts: service_hosts
+  roles:
+    - role: quadlets
+      vars:
+        quadlet_services:
+          - caddy
