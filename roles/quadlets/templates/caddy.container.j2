@@ -6,9 +6,9 @@ After=koboldcpp.service sillytavern.service piclaw.service
 [Container]
 Image=docker.io/library/caddy:latest
 ContainerName=caddy
-Network=${NETWORK_NAME}
+Network={{ network_name }}
 PublishPort=80:80
-Volume=${CADDY_FILE_PATH}:/etc/caddy/Caddyfile:Z
+Volume={{ caddy_file_path }}:/etc/caddy/Caddyfile:Z
 
 [Service]
 Restart=always

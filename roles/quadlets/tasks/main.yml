@@ -1,0 +1,19 @@
+---
+- name: Deploy Quadlet container definitions
+  ansible.builtin.template:
+    src: "{{ item }}.container.j2"
+    dest: "{{ quadlet_dir }}/{{ item }}.container"
+    mode: '0644'
+  loop: "{{ quadlet_services }}"
+  notify: Reload user systemd
+
+- name: Flush handlers to reload systemd if templates changed
+  ansible.builtin.meta: flush_handlers
+
+- name: Enable and start Quadlet container services
+  ansible.builtin.systemd:
+    name: "{{ item }}.service"
+    enabled: true
+    state: started
+    scope: user
+  loop: "{{ quadlet_services }}"

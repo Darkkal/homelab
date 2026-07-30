@@ -1,0 +1,7 @@
+---
+model_dir: "{{ homelab_data_dir }}/models"
+default_model: gemma-4-26b-a4b-q3_k_m.gguf
+gpu_layers: 99
+context_size: 32768
+auto_unload_seconds: 600
+kobold_port: 5001

@@ -1,0 +1,12 @@
+---
+- name: Ensure Caddy configuration directory exists
+  ansible.builtin.file:
+    path: "{{ homelab_data_dir }}/caddy"
+    state: directory
+    mode: '0755'
+
+- name: Deploy Caddyfile
+  ansible.builtin.copy:
+    src: Caddyfile
+    dest: "{{ caddy_file_path }}"
+    mode: '0644'

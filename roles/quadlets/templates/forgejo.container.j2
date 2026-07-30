@@ -5,7 +5,7 @@ After=network-online.target
 [Container]
 ContainerName=forgejo
 Image=codeberg.org/forgejo/forgejo:10
-Network=${NETWORK_NAME}
+Network={{ network_name }}
 Environment=USER_UID=1000
 Environment=USER_GID=1000
 PublishPort=3000:3000
