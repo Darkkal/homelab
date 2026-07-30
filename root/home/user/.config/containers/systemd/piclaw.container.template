@@ -5,7 +5,7 @@ After=network-online.target
 [Container]
 Image=ghcr.io/rcarmo/piclaw:latest
 ContainerName=piclaw
-Network=ai-rig.network
+Network=${NETWORK_NAME}
 # Environment variables use this syntax
 Environment=PICLAW_WEB_PORT=8080
 # Quadlets handle init natively via systemd, but we can pass the flag to podman

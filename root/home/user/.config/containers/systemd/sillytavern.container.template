@@ -5,7 +5,7 @@ After=network-online.target
 [Container]
 Image=ghcr.io/sillytavern/sillytavern:latest
 ContainerName=sillytavern
-Network=ai-rig.network
+Network=${NETWORK_NAME}
 Volume=/path/to/st/data:/home/node/app/config:Z
 
 [Service]
