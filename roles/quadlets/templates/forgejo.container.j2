@@ -1,0 +1,19 @@
+[Unit]
+Description=Forgejo Git Service
+After=network-online.target
+
+[Container]
+ContainerName=forgejo
+Image=codeberg.org/forgejo/forgejo:10
+Network={{ network_name }}
+Environment=USER_UID=1000
+Environment=USER_GID=1000
+PublishPort=3000:3000
+PublishPort=222:22
+Volume=forgejo-data.volume:/data
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

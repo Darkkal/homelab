@@ -1,0 +1,17 @@
+[Unit]
+Description=KoboldCPP AI Inference
+After=network-online.target
+
+[Container]
+Image=ghcr.io/lostruins/koboldcpp:latest
+ContainerName=koboldcpp
+Network={{ network_name }}
+AddDevice=nvidia.com/gpu=all
+Volume={{ model_dir }}:/models:Z
+Exec=--model /models/{{ default_model }} --routermode --multimodal --admin --admindir /models --autounload {{ auto_unload_seconds }} --gpulayers {{ gpu_layers }} --contextsize {{ context_size }} --port {{ kobold_port }} --host 0.0.0.0
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

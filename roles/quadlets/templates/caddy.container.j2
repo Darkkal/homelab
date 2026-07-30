@@ -1,0 +1,17 @@
+[Unit]
+Description=Caddy Local Routing Proxy
+Requires=koboldcpp.service sillytavern.service piclaw.service
+After=koboldcpp.service sillytavern.service piclaw.service
+
+[Container]
+Image=docker.io/library/caddy:latest
+ContainerName=caddy
+Network={{ network_name }}
+PublishPort=80:80
+Volume={{ caddy_file_path }}:/etc/caddy/Caddyfile:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

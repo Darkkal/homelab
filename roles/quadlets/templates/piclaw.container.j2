@@ -1,0 +1,18 @@
+[Unit]
+Description=PiClaw Agent Workspace
+After=network-online.target
+
+[Container]
+Image=ghcr.io/rcarmo/piclaw:latest
+ContainerName=piclaw
+Network={{ network_name }}
+Environment=PICLAW_WEB_PORT={{ piclaw_port }}
+RunInit=true
+Volume={{ piclaw_home_dir }}:/config:Z
+Volume={{ piclaw_workspace_dir }}:/workspace:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
