@@ -1,0 +1,24 @@
+---
+- name: Add NVIDIA Container Toolkit repository
+  ansible.builtin.get_url:
+    url: https://nvidia.github.io/libnvidia-container/stable/rpm/nvidia-container-toolkit.repo
+    dest: /etc/yum.repos.d/nvidia-container-toolkit.repo
+    mode: '0644'
+  become: true
+
+- name: Install NVIDIA Container Toolkit
+  ansible.builtin.dnf:
+    name: nvidia-container-toolkit
+    state: present
+  become: true
+
+- name: Check if NVIDIA CDI specification exists
+  ansible.builtin.stat:
+    path: /etc/cdi/nvidia.yaml
+  register: cdi_file
+
+- name: Generate NVIDIA CDI specification
+  ansible.builtin.command:
+    cmd: nvidia-ctk cdi generate --output=/etc/cdi/nvidia.yaml
+  become: true
+  when: not cdi_file.stat.exists
