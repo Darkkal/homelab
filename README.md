@@ -46,7 +46,7 @@ homelab/
 │   └── group_vars/
 │       ├── all.yml              # Shared paths and system configuration
 │       ├── all/
-│       │   └── vault.yml        # Ansible Vault placeholder for secrets
+│       │   └── vault.yml        # Ansible Vault encrypted secrets
 │       ├── inference_hosts.yml  # KoboldCPP & GPU inference settings
 │       └── service_hosts.yml    # Service ports and mDNS alias list
 ├── playbooks/
@@ -79,29 +79,37 @@ On the **Target Machine**:
 
 ## Quick Start
 
-### 1. Dry Run (Preview Changes)
+### 1. Secret Vault Preparation
+
+Create a local `.vault-pass` file containing your vault password (ignored by `.gitignore`):
+
+```bash
+echo "your-secure-vault-password" > .vault-pass
+```
+
+### 2. Dry Run (Preview Changes)
 
 To check playbook syntax and preview changes without modifying the system:
 
 ```bash
 # Syntax check
-ansible-playbook playbooks/site.yml --syntax-check
+ansible-playbook playbooks/site.yml --syntax-check --vault-password-file .vault-pass
 
 # Dry run / diff mode
-ansible-playbook playbooks/site.yml --check --diff
+ansible-playbook playbooks/site.yml --check --diff --vault-password-file .vault-pass
 ```
 
-### 2. Deploy Infrastructure
+### 3. Deploy Infrastructure
 
 Run the site playbook to configure all roles:
 
 ```bash
-ansible-playbook playbooks/site.yml --ask-become-pass
+ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vault-pass
 ```
 
-> **Note:** `--ask-become-pass` (or `-K`) is required for root-level tasks (setting unprivileged port 80 in sysctl, enabling user lingering, installing system packages, and creating systemd system units).
+> **Note:** `--ask-become-pass` (or `-K`) is required for root-level tasks (setting unprivileged port 80 in sysctl, enabling user lingering, installing system packages, and creating systemd system units). If no local `.vault-pass` file exists, use `--ask-vault-pass` instead.
 
-### 3. Verify Deployed Services
+### 4. Verify Deployed Services
 
 Check status of user-level Podman Quadlet services:
 
@@ -114,6 +122,42 @@ Check mDNS address resolution:
 ```bash
 avahi-resolve -n sillytavern.local
 ```
+
+---
+
+## Secrets Management (Ansible Vault)
+
+Sensitive values (admin credentials, API keys, authentication tokens) are encrypted at rest using `ansible-vault` in `inventory/group_vars/all/vault.yml`.
+
+### Variable Naming Convention
+
+All secret variables defined in `vault.yml` use the `vault_` prefix:
+- `vault_forgejo_admin_user`
+- `vault_forgejo_admin_password`
+- `vault_forgejo_admin_email`
+- `vault_kobold_api_key`
+- `vault_sillytavern_api_key`
+- `vault_piclaw_api_key`
+
+Unencrypted variable abstractions in `inventory/group_vars/all.yml` reference these vault variables with safe default fallbacks:
+```yaml
+forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"
+```
+
+### Working with Vault Files
+
+- **View encrypted contents:**
+  ```bash
+  ansible-vault view inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
+  ```
+- **Edit encrypted secrets:**
+  ```bash
+  ansible-vault edit inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
+  ```
+- **Change vault password:**
+  ```bash
+  ansible-vault rekey inventory/group_vars/all/vault.yml
+  ```
 
 ---
 
@@ -148,4 +192,4 @@ Detailed configuration guidelines and sampling recommendations for AI models are
 ## Future Roadmap
 
 - **Remote SSH Deployment**: Tracked in [#5](https://github.com/Darkkal/homelab/issues/5) — SSH key authentication and remote target provisioning.
-- **Ansible Vault Secrets**: Tracked in [#6](https://github.com/Darkkal/homelab/issues/6) — Encrypted secret variables for API keys and service passwords.
+- **Ansible Vault Secrets**: Implemented in [#6](https://github.com/Darkkal/homelab/issues/6) — Vault encrypted variables and Quadlet integration.
