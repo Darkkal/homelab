@@ -1,0 +1,11 @@
+# Ansible Vault password files
+.vault-pass
+.vault-password-file
+*.vault_pass
+.vault_pass*
+
+# Editor and OS metadata
+.DS_Store
+*.swp
+*.swo
+*~
