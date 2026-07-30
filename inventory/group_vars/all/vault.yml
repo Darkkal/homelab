@@ -1,0 +1,7 @@
+---
+# Placeholder for sensitive variables to be encrypted with ansible-vault.
+# See GitHub issue #6: https://github.com/Darkkal/homelab/issues/6
+#
+# Example usage:
+# vault_forgejo_admin_password: "changeme"
+# vault_api_keys: {}
