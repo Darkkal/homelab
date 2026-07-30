@@ -23,6 +23,7 @@ There is a user-level network `homelab.network` that is used by the applcation s
 - koboldcpp: ai model serving
 - piclaw: isolated pi coding agent
 - sillytavern: ai chat focused on roleplay
+- forgejo - git hosting and CICD
 
 ## Deployment
 
