@@ -1,0 +1,38 @@
+---
+- name: Ensure homelab data and config directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+  loop:
+    - "{{ homelab_data_dir }}"
+    - "{{ quadlet_dir }}"
+
+- name: Allow rootless podman to bind low ports (port 80)
+  ansible.posix.sysctl:
+    name: net.ipv4.ip_unprivileged_port_start
+    value: '80'
+    state: present
+    reload: true
+    sysctl_file: /etc/sysctl.d/99-rootless-ports.conf
+  become: true
+
+- name: Check if user lingering is enabled
+  ansible.builtin.stat:
+    path: "/var/lib/systemd/linger/{{ ansible_user_id }}"
+  register: linger_file
+
+- name: Enable systemd user lingering
+  ansible.builtin.command:
+    cmd: "loginctl enable-linger {{ ansible_user_id }}"
+  become: true
+  when: not linger_file.stat.exists
+
+- name: Deploy static Quadlet network and volume files
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: "{{ quadlet_dir }}/{{ item }}"
+    mode: '0644'
+  loop:
+    - homelab.network
+    - forgejo-data.volume
