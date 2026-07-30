@@ -1,7 +1,0 @@
----
-homelab_user_home: "/home/{{ ansible_user_id }}"
-quadlet_dir: "{{ homelab_user_home }}/.config/containers/systemd"
-homelab_data_dir: "{{ homelab_user_home }}/homelab"
-
-network_name: homelab.network
-caddy_file_path: "{{ homelab_data_dir }}/caddy/Caddyfile"

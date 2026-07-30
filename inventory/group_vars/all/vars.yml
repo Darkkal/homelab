@@ -1,0 +1,16 @@
+---
+homelab_user_home: "/home/{{ ansible_facts['user_id'] }}"
+quadlet_dir: "{{ homelab_user_home }}/.config/containers/systemd"
+homelab_data_dir: "{{ homelab_user_home }}/homelab"
+
+network_name: homelab.network
+caddy_file_path: "{{ homelab_data_dir }}/caddy/Caddyfile"
+
+# Secret variable mappings referencing vault_ variables with defaults
+forgejo_admin_user: "{{ vault_forgejo_admin_user | default('admin') }}"
+forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"
+forgejo_admin_email: "{{ vault_forgejo_admin_email | default('admin@homelab.local') }}"
+
+kobold_api_key: "{{ vault_kobold_api_key | default('') }}"
+sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
+piclaw_api_key: "{{ vault_piclaw_api_key | default('') }}"

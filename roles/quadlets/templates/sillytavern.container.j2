@@ -6,6 +6,9 @@ After=network-online.target
 Image=ghcr.io/sillytavern/sillytavern:latest
 ContainerName=sillytavern
 Network={{ network_name }}
+{% if sillytavern_api_key is defined and sillytavern_api_key %}
+Environment=SILLY_TAVERN_API_KEY={{ sillytavern_api_key }}
+{% endif %}
 Volume={{ st_data_dir }}:/home/node/app/config:Z
 
 [Service]
