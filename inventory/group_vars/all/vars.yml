@@ -1,5 +1,5 @@
 ---
-homelab_user_home: "/home/{{ ansible_user_id }}"
+homelab_user_home: "/home/{{ ansible_facts['user_id'] }}"
 quadlet_dir: "{{ homelab_user_home }}/.config/containers/systemd"
 homelab_data_dir: "{{ homelab_user_home }}/homelab"
 
