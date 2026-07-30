@@ -10,8 +10,8 @@ Network=${NETWORK_NAME}
 Environment=PICLAW_WEB_PORT=8080
 # Quadlets handle init natively via systemd, but we can pass the flag to podman
 RunInit=true
-Volume=/path/to/piclaw/home:/config:Z
-Volume=/path/to/piclaw/workspace:/workspace:Z
+Volume=${PICLAW_HOME_DIR}:/config:Z
+Volume=${PICLAW_WORKSPACE_DIR}:/workspace:Z
 
 [Service]
 Restart=always

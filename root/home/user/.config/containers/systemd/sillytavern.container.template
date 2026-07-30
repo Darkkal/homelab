@@ -6,7 +6,7 @@ After=network-online.target
 Image=ghcr.io/sillytavern/sillytavern:latest
 ContainerName=sillytavern
 Network=${NETWORK_NAME}
-Volume=/path/to/st/data:/home/node/app/config:Z
+Volume=${ST_DATA_DIR}:/home/node/app/config:Z
 
 [Service]
 Restart=always

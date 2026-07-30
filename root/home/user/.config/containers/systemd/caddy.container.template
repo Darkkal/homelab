@@ -8,7 +8,7 @@ Image=docker.io/library/caddy:latest
 ContainerName=caddy
 Network=${NETWORK_NAME}
 PublishPort=80:80
-Volume=/path/to/caddy/Caddyfile:/etc/caddy/Caddyfile:Z
+Volume=${CADDY_FILE_PATH}:/etc/caddy/Caddyfile:Z
 
 [Service]
 Restart=always
