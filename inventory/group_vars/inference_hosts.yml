@@ -1,6 +1,8 @@
 ---
 model_dir: "{{ homelab_data_dir }}/models"
-default_model: gemma-4-26b-a4b-q3_k_m.gguf
+kobold_roleplay_model: gemma-4-12b-it-Q4_K_M.gguf
+kobold_roleplay_model_mmproj: gemma-4-12b-it-Q4_K_M-mmproj-BF16.gguf
+kobold_use_mtp: true
 gpu_layers: 99
 context_size: 32768
 auto_unload_seconds: 600
