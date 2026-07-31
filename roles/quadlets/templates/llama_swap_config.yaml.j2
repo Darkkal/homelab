@@ -1,0 +1,18 @@
+# llama-swap configuration file
+# Managed by Ansible
+
+macros:
+  llama-server: "/llama-server --host 0.0.0.0 --port ${PORT} --n-gpu-layers {{ gpu_layers | default(99) }} --ctx-size {{ context_size | default(32768) }}"
+
+models:
+  default:
+    cmd: "${llama-server} --model /models/{{ default_chat_model | default('qwen2.5-coder-7b-instruct-q4_k_m.gguf') }}"
+    ttl: {{ auto_unload_seconds | default(600) }}
+  qwen:
+    cmd: "${llama-server} --model /models/{{ default_chat_model | default('qwen2.5-coder-7b-instruct-q4_k_m.gguf') }}"
+    ttl: {{ auto_unload_seconds | default(600) }}
+  gemma:
+    cmd: ["systemctl", "--user", "start", "koboldcpp"]
+    cmdStop: ["systemctl", "--user", "stop", "koboldcpp"]
+    proxy: "http://localhost:{{ kobold_port | default(5001) }}"
+    ttl: {{ auto_unload_seconds | default(600) }}

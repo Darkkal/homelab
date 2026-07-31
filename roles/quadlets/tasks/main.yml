@@ -6,6 +6,14 @@
   when: "'sillytavern' in quadlet_services"
   notify: Restart sillytavern service
 
+- name: Deploy llama-swap configuration file
+  ansible.builtin.template:
+    src: llama_swap_config.yaml.j2
+    dest: "{{ llama_swap_config_dir }}/config.yaml"
+    mode: '0644'
+  when: "'llama-swap' in quadlet_services"
+  notify: Restart llama-swap service
+
 - name: Deploy Quadlet container definitions
   ansible.builtin.template:
     src: "{{ item }}.container.j2"

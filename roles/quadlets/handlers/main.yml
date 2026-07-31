@@ -9,3 +9,9 @@
     name: sillytavern.service
     state: restarted
     scope: user
+
+- name: Restart llama-swap service
+  ansible.builtin.systemd:
+    name: llama-swap.service
+    state: restarted
+    scope: user

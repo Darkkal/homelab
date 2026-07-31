@@ -7,3 +7,7 @@ gpu_layers: 99
 context_size: 32768
 auto_unload_seconds: 600
 kobold_port: 5001
+
+llama_swap_config_dir: "{{ homelab_data_dir }}/llama-swap"
+llama_swap_port: 8080
+
