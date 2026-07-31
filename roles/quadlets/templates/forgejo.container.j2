@@ -8,6 +8,11 @@ Image=codeberg.org/forgejo/forgejo:10
 Network={{ network_name }}
 Environment=USER_UID=1000
 Environment=USER_GID=1000
+Environment=FORGEJO__server__ROOT_URL=http://forgejo.local/
+Environment=FORGEJO__server__DOMAIN=forgejo.local
+Environment=FORGEJO__server__HTTP_PORT=3000
+Environment=FORGEJO__server__SSH_PORT=222
+Environment=FORGEJO__server__SSH_DOMAIN=forgejo.local
 {% if forgejo_admin_user is defined and forgejo_admin_user %}
 Environment=FORGEJO_ADMIN_USER={{ forgejo_admin_user }}
 {% endif %}
@@ -19,7 +24,7 @@ Environment=FORGEJO_ADMIN_EMAIL={{ forgejo_admin_email }}
 {% endif %}
 PublishPort=3000:3000
 PublishPort=222:22
-Volume=forgejo-data.volume:/data
+Volume={{ forgejo_data_dir }}:/data:Z
 
 [Service]
 Restart=always

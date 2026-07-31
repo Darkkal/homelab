@@ -10,6 +10,7 @@
     - "{{ homelab_data_dir }}/sillytavern"
     - "{{ homelab_data_dir }}/piclaw/home"
     - "{{ homelab_data_dir }}/piclaw/workspace"
+    - "{{ homelab_data_dir }}/forgejo"
     - "{{ homelab_data_dir }}/caddy"
     - "{{ quadlet_dir }}"
 
@@ -53,11 +54,10 @@
   become: true
   when: not linger_file.stat.exists
 
-- name: Deploy static Quadlet network and volume files
+- name: Deploy static Quadlet network files
   ansible.builtin.copy:
     src: "{{ item }}"
     dest: "{{ quadlet_dir }}/{{ item }}"
     mode: '0644'
   loop:
     - homelab.network
-    - forgejo-data.volume
