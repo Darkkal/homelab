@@ -136,7 +136,7 @@ Once the Ansible deployment completes successfully, services are accessible on y
 | **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | Web chat & roleplay UI. Proxied via Caddy. Connects internally to KoboldCPP at `http://koboldcpp:5001`. Optional API Key set in `vault.yml`. |
 | **PiClaw** | `http://piclaw.local` | `http://<host-ip>:80` | Web UI (HTTP) | Isolated coding agent workspace UI. Proxied via Caddy. Optional API Key set in `vault.yml`. |
 | **KoboldCPP** | `http://kobold.local` | `http://<host-ip>:80` | Web UI & OpenAI API | AI model inference server GUI & API. OpenAI API endpoint at `http://kobold.local/v1`. Optional API key authentication set in `vault.yml`. |
-| **Forgejo (Web)** | `http://<host-ip>:3000` | `http://localhost:3000` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Initial admin credentials set via `FORGEJO_ADMIN_USER` and `FORGEJO_ADMIN_PASSWORD` in `vault.yml`. |
+| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3000` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Proxied via Caddy or direct port 3000. Initial admin credentials set in `vault.yml`. |
 | **Forgejo (SSH)** | `ssh://git@<host-ip>:222` | `ssh://git@localhost:222` | Git over SSH | Git clone and push operations over SSH using port `222` (e.g. `git clone ssh://git@<host-ip>:222/<user>/<repo>.git`). |
 | **Caddy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Reverse Proxy | Reverse proxy listening on port 80, routing `.local` mDNS domain requests to container backends based on `Host` headers. |
 
@@ -145,7 +145,7 @@ Once the Ansible deployment completes successfully, services are accessible on y
 ### How Network Access Works
 
 1. **mDNS Hostname Resolution (`*.local`)**:
-   - The `avahi` role publishes `.local` mDNS aliases (`sillytavern.local`, `piclaw.local`, `kobold.local`) across your local network.
+   - The `avahi` role publishes `.local` mDNS aliases (`sillytavern.local`, `piclaw.local`, `kobold.local`, `forgejo.local`) across your local network.
    - Any client device connected to the same LAN (Linux, macOS, Windows 10/11, iOS, Android) can resolve these hostnames directly to the host's LAN IP address without requiring a local DNS server.
 
 2. **Reverse Proxy Routing (Caddy)**:
