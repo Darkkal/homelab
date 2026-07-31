@@ -62,3 +62,5 @@
     mode: '0644'
   loop:
     - homelab.network
+  notify: Reload user systemd
+
