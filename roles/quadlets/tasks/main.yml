@@ -1,4 +1,10 @@
----
+- name: Deploy SillyTavern configuration file
+  ansible.builtin.template:
+    src: sillytavern_config.yaml.j2
+    dest: "{{ st_data_dir }}/config.yaml"
+    mode: '0644'
+  when: "'sillytavern' in quadlet_services"
+
 - name: Deploy Quadlet container definitions
   ansible.builtin.template:
     src: "{{ item }}.container.j2"

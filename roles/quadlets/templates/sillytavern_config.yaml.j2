@@ -1,0 +1,17 @@
+# -- DATA CONFIGURATION --
+dataRoot: ./data
+# -- SERVER CONFIGURATION --
+listen: true
+listenAddress:
+  ipv4: 0.0.0.0
+  ipv6: '[::]'
+protocol:
+  ipv4: true
+  ipv6: false
+port: 8000
+# -- SECURITY CONFIGURATION --
+whitelistMode: false
+basicAuthMode: true
+basicAuthUser:
+  username: "{{ sillytavern_user }}"
+  password: "{{ sillytavern_password }}"
