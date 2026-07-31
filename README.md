@@ -133,10 +133,10 @@ Once the Ansible deployment completes successfully, services are accessible on y
 
 | Service | Primary Access URL | Direct Host / Port | Access Protocol | Description & Authentication Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | Web chat & roleplay UI. Proxied via Caddy. Connects internally to KoboldCPP at `http://koboldcpp:5001`. Optional API Key set in `vault.yml`. |
+| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | Web chat & roleplay UI. Proxied via Caddy. HTTP basic authentication enabled (`basicAuthUser`). |
 | **PiClaw** | `http://piclaw.local` | `http://<host-ip>:80` | Web UI (HTTP) | Isolated coding agent workspace UI. Proxied via Caddy. Optional API Key set in `vault.yml`. |
 | **KoboldCPP** | `http://kobold.local` | `http://<host-ip>:80` | Web UI & OpenAI API | AI model inference server GUI & API. OpenAI API endpoint at `http://kobold.local/v1`. Optional API key authentication set in `vault.yml`. |
-| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3000` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Proxied via Caddy or direct port 3000. Initial admin credentials set in `vault.yml`. |
+| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3000` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Data stored in `~/homelab/forgejo`. Initial admin credentials set in `vault.yml`. |
 | **Forgejo (SSH)** | `ssh://git@<host-ip>:222` | `ssh://git@localhost:222` | Git over SSH | Git clone and push operations over SSH using port `222` (e.g. `git clone ssh://git@<host-ip>:222/<user>/<repo>.git`). |
 | **Caddy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Reverse Proxy | Reverse proxy listening on port 80, routing `.local` mDNS domain requests to container backends based on `Host` headers. |
 
@@ -150,10 +150,10 @@ Once the Ansible deployment completes successfully, services are accessible on y
 
 2. **Reverse Proxy Routing (Caddy)**:
    - **Caddy** listens on host port `80` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 80`).
-   - HTTP requests to `http://sillytavern.local`, `http://piclaw.local`, or `http://kobold.local` are routed over the internal Podman container network (`homelab.network`) to their respective container ports (`sillytavern:8000`, `piclaw:8080`, `koboldcpp:5001`).
+   - HTTP requests to `http://sillytavern.local`, `http://piclaw.local`, `http://kobold.local`, or `http://forgejo.local` are routed over the internal Podman container network (`homelab.network`) to their respective container ports.
 
 3. **Direct Port Exposure**:
-   - **Forgejo** binds directly to host ports `3000` (Web) and `222` (SSH), bypassing Caddy. Access it directly via `http://<host-ip>:3000` or `ssh://git@<host-ip>:222`.
+   - **Forgejo** binds directly to host ports `3000` (Web) and `222` (SSH), as well as being proxied at `http://forgejo.local`.
 
 ---
 
@@ -172,14 +172,14 @@ If a client device cannot resolve `.local` mDNS hostnames:
 1. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
    Add target host IP address and service hostnames:
    ```text
-   192.168.1.100  sillytavern.local piclaw.local kobold.local
+   192.168.1.100  sillytavern.local piclaw.local kobold.local forgejo.local
    ```
 
 2. **Testing via HTTP Host Header**:
    Verify proxy routing from any terminal using `curl`:
    ```bash
    curl -H "Host: sillytavern.local" http://<host-ip>
-   curl -H "Host: kobold.local" http://<host-ip>
+   curl -H "Host: forgejo.local" http://<host-ip>
    ```
 
 3. **Verifying mDNS Resolution**:
