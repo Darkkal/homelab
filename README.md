@@ -171,7 +171,9 @@ Key variables can be customized in `inventory/group_vars/`:
 - `network_name`: Shared container bridge network (`homelab.network`)
 
 ### `inventory/group_vars/inference_hosts.yml`
-- `default_model`: Default model file inside `~/homelab/models`
+- `kobold_roleplay_model`: Primary model file for SillyTavern roleplay (`gemma-4-12b-it-Q4_K_M.gguf`)
+- `kobold_roleplay_model_mmproj`: Multimodal vision adapter file (`gemma-4-12b-it-Q4_K_M-mmproj-BF16.gguf`)
+- `kobold_use_mtp`: Enable Multi-Token Prediction (`true`)
 - `gpu_layers`: Number of layers to offload to GPU (`99`)
 - `context_size`: Context window size (`32768`)
 - `auto_unload_seconds`: Inactivity timeout before model unloads (`600`)
