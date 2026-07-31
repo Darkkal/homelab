@@ -22,6 +22,26 @@
     sysctl_file: /etc/sysctl.d/99-rootless-ports.conf
   become: true
 
+- name: Allow Podman container traffic in firewalld
+  ansible.posix.firewalld:
+    zone: trusted
+    interface: "podman+"
+    permanent: true
+    immediate: true
+    state: enabled
+  become: true
+  ignore_errors: true
+
+- name: Allow Podman container subnet in firewalld
+  ansible.posix.firewalld:
+    zone: trusted
+    source: "10.89.0.0/16"
+    permanent: true
+    immediate: true
+    state: enabled
+  become: true
+  ignore_errors: true
+
 - name: Check if user lingering is enabled
   ansible.builtin.stat:
     path: "/var/lib/systemd/linger/{{ ansible_facts['user_id'] }}"
