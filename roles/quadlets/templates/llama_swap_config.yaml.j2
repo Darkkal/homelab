@@ -6,8 +6,8 @@ macros:
 
 models:
   default:
-    cmd: "${llama-server} --model /models/{{ default_chat_model | default('qwen2.5-coder-7b-instruct-q4_k_m.gguf') }}"
+    cmd: "${llama-server} --model /models/{{ default_chat_model | default('Qwen3.5-9B-Q4_K_M.gguf') }}"
     ttl: {{ auto_unload_seconds | default(600) }}
   qwen:
-    cmd: "${llama-server} --model /models/{{ default_chat_model | default('qwen2.5-coder-7b-instruct-q4_k_m.gguf') }}"
+    cmd: "${llama-server} --model /models/{{ default_chat_model | default('Qwen3.5-9B-Q4_K_M.gguf') }}"
     ttl: {{ auto_unload_seconds | default(600) }}

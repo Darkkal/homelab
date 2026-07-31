@@ -10,4 +10,6 @@ kobold_port: 5001
 
 llama_swap_config_dir: "{{ homelab_data_dir }}/llama-swap"
 llama_swap_port: 8080
+default_chat_model: Qwen3.5-9B-Q4_K_M.gguf
+
 
