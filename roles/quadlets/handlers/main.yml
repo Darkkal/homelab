@@ -3,3 +3,9 @@
   ansible.builtin.systemd:
     daemon_reload: true
     scope: user
+
+- name: Restart sillytavern service
+  ansible.builtin.systemd:
+    name: sillytavern.service
+    state: restarted
+    scope: user
