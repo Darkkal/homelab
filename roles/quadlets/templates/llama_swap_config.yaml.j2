@@ -2,7 +2,7 @@
 # Managed by Ansible
 
 macros:
-  llama-server: "/llama-server --host 0.0.0.0 --port ${PORT} --n-gpu-layers {{ gpu_layers | default(99) }} --ctx-size {{ context_size | default(32768) }}"
+  llama-server: "llama-server --host 0.0.0.0 --port ${PORT} --n-gpu-layers {{ gpu_layers | default(99) }} --ctx-size {{ context_size | default(32768) }}"
 
 models:
   default:
