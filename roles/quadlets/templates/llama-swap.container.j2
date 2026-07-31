@@ -8,11 +8,10 @@ ContainerName=llama-swap
 Network={{ network_name }}
 AddDevice=nvidia.com/gpu=all
 Volume={{ model_dir }}:/models:Z
-Volume={{ llama_swap_config_dir | default(homelab_data_dir + '/llama-swap') }}:/config:Z
+Volume={{ llama_swap_config_dir | default(homelab_data_dir + '/llama-swap') }}/config.yaml:/etc/llama-swap/config/config.yaml:Z
 Volume=/run/user/1000/bus:/run/user/1000/bus
 Environment=XDG_RUNTIME_DIR=/run/user/1000
 Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
-Exec=/llama-swap --config /config/config.yaml --listen 0.0.0.0:{{ llama_swap_port | default(8080) }}
 
 [Service]
 Restart=always
