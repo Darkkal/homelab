@@ -11,9 +11,3 @@ models:
   qwen:
     cmd: "${llama-server} --model /models/{{ default_chat_model | default('qwen2.5-coder-7b-instruct-q4_k_m.gguf') }}"
     ttl: {{ auto_unload_seconds | default(600) }}
-  gemma:
-    proxy: "http://koboldcpp:{{ kobold_port | default(5001) }}"
-{% if kobold_api_key is defined and kobold_api_key %}
-    headers:
-      Authorization: "Bearer {{ kobold_api_key }}"
-{% endif %}
