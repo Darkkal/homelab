@@ -32,12 +32,23 @@
     state: restarted
     scope: user
   loop: "{{ quadlet_deploy_results.results }}"
-  when: item.changed
+  when:
+    - item.changed
+    - item.item not in (quadlet_on_demand_services | default(['koboldcpp']))
 
-- name: Enable and start Quadlet container services
+- name: Enable and start auto-start Quadlet container services
   ansible.builtin.systemd:
     name: "{{ item }}.service"
     enabled: true
     state: started
     scope: user
-  loop: "{{ quadlet_services }}"
+  loop: "{{ quadlet_services | difference(quadlet_on_demand_services | default(['koboldcpp'])) }}"
+
+- name: Ensure on-demand container services are stopped and disabled
+  ansible.builtin.systemd:
+    name: "{{ item }}.service"
+    enabled: false
+    state: stopped
+    scope: user
+  loop: "{{ quadlet_services | intersect(quadlet_on_demand_services | default(['koboldcpp'])) }}"
+
