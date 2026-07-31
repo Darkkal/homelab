@@ -11,3 +11,6 @@ models:
   qwen:
     cmd: "${llama-server} --model /models/{{ default_chat_model | default('Qwen3.5-9B-Q4_K_M.gguf') }}"
     ttl: {{ auto_unload_seconds | default(600) }}
+  gemma:
+    cmd: "${llama-server} --model /models/{{ roleplay_model | default('gemma-4-12b-it-Q4_K_M.gguf') }}{% if roleplay_model_mmproj is defined and roleplay_model_mmproj %} --mmproj /models/{{ roleplay_model_mmproj }}{% endif %}"
+    ttl: {{ auto_unload_seconds | default(600) }}
