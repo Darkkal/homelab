@@ -27,6 +27,7 @@
         quadlet_services:
           - sillytavern
           - forgejo
+          - open-webui
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts
