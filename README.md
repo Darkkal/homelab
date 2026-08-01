@@ -303,6 +303,9 @@ Key variables can be customized in `inventory/group_vars/`:
 - `avahi_aliases`: List of `.local` hostnames published on LAN (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`)
 - `forgejo_port`: Host web port for direct Forgejo access (`3003`)
 - `piclaw_port`: Host web port for direct PiClaw access (`8080`)
+- `openwebui_data_dir`: Base path for Open WebUI persistent data (`~/homelab/open-webui`)
+- `openwebui_port`: Host web port for direct Open WebUI access (`8081`)
+- `openwebui_openai_api_base_url`: OpenAI-compatible API base URL for Open WebUI backend (`http://llama-swap:8080/v1`)
 
 ### `roles/caddy/defaults/main.yml`
 - `*_upstream`: Upstream service addresses for Caddy reverse proxy routing (`sillytavern_upstream`, `forgejo_upstream`, `llama_swap_upstream`, `openwebui_upstream`, `hermes_upstream`, `swarmui_upstream`, `wan2gp_upstream`). Defaults to container names on single-host, overrideable for multi-host cross-routing.
