@@ -8,7 +8,7 @@ forgejo_port: 3003
 avahi_aliases:
   - sillytavern.local
   - forgejo.local
-  - llama-swap.local
+  - llamaswap.local
   - openwebui.local
   - hermes.local
   - swarmui.local

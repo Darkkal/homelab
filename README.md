@@ -16,7 +16,7 @@ Services are accessible on your local network via mDNS aliases (`*.local`) route
 
 | Service | Image | Ports / Routing | Description | Group |
 | :--- | :--- | :--- | :--- | :--- |
-| **llama-swap** | `ghcr.io/llama-swap/llama-swap` | `http://llama-swap.local` (internal: 8080) | Model swap proxy & inference controller | `inference_hosts` |
+| **llama-swap** | `ghcr.io/llama-swap/llama-swap` | `http://llamaswap.local` (internal: 8080) | Model swap proxy & inference controller | `inference_hosts` |
 | **SillyTavern** | `ghcr.io/sillytavern/sillytavern` | `http://sillytavern.local` | AI chat & roleplay interface | `service_hosts` |
 | **Open WebUI** | `ghcr.io/open-webui/open-webui` | `http://openwebui.local` (internal: 8081) | Open WebUI chat & LLM interface | `service_hosts` |
 | **Hermes Agent** | `hermes` | `http://hermes.local` (internal: 8383) | Hermes agent service | `service_hosts` |
@@ -136,7 +136,7 @@ Once the Ansible deployment completes successfully, services are accessible on y
 
 | Service | Primary Access URL | Direct Host / Port | Access Protocol | Description & Authentication Notes |
 | :--- | :--- | :--- | :--- | :--- |
-| **llama-swap** | `http://llama-swap.local` | `http://<host-ip>:80` | Web UI & Model API | Model swap proxy & inference controller. Proxied via Caddy. |
+| **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:80` | Web UI & Model API | Model swap proxy & inference controller. Proxied via Caddy. |
 | **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | Web chat & roleplay UI. Proxied via Caddy. HTTP basic authentication enabled (`basicAuthUser`). |
 | **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. |
 | **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:80` | Web UI / API | Hermes agent backend/UI service. Proxied via Caddy. |
@@ -151,7 +151,7 @@ Once the Ansible deployment completes successfully, services are accessible on y
 ### How Network Access Works
 
 1. **mDNS Hostname Resolution (`*.local`)**:
-   - The `avahi` role publishes `.local` mDNS aliases (`sillytavern.local`, `forgejo.local`, `llama-swap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`) across your local network.
+   - The `avahi` role publishes `.local` mDNS aliases (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`) across your local network.
    - Any client device connected to the same LAN (Linux, macOS, Windows 10/11, iOS, Android) can resolve these hostnames directly to the host's LAN IP address without requiring a local DNS server.
 
 2. **Reverse Proxy Routing (Caddy)**:
