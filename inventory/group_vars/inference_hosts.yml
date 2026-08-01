@@ -7,6 +7,3 @@ auto_unload_seconds: 600
 # llama-swap configuration
 llama_swap_config_dir: "{{ homelab_data_dir }}/llama-swap"
 llama_swap_port: 8080
-default_chat_model: Qwen3.5-9B-Q4_K_M.gguf
-roleplay_model: gemma-4-12b-it-Q4_K_M.gguf
-roleplay_model_mmproj: gemma-4-12b-it-Q4_K_M-mmproj-BF16.gguf

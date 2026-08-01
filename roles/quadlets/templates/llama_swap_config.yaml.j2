@@ -2,15 +2,39 @@
 # Managed by Ansible
 
 macros:
-  llama-server: "llama-server --host 0.0.0.0 --port ${PORT} --n-gpu-layers {{ gpu_layers | default(99) }} --ctx-size {{ context_size | default(32768) }}"
+  llama-server: |
+    llama-server \
+    --host 0.0.0.0 \
+    --port ${PORT} \
+    --threads 6 \
+    --parallel 1 \
+    --cache-ram 2048
 
 models:
-  default:
-    cmd: "${llama-server} --model /models/{{ default_chat_model | default('Qwen3.5-9B-Q4_K_M.gguf') }}"
-    ttl: {{ auto_unload_seconds | default(600) }}
-  qwen:
-    cmd: "${llama-server} --model /models/{{ default_chat_model | default('Qwen3.5-9B-Q4_K_M.gguf') }}"
-    ttl: {{ auto_unload_seconds | default(600) }}
-  gemma:
-    cmd: "${llama-server} --model /models/{{ roleplay_model | default('gemma-4-12b-it-Q4_K_M.gguf') }}{% if roleplay_model_mmproj is defined and roleplay_model_mmproj %} --mmproj /models/{{ roleplay_model_mmproj }}{% endif %}"
-    ttl: {{ auto_unload_seconds | default(600) }}
+  qwen3.6-35b-mtp:
+    ttl: 600
+    cmd: |
+      ${llama-server} \
+        --model /models/Qwen3.6-35B-A3B-MTP-UD-Q4_K_M.gguf \
+        --n-gpu-layers 12 \
+        --cache-type-k q4_0 \
+        --cache-type-v q4_0 \
+        --spec-type draft-mtp \
+        --spec-draft-n-max 2 \
+        --flash-attn on \
+        --ctx-size 65535 \
+  gemma-4-26b-qat-rp:
+    ttl: 600
+    cmd: |
+      ${llama-server} \
+        --model /models/gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf \
+        --mmproj /models/gemma-4-26B-A4B-it-qat-mmproj-BF16.gguf \
+        --model-draft /models/mtp-gemma-4-26B-A4B-it.gguf \
+        --n-gpu-layers 16 \
+        --cache-type-k q4_0 \
+        --cache-type-v q4_0 \
+        --spec-type draft-mtp \
+        --spec-draft-n-max 2 \
+        --flash-attn on \
+        --ctx-size 32768 \
+        --reasoning off
