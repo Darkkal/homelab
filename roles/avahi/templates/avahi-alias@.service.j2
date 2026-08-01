@@ -1,11 +1,11 @@
 [Unit]
-Description=Publish %I via mDNS
+Description=Publish %i via mDNS
 Requires=avahi-daemon.service
 After=avahi-daemon.service network-online.target
 
 [Service]
 Type=simple
-ExecStart=/bin/bash -c "exec /usr/bin/avahi-publish -a -R %I $$(hostname -I | cut -d' ' -f1)"
+ExecStart=/bin/bash -c "exec /usr/bin/avahi-publish -a -R %i $$(hostname -I | cut -d' ' -f1)"
 Restart=on-failure
 
 [Install]

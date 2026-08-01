@@ -11,7 +11,9 @@
     dest: /etc/systemd/system/avahi-alias@.service
     mode: '0644'
   become: true
-  notify: Reload system systemd
+  notify:
+    - Reload system systemd
+    - Restart avahi alias services
 
 - name: Flush handlers to reload systemd daemon if unit changed
   ansible.builtin.meta: flush_handlers
