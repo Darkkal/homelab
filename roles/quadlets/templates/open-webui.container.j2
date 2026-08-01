@@ -1,0 +1,19 @@
+[Unit]
+Description=Open WebUI Chat Frontend
+After=network-online.target
+
+[Container]
+ContainerName=open-webui
+Image=ghcr.io/open-webui/open-webui:main
+Network={{ network_name }}
+Environment=PORT={{ openwebui_port | default(8081) }}
+Environment=OPENAI_API_BASE_URL={{ openwebui_openai_api_base_url | default('http://llama-swap:8080/v1') }}
+Environment=OPENAI_API_KEY={{ openwebui_openai_api_key | default('sk-dummy') }}
+PublishPort={{ openwebui_port | default(8081) }}:{{ openwebui_port | default(8081) }}
+Volume={{ openwebui_data_dir }}:/app/backend/data:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
