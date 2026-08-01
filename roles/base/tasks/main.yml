@@ -24,13 +24,18 @@
     sysctl_file: /etc/sysctl.d/99-rootless-ports.conf
   become: true
 
-- name: Allow Podman container traffic in firewalld
+- name: Discover active Podman network interfaces
+  ansible.builtin.set_fact:
+    podman_interfaces: "{{ ansible_facts.interfaces | select('match', '^podman.*') | list }}"
+
+- name: Allow Podman container interfaces in firewalld
   ansible.posix.firewalld:
     zone: trusted
-    interface: "podman+"
+    interface: "{{ item }}"
     permanent: true
     immediate: true
     state: enabled
+  loop: "{{ podman_interfaces }}"
   become: true
   ignore_errors: true
 
@@ -38,6 +43,26 @@
   ansible.posix.firewalld:
     zone: trusted
     source: "10.89.0.0/16"
+    permanent: true
+    immediate: true
+    state: enabled
+  become: true
+  ignore_errors: true
+
+- name: Allow LAN access to HTTP (port 80) in firewalld
+  ansible.posix.firewalld:
+    zone: public
+    rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="80" protocol="tcp" accept'
+    permanent: true
+    immediate: true
+    state: enabled
+  become: true
+  ignore_errors: true
+
+- name: Allow LAN access to mDNS (port 5353) in firewalld
+  ansible.posix.firewalld:
+    zone: public
+    rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="5353" protocol="udp" accept'
     permanent: true
     immediate: true
     state: enabled
