@@ -6,5 +6,9 @@ piclaw_port: 8080
 
 avahi_aliases:
   - sillytavern.local
-  - piclaw.local
   - forgejo.local
+  - llama-swap.local
+  - openwebui.local
+  - hermes.local
+  - swarmui.local
+  - wan2gp.local
