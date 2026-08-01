@@ -26,7 +26,6 @@
       vars:
         quadlet_services:
           - sillytavern
-          - piclaw
           - forgejo
 
 - name: Deploy Caddy reverse proxy
