@@ -26,7 +26,7 @@
 
 - name: Discover active Podman network interfaces
   ansible.builtin.set_fact:
-    podman_interfaces: "{{ ansible_facts.interfaces | select('match', '^podman.*') | list }}"
+    podman_interfaces: "{{ (ansible_facts.interfaces | default([])) | select('match', '^podman.*') | list }}"
 
 - name: Allow Podman container interfaces in firewalld
   ansible.posix.firewalld:
