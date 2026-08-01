@@ -23,7 +23,7 @@ Services are accessible on your local network via mDNS aliases (`*.local`) route
 | **SwarmUI** | `swarmui` | `http://swarmui.local` (internal: 7821) | Generative image creation UI | `inference_hosts` |
 | **Wan2GP** | `wan2gp` | `http://wan2gp.local` (internal: 7860) | Video generation server | `inference_hosts` |
 | **Caddy** | `docker.io/library/caddy` | `80:80` | Reverse proxy for `.local` domain resolution | `service_hosts` |
-| **Forgejo** | `codeberg.org/forgejo/forgejo:10` | `3000:3000`, `222:22` | Self-hosted Git hosting & CI/CD platform | `service_hosts` |
+| **Forgejo** | `codeberg.org/forgejo/forgejo:10` | `3003:3003`, `222:22` | Self-hosted Git hosting & CI/CD platform | `service_hosts` |
 | **Avahi Aliases** | Host native (`avahi-tools`) | mDNS (`*.local`) | Publishes LAN mDNS aliases for local service resolution | `service_hosts` |
 
 ---
@@ -142,7 +142,7 @@ Once the Ansible deployment completes successfully, services are accessible on y
 | **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:80` | Web UI / API | Hermes agent backend/UI service. Proxied via Caddy. |
 | **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative image creation UI. Proxied via Caddy. |
 | **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:80` | Web UI (HTTP) | Video generation server. Proxied via Caddy. |
-| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3000` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Data stored in `~/homelab/forgejo`. Initial admin credentials set in `vault.yml`. |
+| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Data stored in `~/homelab/forgejo`. Initial admin credentials set in `vault.yml`. |
 | **Forgejo (SSH)** | `ssh://git@<host-ip>:222` | `ssh://git@localhost:222` | Git over SSH | Git clone and push operations over SSH using port `222` (e.g. `git clone ssh://git@<host-ip>:222/<user>/<repo>.git`). |
 | **Caddy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Reverse Proxy | Reverse proxy listening on port 80, routing `.local` mDNS domain requests to container backends based on `Host` headers. |
 

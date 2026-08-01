@@ -3,7 +3,7 @@
 # Default to local container service names on homelab.network (single-host deployment).
 # Can be overridden in inventory (e.g. host_vars/group_vars) for multi-host setups.
 sillytavern_upstream: "sillytavern:8000"
-forgejo_upstream: "forgejo:3000"
+forgejo_upstream: "forgejo:3003"
 llama_swap_upstream: "llama-swap:8080"
 openwebui_upstream: "openwebui:8081"
 hermes_upstream: "hermes:8383"
