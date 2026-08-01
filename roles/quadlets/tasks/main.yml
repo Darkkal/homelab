@@ -34,6 +34,16 @@
   loop: "{{ quadlet_deploy_results.results }}"
   when: item.changed
 
+- name: Reload caddy service if container services updated
+  ansible.builtin.systemd:
+    name: caddy.service
+    state: restarted
+    scope: user
+  when:
+    - quadlet_deploy_results.results | selectattr('changed') | list | length > 0
+    - "'caddy' not in quadlet_services"
+  failed_when: false
+
 - name: Enable and start Quadlet container services
   ansible.builtin.systemd:
     name: "{{ item }}.service"
