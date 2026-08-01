@@ -3,6 +3,7 @@
 .vault-password-file
 *.vault_pass
 .vault_pass*
+vault.yml
 
 # Editor and OS metadata
 .DS_Store
