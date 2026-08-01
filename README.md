@@ -16,9 +16,12 @@ Services are accessible on your local network via mDNS aliases (`*.local`) route
 
 | Service | Image | Ports / Routing | Description | Group |
 | :--- | :--- | :--- | :--- | :--- |
-| **KoboldCPP** | `ghcr.io/lostruins/koboldcpp` | `http://kobold.local` (internal: 5001) | LLM inference server with NVIDIA GPU acceleration | `inference_hosts` |
+| **llama-swap** | `ghcr.io/llama-swap/llama-swap` | `http://llama-swap.local` (internal: 8080) | Model swap proxy & inference controller | `inference_hosts` |
 | **SillyTavern** | `ghcr.io/sillytavern/sillytavern` | `http://sillytavern.local` | AI chat & roleplay interface | `service_hosts` |
-| **PiClaw** | `ghcr.io/rcarmo/piclaw` | `http://piclaw.local` | Isolated coding agent workspace | `service_hosts` |
+| **Open WebUI** | `ghcr.io/open-webui/open-webui` | `http://openwebui.local` (internal: 8081) | Open WebUI chat & LLM interface | `service_hosts` |
+| **Hermes Agent** | `hermes` | `http://hermes.local` (internal: 8383) | Hermes agent service | `service_hosts` |
+| **SwarmUI** | `swarmui` | `http://swarmui.local` (internal: 7821) | Generative image creation UI | `inference_hosts` |
+| **Wan2GP** | `wan2gp` | `http://wan2gp.local` (internal: 7860) | Video generation server | `inference_hosts` |
 | **Caddy** | `docker.io/library/caddy` | `80:80` | Reverse proxy for `.local` domain resolution | `service_hosts` |
 | **Forgejo** | `codeberg.org/forgejo/forgejo:10` | `3000:3000`, `222:22` | Self-hosted Git hosting & CI/CD platform | `service_hosts` |
 | **Avahi Aliases** | Host native (`avahi-tools`) | mDNS (`*.local`) | Publishes LAN mDNS aliases for local service resolution | `service_hosts` |
@@ -133,9 +136,12 @@ Once the Ansible deployment completes successfully, services are accessible on y
 
 | Service | Primary Access URL | Direct Host / Port | Access Protocol | Description & Authentication Notes |
 | :--- | :--- | :--- | :--- | :--- |
+| **llama-swap** | `http://llama-swap.local` | `http://<host-ip>:80` | Web UI & Model API | Model swap proxy & inference controller. Proxied via Caddy. |
 | **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | Web chat & roleplay UI. Proxied via Caddy. HTTP basic authentication enabled (`basicAuthUser`). |
-| **PiClaw** | `http://piclaw.local` | `http://<host-ip>:80` | Web UI (HTTP) | Isolated coding agent workspace UI. Proxied via Caddy. Optional API Key set in `vault.yml`. |
-| **KoboldCPP** | `http://kobold.local` | `http://<host-ip>:80` | Web UI & OpenAI API | AI model inference server GUI & API. OpenAI API endpoint at `http://kobold.local/v1`. Optional API key authentication set in `vault.yml`. |
+| **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. |
+| **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:80` | Web UI / API | Hermes agent backend/UI service. Proxied via Caddy. |
+| **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative image creation UI. Proxied via Caddy. |
+| **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:80` | Web UI (HTTP) | Video generation server. Proxied via Caddy. |
 | **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3000` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Data stored in `~/homelab/forgejo`. Initial admin credentials set in `vault.yml`. |
 | **Forgejo (SSH)** | `ssh://git@<host-ip>:222` | `ssh://git@localhost:222` | Git over SSH | Git clone and push operations over SSH using port `222` (e.g. `git clone ssh://git@<host-ip>:222/<user>/<repo>.git`). |
 | **Caddy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Reverse Proxy | Reverse proxy listening on port 80, routing `.local` mDNS domain requests to container backends based on `Host` headers. |
@@ -145,12 +151,12 @@ Once the Ansible deployment completes successfully, services are accessible on y
 ### How Network Access Works
 
 1. **mDNS Hostname Resolution (`*.local`)**:
-   - The `avahi` role publishes `.local` mDNS aliases (`sillytavern.local`, `piclaw.local`, `kobold.local`, `forgejo.local`) across your local network.
+   - The `avahi` role publishes `.local` mDNS aliases (`sillytavern.local`, `forgejo.local`, `llama-swap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`) across your local network.
    - Any client device connected to the same LAN (Linux, macOS, Windows 10/11, iOS, Android) can resolve these hostnames directly to the host's LAN IP address without requiring a local DNS server.
 
 2. **Reverse Proxy Routing (Caddy)**:
    - **Caddy** listens on host port `80` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 80`).
-   - HTTP requests to `http://sillytavern.local`, `http://piclaw.local`, `http://kobold.local`, or `http://forgejo.local` are routed over the internal Podman container network (`homelab.network`) to their respective container ports.
+   - HTTP requests to `.local` domains are routed to configured upstream addresses (`*_upstream`). In single-host deployments, these default to container names on the shared Podman network (`homelab.network`), while in multi-host setups they can be overridden with host IPs.
 
 3. **Direct Port Exposure**:
    - **Forgejo** binds directly to host ports `3000` (Web) and `222` (SSH), as well as being proxied at `http://forgejo.local`.
@@ -246,6 +252,9 @@ Key variables can be customized in `inventory/group_vars/`:
 
 ### `inventory/group_vars/service_hosts.yml`
 - `avahi_aliases`: List of `.local` hostnames to publish on the LAN
+
+### `roles/caddy/defaults/main.yml`
+- `*_upstream`: Upstream service addresses for Caddy reverse proxy routing (`sillytavern_upstream`, `forgejo_upstream`, `llama_swap_upstream`, `openwebui_upstream`, `hermes_upstream`, `swarmui_upstream`, `wan2gp_upstream`, `koboldcpp_upstream`). Defaults to container names on single-host, overrideable for multi-host cross-routing.
 
 ---
 
