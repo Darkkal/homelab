@@ -6,8 +6,8 @@
     mode: '0755'
 
 - name: Deploy Caddyfile
-  ansible.builtin.copy:
-    src: Caddyfile
+  ansible.builtin.template:
+    src: Caddyfile.j2
     dest: "{{ caddy_file_path }}"
     mode: '0644'
   notify: Reload caddy service
