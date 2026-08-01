@@ -24,28 +24,6 @@
     sysctl_file: /etc/sysctl.d/99-rootless-ports.conf
   become: true
 
-- name: Discover Podman network interfaces via Podman CLI
-  ansible.builtin.command:
-    cmd: "podman network ls --format {% raw %}'{{.NetworkInterface}}'{% endraw %}"
-  register: podman_net_ls
-  changed_when: false
-  failed_when: false
-
-- name: Set podman interface list fact
-  ansible.builtin.set_fact:
-    podman_interfaces: "{{ (podman_net_ls.stdout_lines | default([])) | select('match', '^podman.*') | list }}"
-
-- name: Allow Podman container interfaces in firewalld
-  ansible.posix.firewalld:
-    zone: trusted
-    interface: "{{ item }}"
-    permanent: true
-    immediate: true
-    state: enabled
-  loop: "{{ podman_interfaces }}"
-  become: true
-  ignore_errors: true
-
 - name: Allow Podman container subnet in firewalld
   ansible.posix.firewalld:
     zone: trusted
