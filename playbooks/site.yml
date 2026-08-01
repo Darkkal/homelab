@@ -15,7 +15,7 @@
     - role: quadlets
       vars:
         quadlet_services:
-          - koboldcpp
+          - llama-swap
 
 - name: Deploy service Quadlets and supporting infrastructure
   hosts: service_hosts

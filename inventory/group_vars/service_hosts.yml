@@ -7,5 +7,4 @@ piclaw_port: 8080
 avahi_aliases:
   - sillytavern.local
   - piclaw.local
-  - kobold.local
   - forgejo.local
