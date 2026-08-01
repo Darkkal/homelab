@@ -32,7 +32,7 @@ Services are accessible on your local network via mDNS aliases (`*.local`) route
 
 The inventory divides target machines into two main functional groups:
 
-- **`inference_hosts`**: Machines equipped with dedicated GPUs for AI model inference (runs `koboldcpp` and configures the NVIDIA Container Toolkit).
+- **`inference_hosts`**: Machines equipped with dedicated GPUs for AI model inference (runs `llama-swap` and configures the NVIDIA Container Toolkit).
 - **`service_hosts`**: Machines running application containers, proxies, and mDNS services (`caddy`, `sillytavern`, `piclaw`, `forgejo`, `avahi`).
 
 Currently, single-machine setups run both groups on `desktop` (via local Ansible connection). In the future, non-inference services can be migrated to a remote target machine simply by adding a new host under `service_hosts` in `inventory/hosts.yml`.
@@ -49,8 +49,8 @@ homelab/
 │   └── group_vars/
 │       ├── all.yml              # Shared paths and system configuration
 │       ├── all/
-│       │   └── vault.yml        # Ansible Vault encrypted secrets
-│       ├── inference_hosts.yml  # KoboldCPP & GPU inference settings
+│       │   └── vault.yml        # Ansible Vault encrypted secrets (user-created, gitignored)
+│       ├── inference_hosts.yml  # llama-swap & GPU inference settings
 │       └── service_hosts.yml    # Service ports and mDNS alias list
 ├── playbooks/
 │   └── site.yml                 # Main deployment playbook
@@ -117,7 +117,7 @@ ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vau
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern piclaw koboldcpp forgejo
+systemctl --user status caddy sillytavern piclaw llama-swap forgejo
 ```
 
 Check mDNS address resolution:
@@ -159,7 +159,7 @@ Once the Ansible deployment completes successfully, services are accessible on y
    - HTTP requests to `.local` domains are routed to configured upstream addresses (`*_upstream`). In single-host deployments, these default to container names on the shared Podman network (`homelab.network`), while in multi-host setups they can be overridden with host IPs.
 
 3. **Direct Port Exposure**:
-   - **Forgejo** binds directly to host ports `3000` (Web) and `222` (SSH), as well as being proxied at `http://forgejo.local`.
+   - **Forgejo** binds directly to host ports `3003` (Web) and `222` (SSH), as well as being proxied at `http://forgejo.local`.
 
 ---
 
@@ -178,7 +178,7 @@ If a client device cannot resolve `.local` mDNS hostnames:
 1. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
    Add target host IP address and service hostnames:
    ```text
-   192.168.1.100  sillytavern.local piclaw.local kobold.local forgejo.local
+   192.168.1.100  sillytavern.local piclaw.local llamaswap.local forgejo.local
    ```
 
 2. **Testing via HTTP Host Header**:
@@ -199,24 +199,69 @@ If a client device cannot resolve `.local` mDNS hostnames:
 
 ## Secrets Management (Ansible Vault)
 
-Sensitive values (admin credentials, API keys, authentication tokens) are encrypted at rest using `ansible-vault` in `inventory/group_vars/all/vault.yml`.
+Sensitive values (admin credentials, API keys, authentication tokens) are managed using `ansible-vault` in `inventory/group_vars/all/vault.yml`.
 
-### Variable Naming Convention
+> [!IMPORTANT]
+> The encrypted vault file `inventory/group_vars/all/vault.yml` is **not stored in this git repository** and is listed in `.gitignore` to prevent sensitive credentials from living in version control. You must create this file before deployment if you wish to override default credentials or provide API keys.
 
-All secret variables defined in `vault.yml` use the `vault_` prefix:
-- `vault_forgejo_admin_user`
-- `vault_forgejo_admin_password`
-- `vault_forgejo_admin_email`
-- `vault_kobold_api_key`
-- `vault_sillytavern_api_key`
-- `vault_piclaw_api_key`
+### 1. Creating Your Vault File
 
-Unencrypted variable abstractions in `inventory/group_vars/all.yml` reference these vault variables with safe default fallbacks:
-```yaml
-forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"
+First, ensure your `.vault-pass` password file is created:
+
+```bash
+echo "your-secure-vault-password" > .vault-pass
 ```
 
-### Working with Vault Files
+Next, create and populate `inventory/group_vars/all/vault.yml`:
+
+**Option A: Create directly with `ansible-vault`**
+```bash
+ansible-vault create inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
+```
+
+**Option B: Create plaintext file first, then encrypt**
+Create `inventory/group_vars/all/vault.yml` using your editor, add your secrets, and encrypt it:
+```bash
+ansible-vault encrypt inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
+```
+
+### 2. Supported Key-Value Pairs
+
+The playbooks support the following secret variables in `vault.yml`:
+
+| Secret Variable | Description | Safe Fallback (if omitted) |
+| :--- | :--- | :--- |
+| `vault_forgejo_admin_user` | Initial admin username for Forgejo | `admin` |
+| `vault_forgejo_admin_password` | Initial admin password for Forgejo | `""` (no default password) |
+| `vault_forgejo_admin_email` | Initial admin email address for Forgejo | `admin@homelab.local` |
+| `vault_sillytavern_user` | SillyTavern web interface HTTP basic auth username | `admin` |
+| `vault_sillytavern_password` | SillyTavern web interface HTTP basic auth password | `""` (no basic auth password) |
+| `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
+| `vault_piclaw_api_key` | PiClaw agent API access key | `""` |
+
+### 3. Example `vault.yml` Template
+
+Before encryption, your unencrypted `inventory/group_vars/all/vault.yml` file should look like this:
+
+```yaml
+---
+# Forgejo Initial Credentials
+vault_forgejo_admin_user: "admin"
+vault_forgejo_admin_password: "SuperSecretForgejoPassword"
+vault_forgejo_admin_email: "admin@homelab.local"
+
+# SillyTavern Authentication
+vault_sillytavern_user: "admin"
+vault_sillytavern_password: "SuperSecretSillyTavernPassword"
+vault_sillytavern_api_key: ""
+
+# PiClaw Credentials
+vault_piclaw_api_key: ""
+```
+
+Unencrypted variable abstractions in `inventory/group_vars/all/vars.yml` reference these vault variables with safe default fallbacks (e.g., `forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"`).
+
+### 4. Working with Vault Files
 
 - **View encrypted contents:**
   ```bash
@@ -226,9 +271,13 @@ forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"
   ```bash
   ansible-vault edit inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
   ```
+- **Encrypt an existing unencrypted file:**
+  ```bash
+  ansible-vault encrypt inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
+  ```
 - **Change vault password:**
   ```bash
-  ansible-vault rekey inventory/group_vars/all/vault.yml
+  ansible-vault rekey inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
   ```
 
 ---
@@ -243,18 +292,20 @@ Key variables can be customized in `inventory/group_vars/`:
 - `network_name`: Shared container bridge network (`homelab.network`)
 
 ### `inventory/group_vars/inference_hosts.yml`
-- `kobold_roleplay_model`: Primary model file for SillyTavern roleplay (`gemma-4-12b-it-Q4_K_M.gguf`)
-- `kobold_roleplay_model_mmproj`: Multimodal vision adapter file (`gemma-4-12b-it-Q4_K_M-mmproj-BF16.gguf`)
-- `kobold_use_mtp`: Enable Multi-Token Prediction (`true`)
-- `gpu_layers`: Number of layers to offload to GPU (`99`)
-- `context_size`: Context window size (`32768`)
-- `auto_unload_seconds`: Inactivity timeout before model unloads (`600`)
+- `model_dir`: Directory containing downloaded GGUF model files (`~/homelab/models`)
+- `llama_swap_config_dir`: Path for llama-swap configuration (`~/homelab/llama-swap`)
+- `llama_swap_port`: Host port for direct llama-swap access (`8080`)
+- `gpu_layers`: Default number of GPU layers to offload (`99`)
+- `context_size`: Default context window size (`32768`)
+- `auto_unload_seconds`: Inactivity timeout before idle model unloads (`600`)
 
 ### `inventory/group_vars/service_hosts.yml`
-- `avahi_aliases`: List of `.local` hostnames to publish on the LAN
+- `avahi_aliases`: List of `.local` hostnames published on LAN (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`)
+- `forgejo_port`: Host web port for direct Forgejo access (`3003`)
+- `piclaw_port`: Host web port for direct PiClaw access (`8080`)
 
 ### `roles/caddy/defaults/main.yml`
-- `*_upstream`: Upstream service addresses for Caddy reverse proxy routing (`sillytavern_upstream`, `forgejo_upstream`, `llama_swap_upstream`, `openwebui_upstream`, `hermes_upstream`, `swarmui_upstream`, `wan2gp_upstream`, `koboldcpp_upstream`). Defaults to container names on single-host, overrideable for multi-host cross-routing.
+- `*_upstream`: Upstream service addresses for Caddy reverse proxy routing (`sillytavern_upstream`, `forgejo_upstream`, `llama_swap_upstream`, `openwebui_upstream`, `hermes_upstream`, `swarmui_upstream`, `wan2gp_upstream`). Defaults to container names on single-host, overrideable for multi-host cross-routing.
 
 ---
 
