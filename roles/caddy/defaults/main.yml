@@ -1,0 +1,12 @@
+---
+# Upstream addresses for Caddy reverse proxy
+# Default to local container service names on homelab.network (single-host deployment).
+# Can be overridden in inventory (e.g. host_vars/group_vars) for multi-host setups.
+sillytavern_upstream: "sillytavern:8000"
+forgejo_upstream: "forgejo:3003"
+llama_swap_upstream: "llama-swap:8080"
+openwebui_upstream: "openwebui:8081"
+hermes_upstream: "hermes:8383"
+swarmui_upstream: "swarmui:7821"
+wan2gp_upstream: "wan2gp:7860"
+koboldcpp_upstream: "koboldcpp:5001"

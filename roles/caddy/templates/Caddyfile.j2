@@ -1,0 +1,27 @@
+http://sillytavern.local {
+    reverse_proxy {{ sillytavern_upstream }}
+}
+
+http://forgejo.local {
+    reverse_proxy {{ forgejo_upstream }}
+}
+
+http://llama-swap.local {
+    reverse_proxy {{ llama_swap_upstream }}
+}
+
+http://openwebui.local {
+    reverse_proxy {{ openwebui_upstream }}
+}
+
+http://hermes.local {
+    reverse_proxy {{ hermes_upstream }}
+}
+
+http://swarmui.local {
+    reverse_proxy {{ swarmui_upstream }}
+}
+
+http://wan2gp.local {
+    reverse_proxy {{ wan2gp_upstream }}
+}
