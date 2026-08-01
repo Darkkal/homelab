@@ -6,9 +6,6 @@ http://piclaw.local {
     reverse_proxy piclaw:8080
 }
 
-http://kobold.local {
-    reverse_proxy koboldcpp:5001
-}
 
 http://forgejo.local {
     reverse_proxy forgejo:3000

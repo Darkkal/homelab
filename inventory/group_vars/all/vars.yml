@@ -15,5 +15,4 @@ sillytavern_user: "{{ vault_sillytavern_user | default('admin') }}"
 sillytavern_password: "{{ vault_sillytavern_password | default('') }}"
 sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
 
-kobold_api_key: "{{ vault_kobold_api_key | default('') }}"
 piclaw_api_key: "{{ vault_piclaw_api_key | default('') }}"

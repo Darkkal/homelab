@@ -1,7 +1,7 @@
 [Unit]
 Description=Caddy Local Routing Proxy
-Requires=koboldcpp.service sillytavern.service piclaw.service forgejo.service
-After=koboldcpp.service sillytavern.service piclaw.service forgejo.service
+Requires=sillytavern.service piclaw.service forgejo.service
+After=sillytavern.service piclaw.service forgejo.service
 
 [Container]
 Image=docker.io/library/caddy:latest
