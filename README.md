@@ -19,7 +19,7 @@ Services are accessible on your local network via mDNS aliases (`*.local`) route
 | **llama-swap** | `ghcr.io/llama-swap/llama-swap` | `http://llamaswap.local` (internal: 8080) | Model swap proxy & inference controller | `inference_hosts` |
 | **SillyTavern** | `ghcr.io/sillytavern/sillytavern` | `http://sillytavern.local` | AI chat & roleplay interface | `service_hosts` |
 | **Open WebUI** | `ghcr.io/open-webui/open-webui` | `http://openwebui.local` (internal: 8081) | Open WebUI chat & LLM interface | `service_hosts` |
-| **Hermes Agent** | `hermes` | `http://hermes.local` (internal: 8383) | Hermes agent service | `service_hosts` |
+| **Hermes Agent** | `docker.io/nousresearch/hermes-agent` | `http://hermes.local` (internal: 8383) | Hermes agent service | `service_hosts` |
 | **SwarmUI** | `swarmui` | `http://swarmui.local` (internal: 7821) | Generative image creation UI | `inference_hosts` |
 | **Wan2GP** | `wan2gp` | `http://wan2gp.local` (internal: 7860) | Video generation server | `inference_hosts` |
 | **Caddy** | `docker.io/library/caddy` | `80:80` | Reverse proxy for `.local` domain resolution | `service_hosts` |
