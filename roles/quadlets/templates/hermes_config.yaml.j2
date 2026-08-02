@@ -2,4 +2,4 @@ _config_version: 12
 dashboard:
   basic_auth:
     username: "{{ hermes_admin_user | default('admin') }}"
-    password_hash: "{{ hermes_admin_password_hash | default('scrypt$16384$8$1$liCHNhBeMwfPdB85L4dkRA==$LPVqUx49iffaugfdmBN2G3an64CrebADhC8V5+uE/Og=') }}"
+    password_hash: "{{ hermes_admin_password | hermes_scrypt }}"

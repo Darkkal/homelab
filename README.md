@@ -238,7 +238,7 @@ The playbooks support the following secret variables in `vault.yml`:
 | `vault_sillytavern_password` | SillyTavern web interface HTTP basic auth password | `""` (no basic auth password) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
 | `vault_hermes_admin_user` | Hermes Agent web interface basic auth username | `admin` |
-| `vault_hermes_admin_password_hash` | Hermes Agent web interface scrypt password hash | `scrypt$16384$...` (default pass: `admin`) |
+| `vault_hermes_admin_password` | Hermes Agent web interface basic auth password | `admin` |
 
 ### 3. Example `vault.yml` Template
 
@@ -258,7 +258,7 @@ vault_sillytavern_api_key: ""
 
 # Hermes Agent Authentication
 vault_hermes_admin_user: "admin"
-vault_hermes_admin_password_hash: "scrypt$16384$8$1$liCHNhBeMwfPdB85L4dkRA==$LPVqUx49iffaugfdmBN2G3an64CrebADhC8V5+uE/Og="
+vault_hermes_admin_password: "SuperSecretHermesPassword"
 ```
 
 Unencrypted variable abstractions in `inventory/group_vars/all/vars.yml` reference these vault variables with safe default fallbacks (e.g., `forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"`).
