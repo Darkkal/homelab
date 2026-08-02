@@ -8,8 +8,6 @@
     - "{{ homelab_data_dir }}"
     - "{{ homelab_data_dir }}/models"
     - "{{ homelab_data_dir }}/sillytavern"
-    - "{{ homelab_data_dir }}/piclaw/home"
-    - "{{ homelab_data_dir }}/piclaw/workspace"
     - "{{ homelab_data_dir }}/forgejo"
     - "{{ homelab_data_dir }}/caddy"
     - "{{ homelab_data_dir }}/llama-swap"

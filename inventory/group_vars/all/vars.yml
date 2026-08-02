@@ -15,8 +15,6 @@ sillytavern_user: "{{ vault_sillytavern_user | default('admin') }}"
 sillytavern_password: "{{ vault_sillytavern_password | default('') }}"
 sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
 
-piclaw_api_key: "{{ vault_piclaw_api_key | default('') }}"
-
 # LAN subnet for firewall rich rules (HTTP port 80 & mDNS port 5353)
 lan_subnet: "{{ host_lan_subnet | default(ansible_default_ipv4.network + '/24') }}"
 
