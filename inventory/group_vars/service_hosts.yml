@@ -7,6 +7,7 @@ openwebui_openai_api_base_url: "http://llama-swap:8080/v1"
 hermes_data_dir: "{{ homelab_data_dir }}/hermes"
 hermes_port: 8383
 hermes_openai_api_base_url: "http://llama-swap:8080/v1"
+hermes_default_model: "qwen3.6-35b-mtp"
 
 avahi_aliases:
   - sillytavern.local
