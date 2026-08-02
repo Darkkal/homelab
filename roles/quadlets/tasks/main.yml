@@ -20,6 +20,7 @@
     dest: "{{ hermes_data_dir }}/config.yaml"
     mode: '0644'
   when: "'hermes-agent' in quadlet_services"
+  become: true
   notify: Restart hermes-agent service
 
 - name: Deploy Quadlet container definitions
