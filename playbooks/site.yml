@@ -28,6 +28,7 @@
           - sillytavern
           - forgejo
           - open-webui
+          - hermes-agent
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts

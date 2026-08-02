@@ -14,6 +14,7 @@
     - "{{ homelab_data_dir }}/caddy"
     - "{{ homelab_data_dir }}/llama-swap"
     - "{{ homelab_data_dir }}/open-webui"
+    - "{{ homelab_data_dir }}/hermes"
     - "{{ quadlet_dir }}"
 
 - name: Allow rootless podman to bind low ports (port 80)
