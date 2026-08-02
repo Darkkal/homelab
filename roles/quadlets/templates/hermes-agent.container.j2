@@ -4,7 +4,7 @@ After=network-online.target
 
 [Container]
 ContainerName=hermes
-Image=ghcr.io/nousresearch/hermes-agent:latest
+Image=docker.io/nousresearch/hermes-agent:latest
 Network={{ network_name }}
 Environment=OPENAI_BASE_URL={{ hermes_openai_api_base_url | default('http://llama-swap:8080/v1') }}
 {% if hermes_openai_api_key is defined and hermes_openai_api_key %}
