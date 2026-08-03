@@ -44,6 +44,17 @@ When `quadlet_no_block: true` is set in inventory variables (enabled by default 
 
 This prevents Ansible playbook execution from blocking on long-running container startup tasks or on-demand container image builds (such as `swarmui-build.service`), allowing the playbook run to complete immediately while systemd manages the job asynchronously in the background.
 
+#### SwarmUI Volume Structure
+
+SwarmUI persistent data, models, and generated outputs are stored in isolated subdirectories within `swarmui_data_dir` (`~/homelab/swarmui`):
+
+| Host Path | Container Target | Purpose |
+| :--- | :--- | :--- |
+| `~/homelab/swarmui/Data` | `/SwarmUI/Data` | Core application settings and state |
+| `~/homelab/swarmui/Models` | `/SwarmUI/Models` | SwarmUI image models (SDXL, Flux, LoRAs, VAEs) |
+| `~/homelab/swarmui/Output` | `/SwarmUI/Output` | Generated images and media output |
+
+
 
 
 
