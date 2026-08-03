@@ -8,7 +8,7 @@ This document provides a detailed reference for all configuration variables acro
 
 Customizing deployment options is done by editing files under `inventory/group_vars/`.
 
-### Shared Configuration (`inventory/group_vars/all.yml`)
+### Shared Configuration (`inventory/group_vars/all/vars.yml`)
 
 These settings apply to all target hosts across all host groups:
 
