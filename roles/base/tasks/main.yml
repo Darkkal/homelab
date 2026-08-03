@@ -1,11 +1,18 @@
 ---
-- name: Ensure homelab data and config directories exist
+- name: Ensure common homelab directories exist
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
   loop:
     - "{{ homelab_data_dir }}"
-    - "{{ homelab_data_dir }}/models"
+    - "{{ quadlet_dir }}"
+    - "~/.config/containers/registries.conf.d"
+
+- name: Ensure service host data directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
     - "{{ homelab_data_dir }}/sillytavern"
     - "{{ homelab_data_dir }}/sillytavern/config"
     - "{{ homelab_data_dir }}/sillytavern/data"
@@ -13,15 +20,22 @@
     - "{{ homelab_data_dir }}/sillytavern/extensions"
     - "{{ homelab_data_dir }}/forgejo"
     - "{{ homelab_data_dir }}/caddy"
-    - "{{ homelab_data_dir }}/llama-swap"
     - "{{ homelab_data_dir }}/open-webui"
     - "{{ homelab_data_dir }}/hermes"
+  when: "'service_hosts' in group_names"
+
+- name: Ensure inference host data directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ homelab_data_dir }}/models"
+    - "{{ homelab_data_dir }}/llama-swap"
     - "{{ homelab_data_dir }}/swarmui"
     - "{{ homelab_data_dir }}/swarmui/Data"
     - "{{ homelab_data_dir }}/swarmui/Models"
     - "{{ homelab_data_dir }}/swarmui/Output"
-    - "{{ quadlet_dir }}"
-    - "~/.config/containers/registries.conf.d"
+  when: "'inference_hosts' in group_names"
 
 - name: Ensure Wan2GP data directories exist with write permissions for rootless container user
   ansible.builtin.file:
@@ -37,6 +51,7 @@
     - "{{ homelab_data_dir }}/wan2gp/profiles"
     - "{{ homelab_data_dir }}/wan2gp/plugins"
     - "{{ homelab_data_dir }}/wan2gp/finetunes"
+  when: "'inference_hosts' in group_names"
 
 
 - name: Deploy Podman short-name resolution aliases configuration
