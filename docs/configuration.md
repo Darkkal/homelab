@@ -34,8 +34,10 @@ These settings apply to target hosts in the `inference_hosts` group:
 | `auto_unload_seconds` | `600` | Inactivity timeout (seconds) before idle models are automatically unloaded from VRAM. |
 | `swarmui_data_dir` | `~/homelab/swarmui` | Directory for SwarmUI persistent data and outputs. |
 | `swarmui_port` | `7801` | Host web port for direct SwarmUI WebUI access. |
-
 | `swarmui_image` | `localhost/swarmui:latest` | Container image repository and tag for SwarmUI built natively from Git by systemd Quadlet. |
+| `wan2gp_data_dir` | `~/homelab/wan2gp` | Directory for Wan2GP persistent data, models, and outputs. |
+| `wan2gp_port` | `7860` | Host web port for direct Wan2GP WebUI access. |
+| `wan2gp_image` | `localhost/wan2gp:latest` | Container image repository and tag for Wan2GP built natively from Git by systemd Quadlet. |
 | `quadlet_no_block` | `true` | When `true`, Ansible issues non-blocking systemd service start and restart commands (`no_block: true`). |
 
 #### Non-Blocking Systemd Service Starts (`quadlet_no_block`)
@@ -53,6 +55,16 @@ SwarmUI persistent data, models, and generated outputs are stored in isolated su
 | `~/homelab/swarmui/Data` | `/SwarmUI/Data` | Core application settings and state |
 | `~/homelab/swarmui/Models` | `/SwarmUI/Models` | SwarmUI image models (SDXL, Flux, LoRAs, VAEs) |
 | `~/homelab/swarmui/Output` | `/SwarmUI/Output` | Generated images and media output |
+
+#### Wan2GP Volume Structure
+
+Wan2GP persistent data, checkpoints, and generated videos are stored in isolated subdirectories within `wan2gp_data_dir` (`~/homelab/wan2gp`):
+
+| Host Path | Container Target | Purpose |
+| :--- | :--- | :--- |
+| `~/homelab/wan2gp` | `/workspace` | Wan2GP workspace root directory |
+| `~/homelab/wan2gp/ckpts` | `/workspace/ckpts` | Model checkpoints (Wan 2.1, LTX Video) |
+| `~/homelab/wan2gp/outputs` | `/workspace/outputs` | Generated video output files |
 
 
 
