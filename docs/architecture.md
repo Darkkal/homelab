@@ -37,6 +37,10 @@ graph TD
         Caddy -->|homelab.network / LAN IP| SwarmUI[SwarmUI]
         Caddy -->|homelab.network / LAN IP| Wan2GP[Wan2GP]
     end
+
+    SillyTavern -->|OpenAI API / homelab.network:8080| LlamaSwap
+    OpenWebUI -->|OpenAI API / homelab.network:8080| LlamaSwap
+    Hermes -->|OpenAI API / homelab.network:8080| LlamaSwap
 ```
 
 ### Host Group Descriptions
@@ -44,9 +48,11 @@ graph TD
 - **`inference_hosts`**:
   - Hosts equipped with GPUs for artificial intelligence and machine learning workloads.
   - Deploys NVIDIA Container Toolkit (CDI generation) and Quadlet services such as `llama-swap`, `SwarmUI`, and `Wan2GP`.
+  - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
   - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `forgejo`, and `avahi`.
+  - Frontend AI applications (`sillytavern`, `open-webui`, `hermes-agent`) route model completion calls internally to `llama-swap:8080`.
 
 ### Deployment Topologies
 
@@ -68,7 +74,10 @@ graph TD
    - System parameter `net.ipv4.ip_unprivileged_port_start = 80` allows the unprivileged Caddy container to bind directly to host port `80`.
 3. **Upstream Forwarding**:
    - Caddy inspects the incoming HTTP `Host` header and forwards traffic to the corresponding container service port.
-4. **Direct Port Exposure**:
+4. **Unified LLM Inference Routing**:
+   - All LLM application containers (`SillyTavern`, `Open WebUI`, `Hermes Agent`) connect directly to `http://llama-swap:8080/v1` over `homelab.network`.
+   - `llama-swap` handles model swapping, VRAM allocation, and TTL-based model auto-unloading dynamically.
+5. **Direct Port Exposure**:
    - Forgejo binds web port `3003` and SSH port `222` directly to the host for non-proxied or SSH access.
 
 ---
