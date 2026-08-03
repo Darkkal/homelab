@@ -9,7 +9,10 @@ Network={{ network_name }}
 {% if sillytavern_api_key is defined and sillytavern_api_key %}
 Environment=SILLY_TAVERN_API_KEY={{ sillytavern_api_key }}
 {% endif %}
-Volume={{ st_data_dir }}:/home/node/app/config:Z
+Volume={{ st_data_dir }}/config:/home/node/app/config:Z
+Volume={{ st_data_dir }}/data:/home/node/app/data:Z
+Volume={{ st_data_dir }}/plugins:/home/node/app/plugins:Z
+Volume={{ st_data_dir }}/extensions:/home/node/app/public/scripts/extensions/third-party:Z
 
 [Service]
 Restart=always

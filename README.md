@@ -119,7 +119,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | Service | Primary LAN URL | Direct Host / Port | Access Protocol | Description & Authentication | Ansible Group |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
-| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | LLM chat & roleplay UI. Basic HTTP auth enabled (`vault_sillytavern_user`). | `service_hosts` |
+| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
 | **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
 | **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:8383` | Web UI / API | Hermes agent service backend & UI. Basic HTTP auth supported. | `service_hosts` |
 | **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |

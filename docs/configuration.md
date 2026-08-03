@@ -49,6 +49,38 @@ These settings apply to target hosts in the `service_hosts` group:
 | `openwebui_data_dir` | `~/homelab/open-webui` | Directory for Open WebUI persistent data. |
 | `openwebui_port` | `8081` | Host web port for direct Open WebUI access. |
 | `openwebui_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Open WebUI backend calls. |
+| `st_data_dir` | `~/homelab/sillytavern` | Directory for SillyTavern persistent data. |
+| `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
+
+#### SillyTavern Volume Structure & Data Migration
+
+SillyTavern's persistent data is mapped to `st_data_dir` (`~/homelab/sillytavern`) via four standard volume mounts:
+
+| Host Path | Container Target | Purpose |
+| :--- | :--- | :--- |
+| `~/homelab/sillytavern/config` | `/home/node/app/config` | Server configuration (`config.yaml`) |
+| `~/homelab/sillytavern/data` | `/home/node/app/data` | Characters, chats, worlds, group chats, presets, and user settings (`user/settings.json`) |
+| `~/homelab/sillytavern/plugins` | `/home/node/app/plugins` | Server-side plugins |
+| `~/homelab/sillytavern/extensions` | `/home/node/app/public/scripts/extensions/third-party` | Third-party client extensions |
+
+##### Migrating Data from Existing SillyTavern Instances
+
+To migrate characters, chats, and settings from a standalone Docker Compose instance:
+
+1. Stop the active user systemd service:
+   ```bash
+   systemctl --user stop sillytavern
+   ```
+2. Copy your existing `./data`, `./plugins`, and `./extensions` content into `~/homelab/sillytavern/`:
+   ```bash
+   cp -r /path/to/old/sillytavern/data/* ~/homelab/sillytavern/data/
+   cp -r /path/to/old/sillytavern/plugins/* ~/homelab/sillytavern/plugins/
+   cp -r /path/to/old/sillytavern/extensions/* ~/homelab/sillytavern/extensions/
+   ```
+3. Re-run the site playbook to apply rootless SELinux permissions (`:Z`) and restart the container:
+   ```bash
+   ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vault-pass
+   ```
 
 ---
 
