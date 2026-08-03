@@ -1,0 +1,19 @@
+[Unit]
+Description=SwarmUI Modular AI Image Generation Interface
+After=network-online.target
+
+[Container]
+ContainerName=swarmui
+Image={{ swarmui_image | default('ghcr.io/mcmonkeyprojects/swarmui:latest') }}
+Network={{ network_name }}
+PublishPort={{ swarmui_port | default(7821) }}:7821
+AddDevice=nvidia.com/gpu=all
+Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}:/app/Data:Z
+Volume={{ model_dir }}:/app/Models:Z
+Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/Output:/app/Output:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
