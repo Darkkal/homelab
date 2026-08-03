@@ -7,3 +7,9 @@ auto_unload_seconds: 600
 # llama-swap configuration
 llama_swap_config_dir: "{{ homelab_data_dir }}/llama-swap"
 llama_swap_port: 8080
+
+# SwarmUI configuration
+swarmui_data_dir: "{{ homelab_data_dir }}/swarmui"
+swarmui_port: 7821
+swarmui_image: "ghcr.io/mcmonkeyprojects/swarmui:latest"
+
