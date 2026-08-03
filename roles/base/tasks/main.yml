@@ -20,6 +20,9 @@
     - "{{ homelab_data_dir }}/swarmui/Data"
     - "{{ homelab_data_dir }}/swarmui/Models"
     - "{{ homelab_data_dir }}/swarmui/Output"
+    - "{{ homelab_data_dir }}/wan2gp"
+    - "{{ homelab_data_dir }}/wan2gp/ckpts"
+    - "{{ homelab_data_dir }}/wan2gp/outputs"
     - "{{ quadlet_dir }}"
 
 
