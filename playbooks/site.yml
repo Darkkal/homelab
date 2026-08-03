@@ -17,6 +17,7 @@
         quadlet_services:
           - llama-swap
           - swarmui
+          - wan2gp
 
 
 - name: Deploy service Quadlets and supporting infrastructure
