@@ -16,6 +16,8 @@
       vars:
         quadlet_services:
           - llama-swap
+          - swarmui
+
 
 - name: Deploy service Quadlets and supporting infrastructure
   hosts: service_hosts

@@ -32,6 +32,31 @@ These settings apply to target hosts in the `inference_hosts` group:
 | `gpu_layers` | `99` | Default number of model layers to offload to GPU VRAM. |
 | `context_size` | `32768` | Default context window size (tokens) for inference model execution. |
 | `auto_unload_seconds` | `600` | Inactivity timeout (seconds) before idle models are automatically unloaded from VRAM. |
+| `swarmui_data_dir` | `~/homelab/swarmui` | Directory for SwarmUI persistent data and outputs. |
+| `swarmui_port` | `7801` | Host web port for direct SwarmUI WebUI access. |
+
+| `swarmui_image` | `localhost/swarmui:latest` | Container image repository and tag for SwarmUI built natively from Git by systemd Quadlet. |
+| `quadlet_no_block` | `true` | When `true`, Ansible issues non-blocking systemd service start and restart commands (`no_block: true`). |
+
+#### Non-Blocking Systemd Service Starts (`quadlet_no_block`)
+
+When `quadlet_no_block: true` is set in inventory variables (enabled by default in `inference_hosts.yml`), Ansible executes systemd container start and restart tasks with `no_block: true` (equivalent to `systemctl start --no-block`).
+
+This prevents Ansible playbook execution from blocking on long-running container startup tasks or on-demand container image builds (such as `swarmui-build.service`), allowing the playbook run to complete immediately while systemd manages the job asynchronously in the background.
+
+#### SwarmUI Volume Structure
+
+SwarmUI persistent data, models, and generated outputs are stored in isolated subdirectories within `swarmui_data_dir` (`~/homelab/swarmui`):
+
+| Host Path | Container Target | Purpose |
+| :--- | :--- | :--- |
+| `~/homelab/swarmui/Data` | `/SwarmUI/Data` | Core application settings and state |
+| `~/homelab/swarmui/Models` | `/SwarmUI/Models` | SwarmUI image models (SDXL, Flux, LoRAs, VAEs) |
+| `~/homelab/swarmui/Output` | `/SwarmUI/Output` | Generated images and media output |
+
+
+
+
 
 ---
 
@@ -97,7 +122,8 @@ Caddy upstream variables define where requests to `*.local` hostnames are routed
 | `llama_swap_upstream` | `llama-swap:8080` | `llamaswap.local` |
 | `openwebui_upstream` | `open-webui:8080` | `openwebui.local` |
 | `hermes_upstream` | `hermes-agent:8080` | `hermes.local` |
-| `swarmui_upstream` | `swarmui:7821` | `swarmui.local` |
+| `swarmui_upstream` | `swarmui:7801` | `swarmui.local` |
+
 | `wan2gp_upstream` | `wan2gp:7860` | `wan2gp.local` |
 
 ---

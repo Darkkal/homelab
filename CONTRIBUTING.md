@@ -41,11 +41,18 @@ This repository uses **`release-please`** to automate versioning and changelogs.
 - Services are declared using **Podman Quadlets** (`.container`, `.network`, `.volume` systemd unit templates).
 - All containers run as **rootless systemd user units** under `~/.config/containers/systemd/`.
 - Ensure systemd user lingering is enabled for persistent container background execution.
+- Use `quadlet_no_block: true` in group/host variables when containers require background build units or non-blocking systemd starts to prevent Ansible playbook delays.
+
 
 ### Network & Routing
 - Services publish LAN mDNS hostnames (`*.local`) via Avahi.
 - Web services are reverse-proxied through **Caddy** bound to unprivileged host port `80`.
+- **New Service `.local` Routing Requirement**: Every new web-accessible service must be configured for `.local` routing:
+  1. Add the `.local` hostname (e.g. `swarmui.local`) to `avahi_aliases` in `inventory/group_vars/service_hosts.yml`.
+  2. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
+  3. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
 - Multi-host overrides should be configured cleanly in `inventory/group_vars/service_hosts.yml`.
+
 
 ---
 

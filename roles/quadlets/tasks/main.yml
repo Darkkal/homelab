@@ -23,6 +23,15 @@
   become: true
   notify: Restart hermes-agent service
 
+- name: Deploy SwarmUI Quadlet build definition
+
+  ansible.builtin.template:
+    src: swarmui.build.j2
+    dest: "{{ quadlet_dir }}/swarmui.build"
+    mode: '0644'
+  when: "'swarmui' in quadlet_services"
+  notify: Reload user systemd
+
 - name: Deploy Quadlet container definitions
   ansible.builtin.template:
     src: "{{ item }}.container.j2"
@@ -39,6 +48,7 @@
   ansible.builtin.systemd:
     name: "{{ item.item }}.service"
     state: restarted
+    no_block: "{{ quadlet_no_block | default(false) }}"
     scope: user
   loop: "{{ quadlet_deploy_results.results }}"
   when: item.changed
@@ -58,7 +68,9 @@
     name: "{{ item }}.service"
     enabled: true
     state: started
+    no_block: "{{ quadlet_no_block | default(false) }}"
     scope: user
   loop: "{{ quadlet_services }}"
+
 
 
