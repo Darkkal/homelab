@@ -21,7 +21,6 @@
     mode: '0644'
     force: false
   when: "'hermes-agent' in quadlet_services"
-  become: true
   notify: Restart hermes-agent service
 
 - name: Deploy SwarmUI Quadlet build definition
