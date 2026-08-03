@@ -19,6 +19,7 @@
     src: hermes_config.yaml.j2
     dest: "{{ hermes_data_dir }}/config.yaml"
     mode: '0644'
+    force: false
   when: "'hermes-agent' in quadlet_services"
   become: true
   notify: Restart hermes-agent service

@@ -8,7 +8,7 @@ This document provides a detailed reference for all configuration variables acro
 
 Customizing deployment options is done by editing files under `inventory/group_vars/`.
 
-### Shared Configuration (`inventory/group_vars/all.yml`)
+### Shared Configuration (`inventory/group_vars/all/vars.yml`)
 
 These settings apply to all target hosts across all host groups:
 
@@ -63,15 +63,12 @@ Wan2GP persistent data, checkpoints, and generated videos are stored in isolated
 | Host Path | Container Target | Purpose |
 | :--- | :--- | :--- |
 | `~/homelab/wan2gp/ckpts` | `/workspace/ckpts` | Model checkpoints (Wan 2.1, LTX Video, VAEs, T5/CLIP encoders) |
-| `~/homelab/wan2gp/models` | `/workspace/models` | Secondary GGUF and diffusion model weights |
 | `~/homelab/wan2gp/loras` | `/workspace/loras` | LoRA weights and adapters |
 | `~/homelab/wan2gp/outputs` | `/workspace/outputs` | Generated videos, images, and media outputs |
 | `~/homelab/wan2gp/settings` | `/workspace/settings` | User UI presets and generation parameter settings |
 | `~/homelab/wan2gp/profiles` | `/workspace/profiles` | Hardware VRAM/RAM allocation profiles and memory overrides |
 | `~/homelab/wan2gp/plugins` | `/workspace/plugins` | Installed third-party user plugins (e.g. Gallery, LoRA Manager, Wildcards) |
 | `~/homelab/wan2gp/finetunes` | `/workspace/finetunes` | Custom finetune JSON configurations |
-| `~/homelab/wan2gp/preprocessing` | `/workspace/preprocessing` | Preprocessed masks, face/pose tracking caches, and extracted speaker audio |
-| `~/homelab/wan2gp/postprocessing` | `/workspace/postprocessing` | Postprocessing pipelines, upscaling workflows, and output artifacts |
 
 
 
@@ -126,6 +123,13 @@ To migrate characters, chats, and settings from a standalone Docker Compose inst
    ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vault-pass
    ```
 
+#### Hermes Agent Runtime Configuration & Persistence
+
+Hermes Agent maintains its active platform channels (e.g. Discord, Telegram), API keys, and plugin state inside `hermes_data_dir/config.yaml` (`~/homelab/hermes/config.yaml`).
+
+- **Initial Setup**: Ansible deploys `hermes_config.yaml.j2` on initial installation with `force: false`.
+- **Runtime Persistence**: Because `force: false` is configured, settings and credentials added via the Hermes Web UI or CLI are preserved across playbook runs and will not be overwritten by Ansible.
+
 ---
 
 ## Role Defaults & Upstreams
@@ -137,12 +141,11 @@ Caddy upstream variables define where requests to `*.local` hostnames are routed
 | Variable | Default Upstream Target | Proxied Hostname |
 | :--- | :--- | :--- |
 | `sillytavern_upstream` | `sillytavern:8000` | `sillytavern.local` |
-| `forgejo_upstream` | `forgejo:3000` | `forgejo.local` |
+| `forgejo_upstream` | `forgejo:3003` | `forgejo.local` |
 | `llama_swap_upstream` | `llama-swap:8080` | `llamaswap.local` |
-| `openwebui_upstream` | `open-webui:8080` | `openwebui.local` |
-| `hermes_upstream` | `hermes-agent:8080` | `hermes.local` |
+| `openwebui_upstream` | `open-webui:8081` | `openwebui.local` |
+| `hermes_upstream` | `hermes:9119` | `hermes.local` |
 | `swarmui_upstream` | `swarmui:7801` | `swarmui.local` |
-
 | `wan2gp_upstream` | `wan2gp:7860` | `wan2gp.local` |
 
 ---

@@ -91,8 +91,8 @@ homelab/
 ├── inventory/
 │   ├── hosts.yml                # Host inventory and group mappings
 │   └── group_vars/
-│       ├── all.yml              # Shared paths and baseline system configuration
 │       ├── all/
+│       │   ├── vars.yml         # Shared paths and baseline system configuration
 │       │   └── vault.yml        # Encrypted secrets (gitignored)
 │       ├── inference_hosts.yml  # GPU layers, context sizes, and model paths
 │       └── service_hosts.yml    # Service ports, upstream addresses, and mDNS aliases

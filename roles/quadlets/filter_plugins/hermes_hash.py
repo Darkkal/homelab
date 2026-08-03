@@ -1,11 +1,10 @@
 import base64
 import hashlib
-import secrets
 
 def hermes_scrypt(password):
     if not password:
         password = "admin"
-    salt = secrets.token_bytes(16)
+    salt = hashlib.sha256(f"hermes-salt:{password}".encode("utf-8")).digest()[:16]
     dk = hashlib.scrypt(
         password.encode("utf-8"),
         salt=salt,
