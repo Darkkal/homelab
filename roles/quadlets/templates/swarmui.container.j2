@@ -1,10 +1,11 @@
 [Unit]
 Description=SwarmUI Modular AI Image Generation Interface
-After=network-online.target
+After=network-online.target swarmui-build.service
+Wants=swarmui-build.service
 
 [Container]
 ContainerName=swarmui
-Image={{ swarmui_image | default('ghcr.io/mcmonkeyprojects/swarmui:latest') }}
+Image={{ swarmui_image | default('localhost/swarmui:latest') }}
 Network={{ network_name }}
 PublishPort={{ swarmui_port | default(7821) }}:7821
 AddDevice=nvidia.com/gpu=all
