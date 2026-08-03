@@ -7,7 +7,8 @@ Wants=swarmui-build.service
 ContainerName=swarmui
 Image={{ swarmui_image | default('localhost/swarmui:latest') }}
 Network={{ network_name }}
-PublishPort={{ swarmui_port | default(7821) }}:7821
+PublishPort={{ swarmui_port | default(7801) }}:7801
+
 AddDevice=nvidia.com/gpu=all
 Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}:/app/Data:Z
 Volume={{ model_dir }}:/app/Models:Z
