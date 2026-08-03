@@ -1,0 +1,9 @@
+[Unit]
+Description=Build SwarmUI Container Image
+Wants=network-online.target
+After=network-online.target
+
+[Build]
+ImageTag={{ swarmui_image | default('localhost/swarmui:latest') }}
+File={{ swarmui_src_dir }}/launchtools/StandardDockerfile.docker
+SetWorkingDirectory={{ swarmui_src_dir }}
