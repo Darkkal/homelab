@@ -1,9 +1,9 @@
 [Unit]
-Description=Build SwarmUI Container Image
+Description=Build SwarmUI Container Image from Git
 Wants=network-online.target
 After=network-online.target
 
 [Build]
 ImageTag={{ swarmui_image | default('localhost/swarmui:latest') }}
-File={{ swarmui_src_dir }}/launchtools/StandardDockerfile.docker
-SetWorkingDirectory={{ swarmui_src_dir }}
+File=launchtools/StandardDockerfile.docker
+SetWorkingDirectory=https://github.com/mcmonkeyprojects/SwarmUI.git

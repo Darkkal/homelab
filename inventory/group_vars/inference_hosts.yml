@@ -10,8 +10,8 @@ llama_swap_port: 8080
 
 # SwarmUI configuration
 swarmui_data_dir: "{{ homelab_data_dir }}/swarmui"
-swarmui_src_dir: "{{ homelab_data_dir }}/swarmui_src"
 swarmui_port: 7821
 swarmui_image: "localhost/swarmui:latest"
+
 
 

@@ -33,9 +33,9 @@ These settings apply to target hosts in the `inference_hosts` group:
 | `context_size` | `32768` | Default context window size (tokens) for inference model execution. |
 | `auto_unload_seconds` | `600` | Inactivity timeout (seconds) before idle models are automatically unloaded from VRAM. |
 | `swarmui_data_dir` | `~/homelab/swarmui` | Directory for SwarmUI persistent data and outputs. |
-| `swarmui_src_dir` | `~/homelab/swarmui_src` | Directory path for SwarmUI source repository checkout used by Quadlet build unit. |
 | `swarmui_port` | `7821` | Host web port for direct SwarmUI WebUI access. |
-| `swarmui_image` | `localhost/swarmui:latest` | Container image repository and tag for SwarmUI built natively by systemd Quadlet. |
+| `swarmui_image` | `localhost/swarmui:latest` | Container image repository and tag for SwarmUI built natively from Git by systemd Quadlet. |
+
 
 
 ---
