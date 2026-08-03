@@ -31,6 +31,14 @@
   when: "'swarmui' in quadlet_services"
   notify: Reload user systemd
 
+- name: Deploy Wan2GP Dockerfile template
+  ansible.builtin.template:
+    src: wan2gp.Dockerfile.j2
+    dest: "{{ quadlet_dir }}/wan2gp.Dockerfile"
+    mode: '0644'
+  when: "'wan2gp' in quadlet_services"
+  notify: Reload user systemd
+
 - name: Deploy Wan2GP Quadlet build definition
   ansible.builtin.template:
     src: wan2gp.build.j2
