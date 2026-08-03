@@ -11,3 +11,11 @@
     dest: "{{ caddy_file_path }}"
     mode: '0644'
   notify: Reload caddy service
+
+- name: Ensure active Caddy instance reloads configuration
+  ansible.builtin.systemd:
+    name: caddy.service
+    state: reloaded
+    scope: user
+  failed_when: false
+
