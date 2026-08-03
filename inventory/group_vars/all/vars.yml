@@ -17,7 +17,7 @@ sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
 
 hermes_admin_user: "{{ vault_hermes_admin_user | default('admin') }}"
 hermes_admin_password: "{{ vault_hermes_admin_password | default('admin') }}"
-hermes_api_server_key: "{{ vault_hermes_api_server_key | default('7f9b8c3d2e1a4f5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b') }}"
+hermes_api_server_key: "{{ vault_hermes_api_server_key | default(lookup('password', homelab_data_dir + '/.hermes_api_key length=64 chars=hexdigits')) }}"
 
 # LAN subnet for firewall rich rules (HTTP port 80 & mDNS port 5353)
 lan_subnet: "{{ host_lan_subnet | default(ansible_default_ipv4.network + '/24') }}"

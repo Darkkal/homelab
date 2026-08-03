@@ -174,7 +174,7 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
 | `vault_hermes_admin_user` | Basic auth username for Hermes Agent | `admin` |
 | `vault_hermes_admin_password` | Basic auth password for Hermes Agent | `admin` |
-| `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | `7f9b8c3d2e1a4f5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b` |
+| `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | Auto-generated unique 64-char hex secret (`~/homelab/.hermes_api_key`) |
 
 ### `vault.yml` File Template
 
@@ -195,6 +195,7 @@ vault_sillytavern_api_key: ""
 # Hermes Agent Authentication
 vault_hermes_admin_user: "admin"
 vault_hermes_admin_password: "SuperSecretHermesPassword"
+vault_hermes_api_server_key: "SuperSecretHermesApiKey"
 ```
 
 ### Ansible Vault Utility Commands
