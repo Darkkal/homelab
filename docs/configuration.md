@@ -126,6 +126,13 @@ To migrate characters, chats, and settings from a standalone Docker Compose inst
    ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vault-pass
    ```
 
+#### Hermes Agent Runtime Configuration & Persistence
+
+Hermes Agent maintains its active platform channels (e.g. Discord, Telegram), API keys, and plugin state inside `hermes_data_dir/config.yaml` (`~/homelab/hermes/config.yaml`).
+
+- **Initial Setup**: Ansible deploys `hermes_config.yaml.j2` on initial installation with `force: false`.
+- **Runtime Persistence**: Because `force: false` is configured, settings and credentials added via the Hermes Web UI or CLI are preserved across playbook runs and will not be overwritten by Ansible.
+
 ---
 
 ## Role Defaults & Upstreams

@@ -140,4 +140,3 @@
   loop:
     - homelab.network
   notify: Reload user systemd
-
