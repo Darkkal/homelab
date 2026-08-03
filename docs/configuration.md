@@ -49,6 +49,8 @@ These settings apply to target hosts in the `service_hosts` group:
 | `openwebui_data_dir` | `~/homelab/open-webui` | Directory for Open WebUI persistent data. |
 | `openwebui_port` | `8081` | Host web port for direct Open WebUI access. |
 | `openwebui_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Open WebUI backend calls. |
+| `st_data_dir` | `~/homelab/sillytavern` | Directory for SillyTavern persistent data. |
+| `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
 
 ---
 
