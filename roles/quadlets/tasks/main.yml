@@ -23,6 +23,22 @@
   become: true
   notify: Restart hermes-agent service
 
+- name: Ensure SwarmUI source code repository is checked out
+  ansible.builtin.git:
+    repo: https://github.com/mcmonkeyprojects/SwarmUI.git
+    dest: "{{ swarmui_src_dir }}"
+    version: master
+    depth: 1
+  when: "'swarmui' in quadlet_services"
+
+- name: Deploy SwarmUI Quadlet build definition
+  ansible.builtin.template:
+    src: swarmui.build.j2
+    dest: "{{ quadlet_dir }}/swarmui.build"
+    mode: '0644'
+  when: "'swarmui' in quadlet_services"
+  notify: Reload user systemd
+
 - name: Deploy Quadlet container definitions
   ansible.builtin.template:
     src: "{{ item }}.container.j2"
