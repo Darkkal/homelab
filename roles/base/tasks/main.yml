@@ -20,6 +20,15 @@
     - "{{ homelab_data_dir }}/swarmui/Data"
     - "{{ homelab_data_dir }}/swarmui/Models"
     - "{{ homelab_data_dir }}/swarmui/Output"
+    - "{{ quadlet_dir }}"
+    - "~/.config/containers/registries.conf.d"
+
+- name: Ensure Wan2GP data directories exist with write permissions for rootless container user
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0777'
+  loop:
     - "{{ homelab_data_dir }}/wan2gp"
     - "{{ homelab_data_dir }}/wan2gp/ckpts"
     - "{{ homelab_data_dir }}/wan2gp/loras"
@@ -28,8 +37,7 @@
     - "{{ homelab_data_dir }}/wan2gp/profiles"
     - "{{ homelab_data_dir }}/wan2gp/plugins"
     - "{{ homelab_data_dir }}/wan2gp/finetunes"
-    - "{{ quadlet_dir }}"
-    - "~/.config/containers/registries.conf.d"
+
 
 - name: Deploy Podman short-name resolution aliases configuration
   ansible.builtin.copy:

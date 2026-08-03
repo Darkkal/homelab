@@ -64,4 +64,7 @@ RUN chown -R user:user /workspace
 RUN mkdir -p /home/user/.cache && \
     chown -R user:user /home/user/.cache
 
+# Ensure mounted volume directories are owned by container user 'user' before switching privileges
+RUN sed -i 's|exec su -p user|chown -R user:user /workspace/ckpts /workspace/loras /workspace/outputs /workspace/settings /workspace/profiles /workspace/plugins /workspace/finetunes 2>/dev/null \|\| true\nexec su -p user|g' /workspace/entrypoint.sh
+
 ENTRYPOINT ["/workspace/entrypoint.sh"]
