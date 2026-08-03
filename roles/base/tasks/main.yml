@@ -24,6 +24,15 @@
     - "{{ homelab_data_dir }}/wan2gp/ckpts"
     - "{{ homelab_data_dir }}/wan2gp/outputs"
     - "{{ quadlet_dir }}"
+    - "~/.config/containers/registries.conf.d"
+
+- name: Deploy Podman short-name resolution aliases configuration
+  ansible.builtin.copy:
+    content: |
+      [aliases]
+        "nvidia/cuda" = "docker.io/nvidia/cuda"
+    dest: "~/.config/containers/registries.conf.d/00-shortnames.conf"
+    mode: '0644'
 
 
 
