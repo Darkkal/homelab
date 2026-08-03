@@ -16,7 +16,9 @@
     - "{{ homelab_data_dir }}/llama-swap"
     - "{{ homelab_data_dir }}/open-webui"
     - "{{ homelab_data_dir }}/hermes"
+    - "{{ homelab_data_dir }}/swarmui"
     - "{{ quadlet_dir }}"
+
 
 - name: Allow rootless podman to bind low ports (port 80)
   ansible.posix.sysctl:
