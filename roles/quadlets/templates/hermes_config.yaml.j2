@@ -1,0 +1,9 @@
+_config_version: 33
+model:
+  default: "{{ hermes_default_model | default('qwen3.6-35b-mtp') }}"
+  provider: "custom"
+  base_url: "{{ hermes_openai_api_base_url | default('http://llama-swap:8080/v1') }}"
+dashboard:
+  basic_auth:
+    username: "{{ hermes_admin_user | default('admin') }}"
+    password_hash: "{{ hermes_admin_password | hermes_scrypt }}"

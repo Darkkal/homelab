@@ -1,0 +1,25 @@
+[Unit]
+Description=Hermes Agent Service
+After=network-online.target
+
+[Container]
+ContainerName=hermes
+Image=docker.io/nousresearch/hermes-agent:latest
+Network={{ network_name }}
+Environment=HERMES_UID=1000
+Environment=HERMES_GID=1000
+Environment=OPENAI_BASE_URL={{ hermes_openai_api_base_url | default('http://llama-swap:8080/v1') }}
+Environment=HERMES_DASHBOARD=1
+Environment=HERMES_DASHBOARD_HOST=0.0.0.0
+{% if hermes_openai_api_key is defined and hermes_openai_api_key %}
+Environment=OPENAI_API_KEY={{ hermes_openai_api_key }}
+{% endif %}
+PublishPort={{ hermes_port | default(8383) }}:9119
+Volume={{ hermes_data_dir }}:/opt/data:Z
+Exec=gateway run
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

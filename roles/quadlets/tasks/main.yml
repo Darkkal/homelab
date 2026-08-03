@@ -14,6 +14,15 @@
   when: "'llama-swap' in quadlet_services"
   notify: Restart llama-swap service
 
+- name: Deploy Hermes configuration file
+  ansible.builtin.template:
+    src: hermes_config.yaml.j2
+    dest: "{{ hermes_data_dir }}/config.yaml"
+    mode: '0644'
+  when: "'hermes-agent' in quadlet_services"
+  become: true
+  notify: Restart hermes-agent service
+
 - name: Deploy Quadlet container definitions
   ansible.builtin.template:
     src: "{{ item }}.container.j2"

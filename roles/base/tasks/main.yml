@@ -3,17 +3,15 @@
   ansible.builtin.file:
     path: "{{ item }}"
     state: directory
-    mode: '0755'
   loop:
     - "{{ homelab_data_dir }}"
     - "{{ homelab_data_dir }}/models"
     - "{{ homelab_data_dir }}/sillytavern"
-    - "{{ homelab_data_dir }}/piclaw/home"
-    - "{{ homelab_data_dir }}/piclaw/workspace"
     - "{{ homelab_data_dir }}/forgejo"
     - "{{ homelab_data_dir }}/caddy"
     - "{{ homelab_data_dir }}/llama-swap"
     - "{{ homelab_data_dir }}/open-webui"
+    - "{{ homelab_data_dir }}/hermes"
     - "{{ quadlet_dir }}"
 
 - name: Allow rootless podman to bind low ports (port 80)

@@ -19,7 +19,7 @@ Services are accessible on your local network via mDNS aliases (`*.local`) route
 | **llama-swap** | `ghcr.io/llama-swap/llama-swap` | `http://llamaswap.local` (internal: 8080) | Model swap proxy & inference controller | `inference_hosts` |
 | **SillyTavern** | `ghcr.io/sillytavern/sillytavern` | `http://sillytavern.local` | AI chat & roleplay interface | `service_hosts` |
 | **Open WebUI** | `ghcr.io/open-webui/open-webui` | `http://openwebui.local` (internal: 8081) | Open WebUI chat & LLM interface | `service_hosts` |
-| **Hermes Agent** | `hermes` | `http://hermes.local` (internal: 8383) | Hermes agent service | `service_hosts` |
+| **Hermes Agent** | `docker.io/nousresearch/hermes-agent` | `http://hermes.local` (internal: 8383) | Hermes agent service | `service_hosts` |
 | **SwarmUI** | `swarmui` | `http://swarmui.local` (internal: 7821) | Generative image creation UI | `inference_hosts` |
 | **Wan2GP** | `wan2gp` | `http://wan2gp.local` (internal: 7860) | Video generation server | `inference_hosts` |
 | **Caddy** | `docker.io/library/caddy` | `80:80` | Reverse proxy for `.local` domain resolution | `service_hosts` |
@@ -33,7 +33,7 @@ Services are accessible on your local network via mDNS aliases (`*.local`) route
 The inventory divides target machines into two main functional groups:
 
 - **`inference_hosts`**: Machines equipped with dedicated GPUs for AI model inference (runs `llama-swap` and configures the NVIDIA Container Toolkit).
-- **`service_hosts`**: Machines running application containers, proxies, and mDNS services (`caddy`, `sillytavern`, `piclaw`, `forgejo`, `avahi`).
+- **`service_hosts`**: Machines running application containers, proxies, and mDNS services (`caddy`, `sillytavern`, `hermes-agent`, `forgejo`, `avahi`).
 
 Currently, single-machine setups run both groups on `desktop` (via local Ansible connection). In the future, non-inference services can be migrated to a remote target machine simply by adding a new host under `service_hosts` in `inventory/hosts.yml`.
 
@@ -117,7 +117,7 @@ ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vau
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern piclaw llama-swap forgejo
+systemctl --user status caddy sillytavern hermes-agent llama-swap forgejo
 ```
 
 Check mDNS address resolution:
@@ -178,7 +178,7 @@ If a client device cannot resolve `.local` mDNS hostnames:
 1. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
    Add target host IP address and service hostnames:
    ```text
-   192.168.1.100  sillytavern.local piclaw.local llamaswap.local forgejo.local
+   192.168.1.100  sillytavern.local hermes.local llamaswap.local forgejo.local
    ```
 
 2. **Testing via HTTP Host Header**:
@@ -237,7 +237,8 @@ The playbooks support the following secret variables in `vault.yml`:
 | `vault_sillytavern_user` | SillyTavern web interface HTTP basic auth username | `admin` |
 | `vault_sillytavern_password` | SillyTavern web interface HTTP basic auth password | `""` (no basic auth password) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
-| `vault_piclaw_api_key` | PiClaw agent API access key | `""` |
+| `vault_hermes_admin_user` | Hermes Agent web interface basic auth username | `admin` |
+| `vault_hermes_admin_password` | Hermes Agent web interface basic auth password | `admin` |
 
 ### 3. Example `vault.yml` Template
 
@@ -255,8 +256,9 @@ vault_sillytavern_user: "admin"
 vault_sillytavern_password: "SuperSecretSillyTavernPassword"
 vault_sillytavern_api_key: ""
 
-# PiClaw Credentials
-vault_piclaw_api_key: ""
+# Hermes Agent Authentication
+vault_hermes_admin_user: "admin"
+vault_hermes_admin_password: "SuperSecretHermesPassword"
 ```
 
 Unencrypted variable abstractions in `inventory/group_vars/all/vars.yml` reference these vault variables with safe default fallbacks (e.g., `forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"`).
@@ -302,7 +304,9 @@ Key variables can be customized in `inventory/group_vars/`:
 ### `inventory/group_vars/service_hosts.yml`
 - `avahi_aliases`: List of `.local` hostnames published on LAN (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`)
 - `forgejo_port`: Host web port for direct Forgejo access (`3003`)
-- `piclaw_port`: Host web port for direct PiClaw access (`8080`)
+- `hermes_data_dir`: Base path for Hermes Agent persistent data (`~/homelab/hermes`)
+- `hermes_port`: Host web port for direct Hermes Agent access (`8383`)
+- `hermes_openai_api_base_url`: OpenAI-compatible API base URL for Hermes Agent backend (`http://llama-swap:8080/v1`)
 - `openwebui_data_dir`: Base path for Open WebUI persistent data (`~/homelab/open-webui`)
 - `openwebui_port`: Host web port for direct Open WebUI access (`8081`)
 - `openwebui_openai_api_base_url`: OpenAI-compatible API base URL for Open WebUI backend (`http://llama-swap:8080/v1`)
