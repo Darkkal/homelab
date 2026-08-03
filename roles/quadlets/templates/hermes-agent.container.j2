@@ -11,10 +11,15 @@ Environment=HERMES_GID=1000
 Environment=OPENAI_BASE_URL={{ hermes_openai_api_base_url | default('http://llama-swap:8080/v1') }}
 Environment=HERMES_DASHBOARD=1
 Environment=HERMES_DASHBOARD_HOST=0.0.0.0
+Environment=API_SERVER_ENABLED={{ hermes_api_server_enabled | default(true) | lower }}
+Environment=API_SERVER_HOST={{ hermes_api_server_host | default('0.0.0.0') }}
+Environment=API_SERVER_PORT={{ hermes_api_server_port | default(8642) }}
+Environment=API_SERVER_KEY={{ hermes_api_server_key }}
 {% if hermes_openai_api_key is defined and hermes_openai_api_key %}
 Environment=OPENAI_API_KEY={{ hermes_openai_api_key }}
 {% endif %}
 PublishPort={{ hermes_port | default(8383) }}:9119
+PublishPort={{ hermes_api_server_port | default(8642) }}:{{ hermes_api_server_port | default(8642) }}
 Volume={{ hermes_data_dir }}:/opt/data:Z
 Exec=gateway run
 

@@ -24,6 +24,24 @@
   become: true
   notify: Restart hermes-agent service
 
+- name: Ensure Hermes .env API_SERVER_KEY matches Ansible configuration
+  ansible.builtin.lineinfile:
+    path: "{{ hermes_data_dir }}/.env"
+    regexp: '^API_SERVER_KEY='
+    line: "API_SERVER_KEY={{ hermes_api_server_key }}"
+    create: false
+  when: "'hermes-agent' in quadlet_services"
+  become: true
+  failed_when: false
+  notify: Restart hermes-agent service
+
+- name: Sync Open WebUI OpenAI connections in SQLite database
+  ansible.builtin.command:
+    cmd: >
+      python3 -c "import sqlite3, json, os; db_path = '{{ openwebui_data_dir }}/webui.db'; (os.path.exists(db_path) and (conn := sqlite3.connect(db_path)) and (cur := conn.cursor()) and (cur.execute(\"SELECT name FROM sqlite_master WHERE type='table' AND name='config'\").fetchone()) and (base_urls := '{{ openwebui_openai_api_base_urls | default('http://llama-swap:8080/v1;http://hermes:8642/v1') }}'.split(';')) and (api_keys := '{{ openwebui_openai_api_keys | default('sk-dummy;' + hermes_api_server_key) }}'.split(';')) and (api_configs := {str(i): {'enable': True, 'tags': [], 'prefix_id': '', 'model_ids': [], 'connection_type': 'external', 'auth_type': 'bearer', 'passthrough_params': []} for i in range(len(base_urls))}) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('openai.api_base_urls', json.dumps(base_urls))) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('openai.api_keys', json.dumps(api_keys))) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('openai.api_configs', json.dumps(api_configs))) and conn.commit() and conn.close())"
+  when: "'open-webui' in quadlet_services"
+  changed_when: false
+
 - name: Deploy SwarmUI Quadlet build definition
   ansible.builtin.template:
     src: swarmui.build.j2

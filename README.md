@@ -121,7 +121,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
 | **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
 | **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
-| **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:8383` | Web UI / API | Hermes agent service backend & UI. Basic HTTP auth supported. | `service_hosts` |
+| **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:8383`<br>`http://<host-ip>:8642` | Web UI / API | Hermes agent service backend & UI (port 8383) and OpenAI-compatible API server (port 8642). Basic HTTP auth supported. | `service_hosts` |
 | **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
 | **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative video creation server. Proxied via Caddy. | `inference_hosts` |
 | **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
