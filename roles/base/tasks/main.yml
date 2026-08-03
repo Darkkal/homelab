@@ -17,8 +17,11 @@
     - "{{ homelab_data_dir }}/open-webui"
     - "{{ homelab_data_dir }}/hermes"
     - "{{ homelab_data_dir }}/swarmui"
+    - "{{ homelab_data_dir }}/swarmui/Data"
+    - "{{ homelab_data_dir }}/swarmui/Models"
     - "{{ homelab_data_dir }}/swarmui/Output"
     - "{{ quadlet_dir }}"
+
 
 
 
