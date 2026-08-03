@@ -8,91 +8,71 @@ An automated, declarative homelab infrastructure managed with **Ansible** and **
 
 This repository automates the deployment and configuration of self-hosted homelab services. Services run as rootless Podman containers defined via Podman Quadlet systemd unit files, orchestrated centrally through Ansible playbooks.
 
-Services are accessible on your local network via mDNS aliases (`*.local`) routed through a Caddy reverse proxy.
+Services are accessible on your local network (LAN) via mDNS hostnames (`*.local`) routed through a Caddy reverse proxy.
+
+### Documentation Quick Links
+- 📐 **[System Architecture & Structure](docs/architecture.md)**: Host groups (`inference_hosts`, `service_hosts`), network topology, and repository tree.
+- ⚙️ **[Configuration Reference](docs/configuration.md)**: Ansible variables, Caddy upstreams, and Ansible Vault setup.
+- 🤝 **[Contributing Guidelines](CONTRIBUTING.md)**: Conventions, commit standards, Quadlet guidelines, and verification rules.
 
 ---
 
-## Services
+## Quick Start Guide
 
-| Service | Image | Ports / Routing | Description | Group |
-| :--- | :--- | :--- | :--- | :--- |
-| **llama-swap** | `ghcr.io/llama-swap/llama-swap` | `http://llamaswap.local` (internal: 8080) | Model swap proxy & inference controller | `inference_hosts` |
-| **SillyTavern** | `ghcr.io/sillytavern/sillytavern` | `http://sillytavern.local` | AI chat & roleplay interface | `service_hosts` |
-| **Open WebUI** | `ghcr.io/open-webui/open-webui` | `http://openwebui.local` (internal: 8081) | Open WebUI chat & LLM interface | `service_hosts` |
-| **Hermes Agent** | `docker.io/nousresearch/hermes-agent` | `http://hermes.local` (internal: 8383) | Hermes agent service | `service_hosts` |
-| **SwarmUI** | `swarmui` | `http://swarmui.local` (internal: 7821) | Generative image creation UI | `inference_hosts` |
-| **Wan2GP** | `wan2gp` | `http://wan2gp.local` (internal: 7860) | Video generation server | `inference_hosts` |
-| **Caddy** | `docker.io/library/caddy` | `80:80` | Reverse proxy for `.local` domain resolution | `service_hosts` |
-| **Forgejo** | `codeberg.org/forgejo/forgejo:10` | `3003:3003`, `222:22` | Self-hosted Git hosting & CI/CD platform | `service_hosts` |
-| **Avahi Aliases** | Host native (`avahi-tools`) | mDNS (`*.local`) | Publishes LAN mDNS aliases for local service resolution | `service_hosts` |
+Follow this step-by-step process to set up the minimum dependencies, configure secrets, and deploy the homelab infrastructure.
 
----
+### Step 1: Install Prerequisites
 
-## Architecture & Host Groups
+Ensure the following software is installed before deploying:
 
-The inventory divides target machines into two main functional groups:
-
-- **`inference_hosts`**: Machines equipped with dedicated GPUs for AI model inference (runs `llama-swap` and configures the NVIDIA Container Toolkit).
-- **`service_hosts`**: Machines running application containers, proxies, and mDNS services (`caddy`, `sillytavern`, `hermes-agent`, `forgejo`, `avahi`).
-
-Currently, single-machine setups run both groups on `desktop` (via local Ansible connection). In the future, non-inference services can be migrated to a remote target machine simply by adding a new host under `service_hosts` in `inventory/hosts.yml`.
-
----
-
-## Repository Structure
-
-```
-homelab/
-├── ansible.cfg                  # Ansible configuration
-├── inventory/
-│   ├── hosts.yml                # Host definitions and group mappings
-│   └── group_vars/
-│       ├── all.yml              # Shared paths and system configuration
-│       ├── all/
-│       │   └── vault.yml        # Ansible Vault encrypted secrets (user-created, gitignored)
-│       ├── inference_hosts.yml  # llama-swap & GPU inference settings
-│       └── service_hosts.yml    # Service ports and mDNS alias list
-├── playbooks/
-│   └── site.yml                 # Main deployment playbook
-├── roles/
-│   ├── base/                    # Core setup: directories, sysctl port 80, lingering, Quadlet network/volume
-│   ├── nvidia/                  # NVIDIA container toolkit repo & CDI spec generation
-│   ├── quadlets/                # Jinja2 container templates & systemd user service management
-│   ├── avahi/                   # Avahi package, systemd template unit, & mDNS alias publishing
-│   └── caddy/                   # Caddyfile deployment
-├── docs/
-│   └── models/                  # Model inference configuration notes (Gemma, Qwen)
-└── README.md
-```
-
----
-
-## Prerequisites
-
-On the **Ansible Control Node** (your desktop/workstation):
+#### On the **Ansible Control Node** (your workstation):
 - Python 3.10+
-- Ansible (`pip install ansible`)
+- Ansible:
+  ```bash
+  pip install ansible
+  ```
 
-On the **Target Machine**:
-- Linux distribution (Fedora / RHEL recommended)
+#### On the **Target Machine(s)**:
+- Linux distribution (Fedora, RHEL, or AlmaLinux recommended)
 - Podman with Quadlet support (`systemd >= 252`)
-- NVIDIA GPU drivers installed (for `inference_hosts`)
+- NVIDIA GPU Drivers & Container Toolkit (only required for `inference_hosts`)
 
 ---
 
-## Quick Start
+### Step 2: Clone Repository & Inventory Setup
 
-### 1. Secret Vault Preparation
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/Darkkal/homelab.git
+   cd homelab
+   ```
 
-Create a local `.vault-pass` file containing your vault password (ignored by `.gitignore`):
+2. Review `inventory/hosts.yml` to ensure target machine IP addresses or connection parameters match your setup. By default, single-machine setups target `desktop` via Ansible's `local` connection.
+
+---
+
+### Step 3: Secret Vault Preparation
+
+Create a `.vault-pass` password file in the repository root (ignored by `.gitignore`):
 
 ```bash
 echo "your-secure-vault-password" > .vault-pass
+chmod 600 .vault-pass
 ```
 
-### 2. Dry Run (Preview Changes)
+Next, create your encrypted secrets file at `inventory/group_vars/all/vault.yml`:
 
-To check playbook syntax and preview changes without modifying the system:
+```bash
+ansible-vault create inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
+```
+
+*(See the [Configuration Reference](docs/configuration.md#secrets-management-ansible-vault) for recommended vault keys and safe defaults).*
+
+---
+
+### Step 4: Validate Playbook (Syntax & Dry Run)
+
+Verify playbook syntax and dry-run changes without altering system state:
 
 ```bash
 # Syntax check
@@ -102,25 +82,29 @@ ansible-playbook playbooks/site.yml --syntax-check --vault-password-file .vault-
 ansible-playbook playbooks/site.yml --check --diff --vault-password-file .vault-pass
 ```
 
-### 3. Deploy Infrastructure
+---
 
-Run the site playbook to configure all roles:
+### Step 5: Deploy Infrastructure
+
+Run the main playbook to deploy container networks, Quadlet unit files, Avahi mDNS aliases, and Caddy reverse proxy:
 
 ```bash
 ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vault-pass
 ```
 
-> **Note:** `--ask-become-pass` (or `-K`) is required for root-level tasks (setting unprivileged port 80 in sysctl, enabling user lingering, installing system packages, and creating systemd system units). If no local `.vault-pass` file exists, use `--ask-vault-pass` instead.
+> **Note:** `--ask-become-pass` (`-K`) is required for root tasks (setting unprivileged port 80 sysctl, system package installations, and enabling user lingering).
 
-### 4. Verify Deployed Services
+---
+
+### Step 6: Verify Deployed Services
 
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern hermes-agent llama-swap forgejo
+systemctl --user status caddy sillytavern open-webui hermes-agent llama-swap forgejo
 ```
 
-Check mDNS address resolution:
+Verify mDNS address resolution from your local workstation:
 
 ```bash
 avahi-resolve -n sillytavern.local
@@ -128,67 +112,52 @@ avahi-resolve -n sillytavern.local
 
 ---
 
-## Accessing Deployed Services
+## Services & Network Access Directory
 
-Once the Ansible deployment completes successfully, services are accessible on your local network (LAN) using **mDNS Hostnames** (`*.local`) or **Direct Host IP / Ports**.
+Once deployed, all services are accessible across your LAN using **mDNS Hostnames** (`*.local`) or direct host ports.
 
-### Service Directory & Access Matrix
-
-| Service | Primary Access URL | Direct Host / Port | Access Protocol | Description & Authentication Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:80` | Web UI & Model API | Model swap proxy & inference controller. Proxied via Caddy. |
-| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | Web chat & roleplay UI. Proxied via Caddy. HTTP basic authentication enabled (`basicAuthUser`). |
-| **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. |
-| **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:80` | Web UI / API | Hermes agent backend/UI service. Proxied via Caddy. |
-| **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative image creation UI. Proxied via Caddy. |
-| **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:80` | Web UI (HTTP) | Video generation server. Proxied via Caddy. |
-| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI & HTTP Git | Self-hosted Git repository hosting & CI/CD platform. Data stored in `~/homelab/forgejo`. Initial admin credentials set in `vault.yml`. |
-| **Forgejo (SSH)** | `ssh://git@<host-ip>:222` | `ssh://git@localhost:222` | Git over SSH | Git clone and push operations over SSH using port `222` (e.g. `git clone ssh://git@<host-ip>:222/<user>/<repo>.git`). |
-| **Caddy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Reverse Proxy | Reverse proxy listening on port 80, routing `.local` mDNS domain requests to container backends based on `Host` headers. |
+| Service | Primary LAN URL | Direct Host / Port | Access Protocol | Description & Authentication | Ansible Group |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
+| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | LLM chat & roleplay UI. Basic HTTP auth enabled (`vault_sillytavern_user`). | `service_hosts` |
+| **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
+| **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:8383` | Web UI / API | Hermes agent service backend & UI. Basic HTTP auth supported. | `service_hosts` |
+| **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
+| **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative video creation server. Proxied via Caddy. | `inference_hosts` |
+| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
+| **Forgejo (SSH)**| — | `ssh://git@<host-ip>:222` | Git over SSH | Git clone and push operations over SSH using port `222`. | `service_hosts` |
+| **Caddy Proxy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Proxy | Reverse proxy routing `.local` requests to Quadlet containers. | `service_hosts` |
+| **Avahi Aliases**| Host native (`avahi-tools`) | mDNS (`*.local`) | mDNS Publishing | Publishes LAN mDNS aliases for local service resolution. | `service_hosts` |
 
 ---
 
 ### How Network Access Works
 
 1. **mDNS Hostname Resolution (`*.local`)**:
-   - The `avahi` role publishes `.local` mDNS aliases (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`) across your local network.
-   - Any client device connected to the same LAN (Linux, macOS, Windows 10/11, iOS, Android) can resolve these hostnames directly to the host's LAN IP address without requiring a local DNS server.
-
+   - The `avahi` role publishes `.local` hostnames across your LAN.
+   - Any LAN device (Linux, macOS, Windows 10/11, iOS, Android) resolves these hostnames directly without a custom local DNS server.
 2. **Reverse Proxy Routing (Caddy)**:
-   - **Caddy** listens on host port `80` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 80`).
-   - HTTP requests to `.local` domains are routed to configured upstream addresses (`*_upstream`). In single-host deployments, these default to container names on the shared Podman network (`homelab.network`), while in multi-host setups they can be overridden with host IPs.
-
+   - Caddy binds to host port `80` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 80`).
+   - Requests to `*.local` domains forward to container backends based on `Host` headers.
 3. **Direct Port Exposure**:
-   - **Forgejo** binds directly to host ports `3003` (Web) and `222` (SSH), as well as being proxied at `http://forgejo.local`.
+   - Services like Forgejo bind directly to host ports (`3003` for Web, `222` for SSH) alongside proxy routing.
 
 ---
 
-### Client Setup & Requirements
+### Fallback Access & Client Troubleshooting
 
-- **Linux Clients**: Ensure `avahi-daemon` or `systemd-resolved` with mDNS enabled is active.
-- **macOS / iOS Clients**: mDNS (`Bonjour`) is enabled by default. Open any browser to `http://sillytavern.local`.
-- **Windows Clients**: Windows 10 (1803+) and Windows 11 support mDNS out of the box. Ensure network profile is set to "Private".
-
----
-
-### Fallback Access & Troubleshooting
-
-If a client device cannot resolve `.local` mDNS hostnames:
+If a device cannot resolve `.local` mDNS hostnames:
 
 1. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
    Add target host IP address and service hostnames:
    ```text
-   192.168.1.100  sillytavern.local hermes.local llamaswap.local forgejo.local
+   192.168.1.100  sillytavern.local hermes.local llamaswap.local forgejo.local openwebui.local
    ```
-
-2. **Testing via HTTP Host Header**:
-   Verify proxy routing from any terminal using `curl`:
+2. **Direct HTTP Host Header Verification**:
    ```bash
    curl -H "Host: sillytavern.local" http://<host-ip>
-   curl -H "Host: forgejo.local" http://<host-ip>
    ```
-
-3. **Verifying mDNS Resolution**:
+3. **Verify mDNS Resolution**:
    ```bash
    avahi-resolve -n sillytavern.local
    # or
@@ -199,132 +168,13 @@ If a client device cannot resolve `.local` mDNS hostnames:
 
 ## Secrets Management (Ansible Vault)
 
-Sensitive values (admin credentials, API keys, authentication tokens) are managed using `ansible-vault` in `inventory/group_vars/all/vault.yml`.
+Sensitive values (passwords, API tokens) are managed using `ansible-vault` in `inventory/group_vars/all/vault.yml`.
 
 > [!IMPORTANT]
-> The encrypted vault file `inventory/group_vars/all/vault.yml` is **not stored in this git repository** and is listed in `.gitignore` to prevent sensitive credentials from living in version control. You must create this file before deployment if you wish to override default credentials or provide API keys.
-
-### 1. Creating Your Vault File
-
-First, ensure your `.vault-pass` password file is created:
-
-```bash
-echo "your-secure-vault-password" > .vault-pass
-```
-
-Next, create and populate `inventory/group_vars/all/vault.yml`:
-
-**Option A: Create directly with `ansible-vault`**
-```bash
-ansible-vault create inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
-```
-
-**Option B: Create plaintext file first, then encrypt**
-Create `inventory/group_vars/all/vault.yml` using your editor, add your secrets, and encrypt it:
-```bash
-ansible-vault encrypt inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
-```
-
-### 2. Supported Key-Value Pairs
-
-The playbooks support the following secret variables in `vault.yml`:
-
-| Secret Variable | Description | Safe Fallback (if omitted) |
-| :--- | :--- | :--- |
-| `vault_forgejo_admin_user` | Initial admin username for Forgejo | `admin` |
-| `vault_forgejo_admin_password` | Initial admin password for Forgejo | `""` (no default password) |
-| `vault_forgejo_admin_email` | Initial admin email address for Forgejo | `admin@homelab.local` |
-| `vault_sillytavern_user` | SillyTavern web interface HTTP basic auth username | `admin` |
-| `vault_sillytavern_password` | SillyTavern web interface HTTP basic auth password | `""` (no basic auth password) |
-| `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
-| `vault_hermes_admin_user` | Hermes Agent web interface basic auth username | `admin` |
-| `vault_hermes_admin_password` | Hermes Agent web interface basic auth password | `admin` |
-
-### 3. Example `vault.yml` Template
-
-Before encryption, your unencrypted `inventory/group_vars/all/vault.yml` file should look like this:
-
-```yaml
----
-# Forgejo Initial Credentials
-vault_forgejo_admin_user: "admin"
-vault_forgejo_admin_password: "SuperSecretForgejoPassword"
-vault_forgejo_admin_email: "admin@homelab.local"
-
-# SillyTavern Authentication
-vault_sillytavern_user: "admin"
-vault_sillytavern_password: "SuperSecretSillyTavernPassword"
-vault_sillytavern_api_key: ""
-
-# Hermes Agent Authentication
-vault_hermes_admin_user: "admin"
-vault_hermes_admin_password: "SuperSecretHermesPassword"
-```
-
-Unencrypted variable abstractions in `inventory/group_vars/all/vars.yml` reference these vault variables with safe default fallbacks (e.g., `forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"`).
-
-### 4. Working with Vault Files
-
-- **View encrypted contents:**
-  ```bash
-  ansible-vault view inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
-  ```
-- **Edit encrypted secrets:**
-  ```bash
-  ansible-vault edit inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
-  ```
-- **Encrypt an existing unencrypted file:**
-  ```bash
-  ansible-vault encrypt inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
-  ```
-- **Change vault password:**
-  ```bash
-  ansible-vault rekey inventory/group_vars/all/vault.yml --vault-password-file .vault-pass
-  ```
+> The encrypted vault file is **gitignored**. For a complete list of supported secret keys and management commands, refer to the [Configuration Reference](docs/configuration.md#secrets-management-ansible-vault).
 
 ---
 
-## Configuration Reference
+## License
 
-Key variables can be customized in `inventory/group_vars/`:
-
-### `inventory/group_vars/all.yml`
-- `homelab_data_dir`: Base path for persistent service data (`~/homelab`)
-- `quadlet_dir`: Path for user systemd Quadlets (`~/.config/containers/systemd`)
-- `network_name`: Shared container bridge network (`homelab.network`)
-
-### `inventory/group_vars/inference_hosts.yml`
-- `model_dir`: Directory containing downloaded GGUF model files (`~/homelab/models`)
-- `llama_swap_config_dir`: Path for llama-swap configuration (`~/homelab/llama-swap`)
-- `llama_swap_port`: Host port for direct llama-swap access (`8080`)
-- `gpu_layers`: Default number of GPU layers to offload (`99`)
-- `context_size`: Default context window size (`32768`)
-- `auto_unload_seconds`: Inactivity timeout before idle model unloads (`600`)
-
-### `inventory/group_vars/service_hosts.yml`
-- `avahi_aliases`: List of `.local` hostnames published on LAN (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`)
-- `forgejo_port`: Host web port for direct Forgejo access (`3003`)
-- `hermes_data_dir`: Base path for Hermes Agent persistent data (`~/homelab/hermes`)
-- `hermes_port`: Host web port for direct Hermes Agent access (`8383`)
-- `hermes_openai_api_base_url`: OpenAI-compatible API base URL for Hermes Agent backend (`http://llama-swap:8080/v1`)
-- `openwebui_data_dir`: Base path for Open WebUI persistent data (`~/homelab/open-webui`)
-- `openwebui_port`: Host web port for direct Open WebUI access (`8081`)
-- `openwebui_openai_api_base_url`: OpenAI-compatible API base URL for Open WebUI backend (`http://llama-swap:8080/v1`)
-
-### `roles/caddy/defaults/main.yml`
-- `*_upstream`: Upstream service addresses for Caddy reverse proxy routing (`sillytavern_upstream`, `forgejo_upstream`, `llama_swap_upstream`, `openwebui_upstream`, `hermes_upstream`, `swarmui_upstream`, `wan2gp_upstream`). Defaults to container names on single-host, overrideable for multi-host cross-routing.
-
----
-
-## Model Tuning Notes
-
-Detailed configuration guidelines and sampling recommendations for AI models are available in the [docs/models/](docs/models/) directory:
-- [Gemma 4 Setting Notes](docs/models/gemma%20setting%20notes.md)
-- [Qwen Setting Notes](docs/models/qwen%20setting%20notes.md)
-
----
-
-## Future Roadmap
-
-- **Remote SSH Deployment**: Tracked in [#5](https://github.com/Darkkal/homelab/issues/5) — SSH key authentication and remote target provisioning.
-- **Ansible Vault Secrets**: Implemented in [#6](https://github.com/Darkkal/homelab/issues/6) — Vault encrypted variables and Quadlet integration.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
