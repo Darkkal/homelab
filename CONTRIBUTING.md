@@ -43,6 +43,13 @@ This repository uses **`release-please`** to automate versioning and changelogs.
 - Ensure systemd user lingering is enabled for persistent container background execution.
 - Use `quadlet_no_block: true` in group/host variables when containers require background build units or non-blocking systemd starts to prevent Ansible playbook delays.
 
+### Volume Mounting & Data Persistence Audit Strategy
+When persisting data for containerized services, follow this strategy to distinguish user state from application code:
+1. **Audit Application Structure**: Inspect the container image filesystem (`podman run --entrypoint /bin/ls ...`) and search codebase imports/references to determine directory roles.
+2. **Never Mask App Code / Python Packages**: Directories containing Python modules (`__init__.py`, source code) or application binaries must **not** be mounted as volumes over the host. Mounting over code packages causes `ModuleNotFoundError` or missing executable crashes (exit code 127/1).
+3. **Isolate User State**: Mount only true user data directories (checkpoints, models, outputs, presets, user plugins, settings) to subfolders under `~/homelab/<service>/`.
+4. **Rootless SELinux Labels**: Always append `:Z` relabeling flags to volume mounts (e.g. `Volume={{ wan2gp_data_dir }}/ckpts:/workspace/ckpts:Z`) for rootless SELinux permissions.
+
 
 ### Network & Routing
 - Services publish LAN mDNS hostnames (`*.local`) via Avahi.

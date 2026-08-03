@@ -1,0 +1,9 @@
+[Unit]
+Description=Build Wan2GP Container Image from Git
+Wants=network-online.target
+After=network-online.target
+
+[Build]
+ImageTag={{ wan2gp_image | default('localhost/wan2gp:latest') }}
+File={{ quadlet_dir }}/wan2gp.Dockerfile
+SetWorkingDirectory=https://github.com/deepbeepmeep/Wan2GP.git
