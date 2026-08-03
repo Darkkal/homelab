@@ -144,12 +144,11 @@ Caddy upstream variables define where requests to `*.local` hostnames are routed
 | Variable | Default Upstream Target | Proxied Hostname |
 | :--- | :--- | :--- |
 | `sillytavern_upstream` | `sillytavern:8000` | `sillytavern.local` |
-| `forgejo_upstream` | `forgejo:3000` | `forgejo.local` |
+| `forgejo_upstream` | `forgejo:3003` | `forgejo.local` |
 | `llama_swap_upstream` | `llama-swap:8080` | `llamaswap.local` |
-| `openwebui_upstream` | `open-webui:8080` | `openwebui.local` |
-| `hermes_upstream` | `hermes-agent:8080` | `hermes.local` |
+| `openwebui_upstream` | `open-webui:8081` | `openwebui.local` |
+| `hermes_upstream` | `hermes:9119` | `hermes.local` |
 | `swarmui_upstream` | `swarmui:7801` | `swarmui.local` |
-
 | `wan2gp_upstream` | `wan2gp:7860` | `wan2gp.local` |
 
 ---
