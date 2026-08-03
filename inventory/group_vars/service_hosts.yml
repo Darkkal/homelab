@@ -1,5 +1,6 @@
 ---
 st_data_dir: "{{ homelab_data_dir }}/sillytavern"
+sillytavern_openai_api_base_url: "http://llama-swap:8080/v1"
 forgejo_port: 3003
 openwebui_data_dir: "{{ homelab_data_dir }}/open-webui"
 openwebui_port: 8081
