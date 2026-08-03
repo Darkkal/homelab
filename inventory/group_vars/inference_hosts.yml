@@ -12,6 +12,8 @@ llama_swap_port: 8080
 swarmui_data_dir: "{{ homelab_data_dir }}/swarmui"
 swarmui_port: 7821
 swarmui_image: "localhost/swarmui:latest"
+quadlet_no_block: true
+
 
 
 

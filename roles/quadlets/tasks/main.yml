@@ -48,6 +48,7 @@
   ansible.builtin.systemd:
     name: "{{ item.item }}.service"
     state: restarted
+    no_block: "{{ quadlet_no_block | default(false) }}"
     scope: user
   loop: "{{ quadlet_deploy_results.results }}"
   when: item.changed
@@ -67,7 +68,9 @@
     name: "{{ item }}.service"
     enabled: true
     state: started
+    no_block: "{{ quadlet_no_block | default(false) }}"
     scope: user
   loop: "{{ quadlet_services }}"
+
 
 
