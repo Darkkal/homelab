@@ -24,6 +24,17 @@
   become: true
   notify: Restart hermes-agent service
 
+- name: Ensure Hermes .env API_SERVER_KEY matches Ansible configuration
+  ansible.builtin.lineinfile:
+    path: "{{ hermes_data_dir }}/.env"
+    regexp: '^API_SERVER_KEY='
+    line: "API_SERVER_KEY={{ hermes_api_server_key }}"
+    create: false
+  when: "'hermes-agent' in quadlet_services"
+  become: true
+  failed_when: false
+  notify: Restart hermes-agent service
+
 - name: Sync Open WebUI OpenAI connections in SQLite database
   ansible.builtin.command:
     cmd: >
