@@ -87,9 +87,14 @@ These settings apply to target hosts in the `service_hosts` group:
 | `hermes_data_dir` | `~/homelab/hermes` | Directory for Hermes Agent persistent data. |
 | `hermes_port` | `8383` | Host web port for direct Hermes Agent access. |
 | `hermes_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Hermes Agent backend calls. |
+| `hermes_api_server_enabled` | `true` | Enable Hermes Agent built-in OpenAI-compatible API server. |
+| `hermes_api_server_host` | `0.0.0.0` | Bind host address for Hermes Agent API server. |
+| `hermes_api_server_port` | `8642` | Host port for Hermes Agent OpenAI-compatible API server. |
 | `openwebui_data_dir` | `~/homelab/open-webui` | Directory for Open WebUI persistent data. |
 | `openwebui_port` | `8081` | Host web port for direct Open WebUI access. |
-| `openwebui_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Open WebUI backend calls. |
+| `openwebui_openai_api_base_url` | `http://llama-swap:8080/v1` | Primary OpenAI-compatible API endpoint for Open WebUI backend calls. |
+| `openwebui_openai_api_base_urls` | `http://llama-swap:8080/v1;http://hermes:8642/v1` | Semicolon-separated list of OpenAI-compatible API endpoints for Open WebUI. |
+| `openwebui_openai_api_keys` | `sk-dummy;{{ hermes_api_server_key }}` | Semicolon-separated list of OpenAI API keys corresponding to `openwebui_openai_api_base_urls`. |
 | `st_data_dir` | `~/homelab/sillytavern` | Directory for SillyTavern persistent data. |
 | `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
 
@@ -169,6 +174,7 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
 | `vault_hermes_admin_user` | Basic auth username for Hermes Agent | `admin` |
 | `vault_hermes_admin_password` | Basic auth password for Hermes Agent | `admin` |
+| `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | `sk-hermes-agent-api-key-homelab-secure-key` |
 
 ### `vault.yml` File Template
 

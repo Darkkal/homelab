@@ -75,7 +75,8 @@ graph TD
 3. **Upstream Forwarding**:
    - Caddy inspects the incoming HTTP `Host` header and forwards traffic to the corresponding container service port.
 4. **Unified LLM Inference Routing**:
-   - All LLM application containers (`SillyTavern`, `Open WebUI`, `Hermes Agent`) connect directly to `http://llama-swap:8080/v1` over `homelab.network`.
+   - `SillyTavern` connects directly to `http://llama-swap:8080/v1` over `homelab.network`.
+   - `Open WebUI` connects to both `http://llama-swap:8080/v1` (for raw model completions) and Hermes Agent's OpenAI-compatible API server at `http://hermes:8642/v1` (for agent-assisted chats) over `homelab.network`.
    - `llama-swap` handles model swapping, VRAM allocation, and TTL-based model auto-unloading dynamically.
 5. **Direct Port Exposure**:
    - Forgejo binds web port `3003` and SSH port `222` directly to the host for non-proxied or SSH access.
