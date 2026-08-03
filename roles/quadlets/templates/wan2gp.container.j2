@@ -11,7 +11,12 @@ PublishPort={{ wan2gp_port | default(7860) }}:7860
 
 AddDevice=nvidia.com/gpu=all
 Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/ckpts:/workspace/ckpts:Z
+Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/loras:/workspace/loras:Z
 Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/outputs:/workspace/outputs:Z
+Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/settings:/workspace/settings:Z
+Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/profiles:/workspace/profiles:Z
+Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/plugins:/workspace/plugins:Z
+Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/finetunes:/workspace/finetunes:Z
 
 [Service]
 Restart=always

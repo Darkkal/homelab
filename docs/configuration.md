@@ -62,9 +62,16 @@ Wan2GP persistent data, checkpoints, and generated videos are stored in isolated
 
 | Host Path | Container Target | Purpose |
 | :--- | :--- | :--- |
-| `~/homelab/wan2gp` | `/workspace` | Wan2GP workspace root directory |
-| `~/homelab/wan2gp/ckpts` | `/workspace/ckpts` | Model checkpoints (Wan 2.1, LTX Video) |
-| `~/homelab/wan2gp/outputs` | `/workspace/outputs` | Generated video output files |
+| `~/homelab/wan2gp/ckpts` | `/workspace/ckpts` | Model checkpoints (Wan 2.1, LTX Video, VAEs, T5/CLIP encoders) |
+| `~/homelab/wan2gp/models` | `/workspace/models` | Secondary GGUF and diffusion model weights |
+| `~/homelab/wan2gp/loras` | `/workspace/loras` | LoRA weights and adapters |
+| `~/homelab/wan2gp/outputs` | `/workspace/outputs` | Generated videos, images, and media outputs |
+| `~/homelab/wan2gp/settings` | `/workspace/settings` | User UI presets and generation parameter settings |
+| `~/homelab/wan2gp/profiles` | `/workspace/profiles` | Hardware VRAM/RAM allocation profiles and memory overrides |
+| `~/homelab/wan2gp/plugins` | `/workspace/plugins` | Installed third-party user plugins (e.g. Gallery, LoRA Manager, Wildcards) |
+| `~/homelab/wan2gp/finetunes` | `/workspace/finetunes` | Custom finetune JSON configurations |
+| `~/homelab/wan2gp/preprocessing` | `/workspace/preprocessing` | Preprocessed masks, face/pose tracking caches, and extracted speaker audio |
+| `~/homelab/wan2gp/postprocessing` | `/workspace/postprocessing` | Postprocessing pipelines, upscaling workflows, and output artifacts |
 
 
 

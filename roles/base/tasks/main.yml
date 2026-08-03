@@ -22,7 +22,12 @@
     - "{{ homelab_data_dir }}/swarmui/Output"
     - "{{ homelab_data_dir }}/wan2gp"
     - "{{ homelab_data_dir }}/wan2gp/ckpts"
+    - "{{ homelab_data_dir }}/wan2gp/loras"
     - "{{ homelab_data_dir }}/wan2gp/outputs"
+    - "{{ homelab_data_dir }}/wan2gp/settings"
+    - "{{ homelab_data_dir }}/wan2gp/profiles"
+    - "{{ homelab_data_dir }}/wan2gp/plugins"
+    - "{{ homelab_data_dir }}/wan2gp/finetunes"
     - "{{ quadlet_dir }}"
     - "~/.config/containers/registries.conf.d"
 
