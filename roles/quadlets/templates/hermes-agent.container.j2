@@ -23,6 +23,12 @@ PublishPort={{ hermes_api_server_port | default(8642) }}:{{ hermes_api_server_po
 Volume={{ hermes_data_dir }}:/opt/data:Z
 Exec=gateway run
 
+Label=homepage.group="Web Services"
+Label=homepage.name="Hermes Agent"
+Label=homepage.icon=hermes-icon.png
+Label=homepage.href=http://hermes.local
+Label=homepage.description="Memory-capable Agent platform"
+
 [Service]
 Restart=always
 

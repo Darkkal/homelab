@@ -18,6 +18,12 @@ Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/profiles:/w
 Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/plugins:/workspace/plugins:Z
 Volume={{ wan2gp_data_dir | default(homelab_data_dir + '/wan2gp') }}/finetunes:/workspace/finetunes:Z
 
+Label=homepage.group="Inference"
+Label=homepage.name=Wan2GP
+Label=homepage.icon=mdi-movie-open
+Label=homepage.href=http://wan2gp.local
+Label=homepage.description="Video generation"
+
 [Service]
 Restart=always
 

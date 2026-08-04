@@ -26,6 +26,14 @@ PublishPort={{ forgejo_port | default(3003) }}:{{ forgejo_port | default(3003) }
 PublishPort=222:22
 Volume={{ forgejo_data_dir }}:/data:Z
 
+Label=homepage.group="Web Services"
+Label=homepage.name=Forgejo
+Label=homepage.icon=forgejo.png
+Label=homepage.href=http://forgejo.local
+Label=homepage.description="Git hosting"
+Label=homepage.widget.type=gitea
+Label=homepage.widget.url=http://forgejo:3003
+
 [Service]
 Restart=always
 
