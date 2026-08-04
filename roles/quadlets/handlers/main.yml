@@ -27,3 +27,9 @@
     name: homepage.service
     state: restarted
     scope: user
+
+- name: Restart glances service
+  ansible.builtin.systemd:
+    name: glances.service
+    state: restarted
+    scope: user
