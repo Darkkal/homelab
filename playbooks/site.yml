@@ -33,6 +33,7 @@
           - open-webui
           - hermes-agent
           - homepage
+          - glances
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts

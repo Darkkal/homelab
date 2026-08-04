@@ -20,6 +20,9 @@ hermes_admin_user: "{{ vault_hermes_admin_user | default('admin') }}"
 hermes_admin_password: "{{ vault_hermes_admin_password | default('admin') }}"
 hermes_api_server_key: "{{ vault_hermes_api_server_key | default(lookup('password', homelab_data_dir + '/.hermes_api_key length=64 chars=hexdigits')) }}"
 
+glances_username: "{{ vault_glances_username | default('glances') }}"
+glances_password: "{{ vault_glances_password | default('') }}"
+
 # LAN subnet for firewall rich rules (HTTP port 80 & mDNS port 5353)
 lan_subnet: "{{ host_lan_subnet | default(ansible_default_ipv4.network + '/24') }}"
 
