@@ -32,6 +32,9 @@ This repository uses **`release-please`** to automate versioning and changelogs.
 - Break work down into small, logical, self-contained units.
 - Commit after completing and verifying each component or step.
 
+### PR & Issue Titles (Exception)
+PR titles and issue titles do **not** use Conventional Commits syntax — use plain, descriptive titles (e.g. "Deploy Homepage dashboard", "Enable Docker service discovery"). Conventional Commits apply only to commit messages, which `release-please` parses for the changelog.
+
 ---
 
 ## 2. Container Runtime & Infrastructure Conventions
@@ -59,6 +62,10 @@ When persisting data for containerized services, follow this strategy to disting
   2. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
   3. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
 - Multi-host overrides should be configured cleanly in `inventory/group_vars/service_hosts.yml`.
+- **Homepage Service Discovery Labeling Requirement**: Homepage populates the dashboard from container labels read over the Podman socket (see `docs/architecture.md` for the full strategy). Every new web-accessible service must be labeled for discovery:
+  1. Add `homepage.group`, `homepage.name`, `homepage.icon`, `homepage.href`, `homepage.description` labels to the container quadlet template.
+  2. Use an existing group (`Inference`, `Web Services`, `Infrastructure`) or add a matching `layout:` entry to `homepage.settings.yaml.j2`.
+  3. **Quote multi-word label values** (`Label=homepage.group="Web Services"`) and single-quote JSON arrays (`Label=homepage.widget.fields='["a","b"]'`) — the Quadlet generator splits unquoted values on whitespace and strips surrounding quotes.
 
 
 ---

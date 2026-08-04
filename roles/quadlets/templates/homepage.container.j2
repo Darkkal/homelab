@@ -1,15 +1,24 @@
 [Unit]
 Description=Homepage Dashboard
 After=network-online.target
+Requires=podman.socket
+After=podman.socket
 
 [Container]
 ContainerName=homepage
 Image=ghcr.io/gethomepage/homepage:latest
 Network={{ network_name }}
-Environment=HOMEPAGE_ALLOWED_HOSTS=homepage.local
+Environment=HOMEPAGE_ALLOWED_HOSTS=homepage.local,localhost:{{ homepage_port }},127.0.0.1:{{ homepage_port }},[::1]:{{ homepage_port }}
 PublishPort={{ homepage_port | default(3002) }}:3000
 Volume={{ homepage_data_dir }}/config:/app/config:Z
 Volume={{ homepage_data_dir }}/images:/app/public/images:Z
+Volume=/%t/podman/podman.sock:/var/run/docker.sock:ro
+
+Label=homepage.group="Web Services"
+Label=homepage.name=Homepage
+Label=homepage.icon=homepage.png
+Label=homepage.href=http://homepage.local
+Label=homepage.description="Self-hosted Service Dashboard"
 
 [Service]
 Restart=always

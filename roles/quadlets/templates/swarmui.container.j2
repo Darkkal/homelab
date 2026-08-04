@@ -14,6 +14,11 @@ Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/Data:/Swa
 Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/Models:/SwarmUI/Models:Z
 Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/Output:/SwarmUI/Output:Z
 
+Label=homepage.group="Inference"
+Label=homepage.name=SwarmUI
+Label=homepage.icon=mdi-image-multiple
+Label=homepage.href=http://swarmui.local
+Label=homepage.description="Image generation"
 
 [Service]
 Restart=always

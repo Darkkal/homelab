@@ -2,7 +2,7 @@
   ansible.builtin.template:
     src: sillytavern_config.yaml.j2
     dest: "{{ st_data_dir }}/config/config.yaml"
-    mode: '0644'
+    mode: "0644"
   when: "'sillytavern' in quadlet_services"
   notify: Restart sillytavern service
 
@@ -10,7 +10,7 @@
   ansible.builtin.template:
     src: llama_swap_config.yaml.j2
     dest: "{{ llama_swap_config_dir }}/config.yaml"
-    mode: '0644'
+    mode: "0644"
   when: "'llama-swap' in quadlet_services"
   notify: Restart llama-swap service
 
@@ -18,7 +18,7 @@
   ansible.builtin.template:
     src: hermes_config.yaml.j2
     dest: "{{ hermes_data_dir }}/config.yaml"
-    mode: '0644'
+    mode: "0644"
     force: false
   when: "'hermes-agent' in quadlet_services"
   become: true
@@ -27,7 +27,7 @@
 - name: Ensure Hermes .env API_SERVER_KEY matches Ansible configuration
   ansible.builtin.lineinfile:
     path: "{{ hermes_data_dir }}/.env"
-    regexp: '^API_SERVER_KEY='
+    regexp: "^API_SERVER_KEY="
     line: "API_SERVER_KEY={{ hermes_api_server_key }}"
     create: false
   when: "'hermes-agent' in quadlet_services"
@@ -39,12 +39,13 @@
   ansible.builtin.template:
     src: "{{ item }}"
     dest: "{{ homepage_data_dir }}/config/{{ item | regex_replace('^homepage\\.(.*)\\.j2$', '\\1') }}"
-    mode: '0644'
+    mode: "0644"
   loop:
     - homepage.settings.yaml.j2
     - homepage.widgets.yaml.j2
-    - homepage.services.yaml.j2
     - homepage.bookmarks.yaml.j2
+    - homepage.docker.yaml.j2
+    - homepage.services.yaml.j2
   when: "'homepage' in quadlet_services"
   notify: Restart homepage service
 
@@ -59,7 +60,7 @@
   ansible.builtin.template:
     src: swarmui.build.j2
     dest: "{{ quadlet_dir }}/swarmui.build"
-    mode: '0644'
+    mode: "0644"
   when: "'swarmui' in quadlet_services"
   notify: Reload user systemd
 
@@ -67,7 +68,7 @@
   ansible.builtin.template:
     src: wan2gp.Dockerfile.j2
     dest: "{{ quadlet_dir }}/wan2gp.Dockerfile"
-    mode: '0644'
+    mode: "0644"
   when: "'wan2gp' in quadlet_services"
   notify: Reload user systemd
 
@@ -75,7 +76,7 @@
   ansible.builtin.template:
     src: wan2gp.build.j2
     dest: "{{ quadlet_dir }}/wan2gp.build"
-    mode: '0644'
+    mode: "0644"
   when: "'wan2gp' in quadlet_services"
   notify: Reload user systemd
 
@@ -83,7 +84,7 @@
   ansible.builtin.template:
     src: "{{ item }}.container.j2"
     dest: "{{ quadlet_dir }}/{{ item }}.container"
-    mode: '0644'
+    mode: "0644"
   loop: "{{ quadlet_services }}"
   register: quadlet_deploy_results
   notify: Reload user systemd
@@ -118,6 +119,3 @@
     no_block: "{{ quadlet_no_block | default(false) }}"
     scope: user
   loop: "{{ quadlet_services }}"
-
-
-

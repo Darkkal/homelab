@@ -10,6 +10,11 @@ Network={{ network_name }}
 PublishPort=80:80
 Volume={{ caddy_file_path }}:/etc/caddy/Caddyfile:Z
 
+Label=homepage.group="Infrastructure"
+Label=homepage.name=Caddy
+Label=homepage.icon=caddy.png
+Label=homepage.description="Reverse proxy"
+
 [Service]
 Restart=always
 

@@ -14,6 +14,12 @@ Environment=OPENAI_API_KEYS={{ openwebui_openai_api_keys | default('sk-dummy;' +
 PublishPort={{ openwebui_port | default(8081) }}:{{ openwebui_port | default(8081) }}
 Volume={{ openwebui_data_dir }}:/app/backend/data:Z
 
+Label=homepage.group="Web Services"
+Label=homepage.name="Open WebUI"
+Label=homepage.icon=open-webui.png
+Label=homepage.href=http://openwebui.local
+Label=homepage.description="Chat & RAG frontend"
+
 [Service]
 Restart=always
 

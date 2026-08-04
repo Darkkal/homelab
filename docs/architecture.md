@@ -84,6 +84,65 @@ graph TD
 
 ---
 
+## Homepage Dashboard & Container Label Discovery
+
+[Homepage](https://gethomepage.dev) populates the dashboard dynamically from container labels via the Docker-compatible Podman socket, replacing any manual `services.yaml` definition.
+
+### How discovery works
+
+- The homepage container mounts the rootless Podman socket read-only and points its docker config at it:
+  - `Volume=/%t/podman/podman.sock:/var/run/docker.sock:ro` in `homepage.container.j2`
+  - `docker.yaml` in the homepage config dir: `my-docker: socket: /var/run/docker.sock`
+- **Filename case matters**: Homepage only reads `docker.yaml` (lowercase) — see `checkAndCopyConfig("docker.yaml")` in `src/utils/config/service-helpers.js`. A differently-cased file (e.g. `Docker.yaml`) is silently ignored, which leaves discovery using the shipped skeleton (no instances): no containers are discovered and no container stats populate.
+- Homepage **merges** manual `services.yaml` groups with discovered ones (`api-response.js: servicesResponse`), so a stale `services.yaml` from a previous deployment keeps resurrecting old groups. An empty (comment-only) `services.yaml` is deployed on purpose so no manual groups exist.
+
+### Labeling containers
+
+Every web-accessible container carries `homepage.*` labels in its quadlet template:
+
+| Label | Example |
+| :--- | :--- |
+| `homepage.group` | `Label=homepage.group="Web Services"` |
+| `homepage.name` | `Label=homepage.name="Open WebUI"` |
+| `homepage.icon` | `Label=homepage.icon=open-webui.png` |
+| `homepage.href` | `Label=homepage.href=http://openwebui.local` |
+| `homepage.description` | `Label=homepage.description="Chat & RAG frontend"` |
+
+Optional widget labels use dot notation (`homepage.widget.type=...`, `homepage.widget.url=...`, `homepage.widget.fields=...`). Multiple widgets use an index, e.g. `homepage.widgets[0].type=...`.
+
+**Critical quadlet quoting rule**: the Podman Quadlet generator splits `Label=` values on whitespace and strips surrounding quotes when it builds the `podman run` command. Multi-word values (including `&`) MUST be double-quoted, and JSON array values MUST be single-quoted:
+
+- `Label=homepage.group="Web Services"` → podman stores `Web Services` (quotes stripped, space preserved)
+- `Label=homepage.widget.fields='["upstreams","requests"]'` → stored as a valid JSON array
+
+Leaving multi-word values unquoted silently produces broken labels (e.g. `homepage.description=Reverse proxy` becomes two `--label` args). Verified with `podman-system-generator` + `podman inspect`.
+
+### Groups & layout
+
+Label groups match the `settings.yaml` layout keys so row layouts apply. Current groups: `Inference`, `Web Services`, `Infrastructure`. Adding a new group requires a matching `layout:` entry in `homepage.settings.yaml.j2`.
+
+### Config files in the homepage config dir
+
+| File | Purpose |
+| :--- | :--- |
+| `docker.yaml` | Docker/Podman socket config — the discovery source |
+| `settings.yaml` | Theme, layout, `showStats: true` |
+| `services.yaml` | Intentionally empty/comment-only (see below) |
+| `widgets.yaml` | Info widgets (search, datetime) |
+| `bookmarks.yaml` | Bookmark groups |
+
+`services.yaml` must exist but be empty: Homepage's `checkAndCopyConfig` re-copies its shipped skeleton (the `My First/Second/Third Group` example groups) whenever the file is absent, so an empty placeholder file is deployed to suppress those examples. An empty config parses to `null` and `parseServicesToGroups(null)` returns `[]`.
+
+### Host validation
+
+Homepage's middleware (`src/middleware.js`) exact-matches the full `Host` header against `HOMEPAGE_ALLOWED_HOSTS` plus `localhost:<internal-port>` defaults. Access via the published port (`localhost:3002`) never matches the internal `localhost:3000` default, so the published `host:port` list is templated from `homepage_port`.
+
+### Security note: rootless Podman networks do not isolate
+
+All rootless Podman bridge networks live in a single shared network namespace, and the kernel routes between them via the bridge gateways. Separate Podman networks are separate **L2** domains, **not L3-isolated** — any container can reach any other container's IP across networks. Do not rely on a "private" network to restrict access to an unauthenticated admin/management API. (This is why Caddy's unauthenticated admin endpoint is intentionally NOT exposed for a Homepage widget: it would be reachable by every container, not just Homepage.)
+
+---
+
 ## Repository Structure
 
 ```
