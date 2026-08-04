@@ -24,6 +24,7 @@
     - "{{ homelab_data_dir }}/hermes"
     - "{{ homelab_data_dir }}/homepage"
     - "{{ homelab_data_dir }}/homepage/config"
+    - "{{ homelab_data_dir }}/glances"
   when: "'service_hosts' in group_names"
 
 - name: Ensure inference host data directories exist

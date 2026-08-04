@@ -101,7 +101,7 @@ ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vau
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern open-webui hermes-agent llama-swap forgejo
+systemctl --user status caddy sillytavern open-webui hermes-agent llama-swap forgejo glances
 ```
 
 Verify mDNS address resolution from your local workstation:
@@ -128,6 +128,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | **Forgejo (SSH)**| — | `ssh://git@<host-ip>:222` | Git over SSH | Git clone and push operations over SSH using port `222`. | `service_hosts` |
 | **Caddy Proxy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Proxy | Reverse proxy routing `.local` requests to Quadlet containers. | `service_hosts` |
 | **Homepage** | `http://homepage.local` | `http://<host-ip>:3002` | Web UI (HTTP) | Single-page dashboard for all local services with bookmarks, site monitoring, and widgets. Proxied via Caddy. | `service_hosts` |
+| **Glances** | `http://glances.local` | `http://<host-ip>:61208` | Web UI / REST API | Host resource monitoring (CPU, memory, temp, uptime, disk) exposing the REST API consumed by the Homepage Glances info widget. Basic auth enabled. Proxied via Caddy. | `service_hosts` |
 | **Avahi Aliases**| Host native (`avahi-tools`) | mDNS (`*.local`) | mDNS Publishing | Publishes LAN mDNS aliases for local service resolution. | `service_hosts` |
 
 ---
@@ -152,7 +153,7 @@ If a device cannot resolve `.local` mDNS hostnames:
 1. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
    Add target host IP address and service hostnames:
    ```text
-   192.168.1.100  sillytavern.local hermes.local llamaswap.local forgejo.local openwebui.local
+   192.168.1.100  sillytavern.local hermes.local llamaswap.local forgejo.local openwebui.local glances.local
    ```
 2. **Direct HTTP Host Header Verification**:
    ```bash

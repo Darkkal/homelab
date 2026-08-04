@@ -35,6 +35,16 @@
   failed_when: false
   notify: Restart hermes-agent service
 
+- name: Deploy Glances password file
+  ansible.builtin.template:
+    src: glances.pwd.j2
+    dest: "{{ glances_data_dir }}/{{ glances_username }}.pwd"
+    mode: "0600"
+  when:
+    - "'glances' in quadlet_services"
+    - glances_password != ''
+  notify: Restart glances service
+
 - name: Deploy Homepage configuration files
   ansible.builtin.template:
     src: "{{ item }}"
@@ -46,6 +56,7 @@
     - homepage.bookmarks.yaml.j2
     - homepage.docker.yaml.j2
     - homepage.services.yaml.j2
+    - homepage.custom.css.j2
   when: "'homepage' in quadlet_services"
   notify: Restart homepage service
 

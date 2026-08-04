@@ -31,6 +31,7 @@ graph TD
         Caddy -->|homelab.network| Hermes[Hermes Agent]
         Caddy -->|Port 3003 / 222| Forgejo[Forgejo Git]
         Caddy -->|homelab.network| Homepage[Homepage]
+        Caddy -->|homelab.network| Glances[Glances]
     end
 
     subgraph inference_hosts ["inference_hosts (GPU Node)"]
@@ -52,8 +53,9 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `forgejo`, `homepage`, and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `forgejo`, `homepage`, `glances`, and `avahi`.
   - Frontend AI applications (`sillytavern`, `open-webui`, `hermes-agent`) route model completion calls internally to `llama-swap:8080`.
+  - `glances` monitors the host (CPU, memory, temp, uptime, disk) and exposes a REST API that Homepage's Glances info widget consumes over `homelab.network`.
 
 ### Deployment Topologies
 
@@ -121,6 +123,10 @@ Leaving multi-word values unquoted silently produces broken labels (e.g. `homepa
 
 Label groups match the `settings.yaml` layout keys so row layouts apply. Current groups: `Inference`, `Web Services`, `Infrastructure`. Adding a new group requires a matching `layout:` entry in `homepage.settings.yaml.j2`.
 
+### Host resource monitoring
+
+The `glances` container publishes its REST API to the shared network, and the Homepage **Glances** info widget (`homepage.widgets.yaml.j2`) shows real **host** CPU, memory, temperature, uptime, and disk usage. Unlike the built-in `resources` widget (which reads only the Homepage container's own stats via `systeminformation`), the Glances widget reads host statistics from the Glances REST API. Glances runs with `--pid=host`, read-only `/sys`, `/etc/os-release`, and host-root (`/:/host`) mounts; the widget monitors host disk via `disk: /host`. Authentication is enforced with basic auth (`--password`) wired through `vault_glances_username` / `vault_glances_password`. A small `custom.css` rule (see below) makes the Glances widget span the full header row above the search/datetime widgets.
+
 ### Config files in the homepage config dir
 
 | File | Purpose |
@@ -128,8 +134,9 @@ Label groups match the `settings.yaml` layout keys so row layouts apply. Current
 | `docker.yaml` | Docker/Podman socket config — the discovery source |
 | `settings.yaml` | Theme, layout, `showStats: true` |
 | `services.yaml` | Intentionally empty/comment-only (see below) |
-| `widgets.yaml` | Info widgets (search, datetime) |
+| `widgets.yaml` | Info widgets (search, datetime, glances host resource monitor) |
 | `bookmarks.yaml` | Bookmark groups |
+| `custom.css` | Optional custom CSS served at `/api/config/custom.css`; stretches the glances info widget to full width above the search/datetime row |
 
 `services.yaml` must exist but be empty: Homepage's `checkAndCopyConfig` re-copies its shipped skeleton (the `My First/Second/Third Group` example groups) whenever the file is absent, so an empty placeholder file is deployed to suppress those examples. An empty config parses to `null` and `parseServicesToGroups(null)` returns `[]`.
 

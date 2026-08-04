@@ -18,6 +18,9 @@ hermes_api_server_port: 8642
 homepage_data_dir: "{{ homelab_data_dir }}/homepage"
 homepage_port: 3002
 
+glances_data_dir: "{{ homelab_data_dir }}/glances"
+glances_port: 61208
+
 avahi_aliases:
   - sillytavern.local
   - forgejo.local
@@ -27,3 +30,4 @@ avahi_aliases:
   - swarmui.local
   - wan2gp.local
   - homepage.local
+  - glances.local

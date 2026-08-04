@@ -1,0 +1,33 @@
+[Unit]
+Description=Glances Host Resource Monitoring
+After=network-online.target
+
+[Container]
+ContainerName=glances
+Image=docker.io/nicolargo/glances:latest
+Network={{ network_name }}
+{% if glances_password %}
+Environment="GLANCES_OPT=-w --password -u {{ glances_username }}"
+{% else %}
+Environment=GLANCES_OPT=-w
+{% endif %}
+PublishPort={{ glances_port | default(61208) }}:61208
+PodmanArgs=--pid=host
+Volume=/etc/os-release:/etc/os-release:ro
+Volume=/sys:/sys:ro
+Volume=/:/host:ro
+{% if glances_password %}
+Volume={{ glances_data_dir }}/{{ glances_username }}.pwd:/root/.config/glances/{{ glances_username }}.pwd:ro
+{% endif %}
+
+Label=homepage.group="Infrastructure"
+Label=homepage.name=Glances
+Label=homepage.icon=glances.png
+Label=homepage.href=http://glances.local
+Label=homepage.description="Host resource monitoring"
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
