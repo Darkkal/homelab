@@ -101,6 +101,7 @@ These settings apply to target hosts in the `service_hosts` group:
 | `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
 | `homepage_data_dir` | `~/homelab/homepage` | Directory for Homepage dashboard persistent config. |
 | `homepage_port` | `3002` | Host web port for direct Homepage dashboard access (container internal port `3000`). |
+| `homepage_allowed_hosts_extra` | `[]` | Extra `host:port` entries appended to `HOMEPAGE_ALLOWED_HOSTS` (in addition to `homepage.local`, the host's default LAN IPv4 address, and loopback), e.g. `['desktop.local:3002']`. |
 | `glances_data_dir` | `~/homelab/glances` | Directory for the Glances password file and runtime data. |
 | `glances_port` | `61208` | Host web port for direct Glances access (container internal port `61208`). |
 | `glances_username` | `glances` | Glances web server basic auth username (from `vault_glances_username`). |
