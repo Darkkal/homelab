@@ -32,6 +32,7 @@
           - forgejo
           - open-webui
           - hermes-agent
+          - homepage
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts
