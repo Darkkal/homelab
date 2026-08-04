@@ -38,12 +38,12 @@
         icon: forgejo.png
         description: Git hosting
         siteMonitor: http://forgejo:3003
-        {% if forgejo_api_token %}
+{% if forgejo_api_token %}
         widget:
           type: gitea
           url: http://forgejo:3003
           key: {{ forgejo_api_token }}
-        {% endif %}
+{% endif %}
     - Caddy:
         href: http://localhost:80
         icon: caddy.png
