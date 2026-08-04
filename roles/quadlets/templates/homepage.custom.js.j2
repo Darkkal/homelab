@@ -1,0 +1,44 @@
+(function () {
+  const hostname = window.location.hostname;
+  if (hostname.endsWith('.local')) {
+    return;
+  }
+
+  const servicePorts = {
+    'sillytavern.local': {{ sillytavern_port | default(8000) }},
+    'llamaswap.local': {{ llama_swap_port | default(8080) }},
+    'openwebui.local': {{ openwebui_port | default(8081) }},
+    'hermes.local': {{ hermes_port | default(8383) }},
+    'swarmui.local': {{ swarmui_port | default(7801) }},
+    'wan2gp.local': {{ wan2gp_port | default(7860) }},
+    'forgejo.local': {{ forgejo_port | default(3003) }},
+    'homepage.local': {{ homepage_port | default(3002) }},
+    'glances.local': {{ glances_port | default(61208) }},
+  };
+
+  const origin = window.location.protocol + '//' + hostname;
+
+  const rewrite = function (root) {
+    root.querySelectorAll('a[href]').forEach(function (anchor) {
+      const href = anchor.getAttribute('href');
+      if (!href) {
+        return;
+      }
+      for (const service of Object.keys(servicePorts)) {
+        const prefix = window.location.protocol + '//' + service;
+        if (href.startsWith(prefix)) {
+          const path = href.slice(prefix.length);
+          anchor.setAttribute('href', origin + ':' + servicePorts[service] + path);
+          break;
+        }
+      }
+    });
+  };
+
+  rewrite(document);
+
+  const observer = new MutationObserver(function () {
+    rewrite(document);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+})();
