@@ -35,6 +35,19 @@
   failed_when: false
   notify: Restart hermes-agent service
 
+- name: Deploy Homepage configuration files
+  ansible.builtin.template:
+    src: "{{ item }}"
+    dest: "{{ homepage_data_dir }}/config/{{ item | regex_replace('^homepage\\.(.*)\\.j2$', '\\1') }}"
+    mode: '0644'
+  loop:
+    - homepage.settings.yaml.j2
+    - homepage.widgets.yaml.j2
+    - homepage.services.yaml.j2
+    - homepage.bookmarks.yaml.j2
+  when: "'homepage' in quadlet_services"
+  notify: Restart homepage service
+
 - name: Sync Open WebUI OpenAI connections in SQLite database
   ansible.builtin.command:
     cmd: >
