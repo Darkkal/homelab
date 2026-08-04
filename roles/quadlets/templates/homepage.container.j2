@@ -9,6 +9,7 @@ Network={{ network_name }}
 Environment=HOMEPAGE_ALLOWED_HOSTS=homepage.local
 PublishPort={{ homepage_port | default(3002) }}:3000
 Volume={{ homepage_data_dir }}/config:/app/config:Z
+Volume={{ homepage_data_dir }}/images:/app/public/images:Z
 
 [Service]
 Restart=always
