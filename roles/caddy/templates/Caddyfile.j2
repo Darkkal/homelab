@@ -29,3 +29,7 @@ http://wan2gp.local {
 http://homepage.local {
     reverse_proxy {{ homepage_upstream }}
 }
+
+http://glances.local {
+    reverse_proxy {{ glances_upstream }}
+}

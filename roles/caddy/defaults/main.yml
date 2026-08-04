@@ -12,3 +12,4 @@ swarmui_upstream: "swarmui:7801"
 wan2gp_upstream: "wan2gp:7860"
 
 homepage_upstream: "homepage:3000"
+glances_upstream: "glances:61208"
