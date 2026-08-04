@@ -44,7 +44,14 @@
     - homepage.settings.yaml.j2
     - homepage.widgets.yaml.j2
     - homepage.bookmarks.yaml.j2
-    - homepage.Docker.yaml.j2
+    - homepage.docker.yaml.j2
+  when: "'homepage' in quadlet_services"
+  notify: Restart homepage service
+
+- name: Remove stale homepage services.yaml (replaced by label discovery)
+  ansible.builtin.file:
+    path: "{{ homepage_data_dir }}/config/services.yaml"
+    state: absent
   when: "'homepage' in quadlet_services"
   notify: Restart homepage service
 
