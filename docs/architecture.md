@@ -82,7 +82,12 @@ graph TD
    - `Open WebUI` connects to both `http://llama-swap:8080/v1` (for raw model completions) and Hermes Agent's OpenAI-compatible API server at `http://hermes:8642/v1` (for agent-assisted chats) over `homelab.network`.
    - `llama-swap` handles model swapping, VRAM allocation, and TTL-based model auto-unloading dynamically.
 5. **Direct Port Exposure**:
+   - Every web-accessible service publishes a direct host port (see the README service table) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy.
    - Forgejo binds web port `3003` and SSH port `222` directly to the host for non-proxied or SSH access.
+   - The Homepage dashboard rewrites service links to the direct `host:port` form when it is accessed via IP instead of mDNS (see `homepage.custom.js`).
+
+> [!NOTE]
+> Direct host-port access and the Homepage IP-aware link rewriting assume a **single-host deployment** (both `inference_hosts` and `service_hosts` on the same machine, the default topology). On a split-host topology, the direct port of each service belongs to its own host, so `<host-ip>:<port>` links must be resolved per-host. This is a known limitation to be addressed in a future release.
 
 ---
 
@@ -142,7 +147,7 @@ The `glances` container publishes its REST API to the shared network, and the Ho
 
 ### Host validation
 
-Homepage's middleware (`src/middleware.js`) exact-matches the full `Host` header against `HOMEPAGE_ALLOWED_HOSTS` plus `localhost:<internal-port>` defaults. Access via the published port (`localhost:3002`) never matches the internal `localhost:3000` default, so the published `host:port` list is templated from `homepage_port`.
+Homepage's middleware (`src/middleware.js`) exact-matches the full `Host` header against `HOMEPAGE_ALLOWED_HOSTS` plus `localhost:<internal-port>` defaults. Access via the published port (`localhost:3002`) never matches the internal `localhost:3000` default, so the published `host:port` list is templated from `homepage_port` and includes the host's default LAN IPv4 address (from `ansible_default_ipv4.address`) so the dashboard is reachable at `http://<host-ip>:3002` from other devices. Additional hosts/IPs can be appended via `homepage_allowed_hosts_extra`.
 
 ### Security note: rootless Podman networks do not isolate
 

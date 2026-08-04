@@ -119,11 +119,11 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | Service | Primary LAN URL | Direct Host / Port | Access Protocol | Description & Authentication | Ansible Group |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
-| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:80` | Web UI (HTTP) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
+| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:8000` | Web UI (HTTP) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
 | **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
 | **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:8383`<br>`http://<host-ip>:8642` | Web UI / API | Hermes agent service backend & UI (port 8383) and OpenAI-compatible API server (port 8642). Basic HTTP auth supported. | `service_hosts` |
-| **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
-| **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:80` | Web UI (HTTP) | Generative video creation server. Proxied via Caddy. | `inference_hosts` |
+| **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:7801` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
+| **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:7860` | Web UI (HTTP) | Generative video creation server. Proxied via Caddy. | `inference_hosts` |
 | **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
 | **Forgejo (SSH)**| — | `ssh://git@<host-ip>:222` | Git over SSH | Git clone and push operations over SSH using port `222`. | `service_hosts` |
 | **Caddy Proxy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Proxy | Reverse proxy routing `.local` requests to Quadlet containers. | `service_hosts` |
@@ -142,7 +142,8 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
    - Caddy binds to host port `80` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 80`).
    - Requests to `*.local` domains forward to container backends based on `Host` headers.
 3. **Direct Port Exposure**:
-   - Services like Forgejo bind directly to host ports (`3003` for Web, `222` for SSH) alongside proxy routing.
+   - Every service also publishes a direct host port (see the **Direct Host / Port** column above) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy.
+   - Forgejo additionally binds SSH port `222` directly to the host.
 
 ---
 
@@ -150,21 +151,26 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 
 If a device cannot resolve `.local` mDNS hostnames:
 
-1. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
+1. **Direct Host Port Access**:
+   Reach any service directly by its published port, e.g. `http://<host-ip>:8000` for SillyTavern or `http://<host-ip>:8080` for llama-swap (see the **Direct Host / Port** column above).
+2. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
    Add target host IP address and service hostnames:
    ```text
    192.168.1.100  sillytavern.local hermes.local llamaswap.local forgejo.local openwebui.local glances.local
    ```
-2. **Direct HTTP Host Header Verification**:
+3. **Direct HTTP Host Header Verification**:
    ```bash
    curl -H "Host: sillytavern.local" http://<host-ip>
    ```
-3. **Verify mDNS Resolution**:
+4. **Verify mDNS Resolution**:
    ```bash
    avahi-resolve -n sillytavern.local
    # or
    ping sillytavern.local
    ```
+
+> [!NOTE]
+> Direct host-port access and the Homepage dashboard's IP-aware link rewriting assume a **single-host deployment** (both `inference_hosts` and `service_hosts` on the same machine, as in the default `inventory/hosts.yml`). On a split-host topology, the per-service direct ports and hostnames must be resolved per-host — this is a known limitation to be addressed in a future release.
 
 ---
 

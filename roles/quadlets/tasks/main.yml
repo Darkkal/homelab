@@ -57,6 +57,7 @@
     - homepage.docker.yaml.j2
     - homepage.services.yaml.j2
     - homepage.custom.css.j2
+    - homepage.custom.js.j2
   when: "'homepage' in quadlet_services"
   notify: Restart homepage service
 

@@ -84,6 +84,7 @@ These settings apply to target hosts in the `service_hosts` group:
 | :--- | :--- | :--- |
 | `avahi_aliases` | List of `.local` hostnames | Hostnames published via LAN mDNS (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`). |
 | `forgejo_port` | `3003` | Host web port for direct Forgejo access. |
+| `forgejo_root_url` | `/` | Forgejo `ROOT_URL`. Set to a relative root (`/`) so generated links follow whatever hostname/IP is used to access Forgejo; override with an absolute URL (e.g. `http://forgejo.local/`) if needed. |
 | `hermes_data_dir` | `~/homelab/hermes` | Directory for Hermes Agent persistent data. |
 | `hermes_port` | `8383` | Host web port for direct Hermes Agent access. |
 | `hermes_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Hermes Agent backend calls. |
@@ -96,9 +97,11 @@ These settings apply to target hosts in the `service_hosts` group:
 | `openwebui_openai_api_base_urls` | `http://llama-swap:8080/v1;http://hermes:8642/v1` | Semicolon-separated list of OpenAI-compatible API endpoints for Open WebUI. |
 | `openwebui_openai_api_keys` | `sk-dummy;{{ hermes_api_server_key }}` | Semicolon-separated list of OpenAI API keys corresponding to `openwebui_openai_api_base_urls`. |
 | `st_data_dir` | `~/homelab/sillytavern` | Directory for SillyTavern persistent data. |
+| `sillytavern_port` | `8000` | Host web port for direct SillyTavern access (container internal port `8000`). |
 | `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
 | `homepage_data_dir` | `~/homelab/homepage` | Directory for Homepage dashboard persistent config. |
 | `homepage_port` | `3002` | Host web port for direct Homepage dashboard access (container internal port `3000`). |
+| `homepage_allowed_hosts_extra` | `[]` | Extra `host:port` entries appended to `HOMEPAGE_ALLOWED_HOSTS` (in addition to `homepage.local`, the host's default LAN IPv4 address, and loopback), e.g. `['desktop.local:3002']`. |
 | `glances_data_dir` | `~/homelab/glances` | Directory for the Glances password file and runtime data. |
 | `glances_port` | `61208` | Host web port for direct Glances access (container internal port `61208`). |
 | `glances_username` | `glances` | Glances web server basic auth username (from `vault_glances_username`). |
