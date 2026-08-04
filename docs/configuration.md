@@ -97,6 +97,8 @@ These settings apply to target hosts in the `service_hosts` group:
 | `openwebui_openai_api_keys` | `sk-dummy;{{ hermes_api_server_key }}` | Semicolon-separated list of OpenAI API keys corresponding to `openwebui_openai_api_base_urls`. |
 | `st_data_dir` | `~/homelab/sillytavern` | Directory for SillyTavern persistent data. |
 | `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
+| `homepage_data_dir` | `~/homelab/homepage` | Directory for Homepage dashboard persistent config. |
+| `homepage_port` | `3002` | Host web port for direct Homepage dashboard access (container internal port `3000`). |
 
 #### SillyTavern Volume Structure & Data Migration
 
@@ -152,6 +154,7 @@ Caddy upstream variables define where requests to `*.local` hostnames are routed
 | `hermes_upstream` | `hermes:9119` | `hermes.local` |
 | `swarmui_upstream` | `swarmui:7801` | `swarmui.local` |
 | `wan2gp_upstream` | `wan2gp:7860` | `wan2gp.local` |
+| `homepage_upstream` | `homepage:3000` | `homepage.local` |
 
 ---
 
@@ -169,6 +172,7 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_forgejo_admin_user` | Initial admin username for Forgejo | `admin` |
 | `vault_forgejo_admin_password` | Initial admin password for Forgejo | `""` (no default password) |
 | `vault_forgejo_admin_email` | Initial admin email for Forgejo | `admin@homelab.local` |
+| `vault_forgejo_api_token` | API access token for Forgejo (used by the Homepage dashboard widget) | `""` (no widget) |
 | `vault_sillytavern_user` | HTTP basic auth username for SillyTavern | `admin` |
 | `vault_sillytavern_password` | HTTP basic auth password for SillyTavern | `""` (no basic auth password) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
@@ -186,6 +190,7 @@ Unencrypted template structure before executing `ansible-vault encrypt`:
 vault_forgejo_admin_user: "admin"
 vault_forgejo_admin_password: "SuperSecretForgejoPassword"
 vault_forgejo_admin_email: "admin@homelab.local"
+vault_forgejo_api_token: "SuperSecretForgejoApiToken"
 
 # SillyTavern Authentication
 vault_sillytavern_user: "admin"
