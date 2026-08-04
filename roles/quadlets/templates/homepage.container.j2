@@ -1,0 +1,17 @@
+[Unit]
+Description=Homepage Dashboard
+After=network-online.target
+
+[Container]
+ContainerName=homepage
+Image=ghcr.io/gethomepage/homepage:latest
+Network={{ network_name }}
+Environment=HOMEPAGE_ALLOWED_HOSTS=homepage.local
+PublishPort={{ homepage_port | default(3002) }}:3000
+Volume={{ homepage_data_dir }}/config:/app/config:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

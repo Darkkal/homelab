@@ -15,6 +15,9 @@ hermes_api_server_enabled: true
 hermes_api_server_host: "0.0.0.0"
 hermes_api_server_port: 8642
 
+homepage_data_dir: "{{ homelab_data_dir }}/homepage"
+homepage_port: 3002
+
 avahi_aliases:
   - sillytavern.local
   - forgejo.local
@@ -23,3 +26,4 @@ avahi_aliases:
   - hermes.local
   - swarmui.local
   - wan2gp.local
+  - homepage.local

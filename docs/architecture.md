@@ -30,6 +30,7 @@ graph TD
         Caddy -->|homelab.network| OpenWebUI[Open WebUI]
         Caddy -->|homelab.network| Hermes[Hermes Agent]
         Caddy -->|Port 3003 / 222| Forgejo[Forgejo Git]
+        Caddy -->|homelab.network| Homepage[Homepage]
     end
 
     subgraph inference_hosts ["inference_hosts (GPU Node)"]
@@ -51,7 +52,7 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `forgejo`, and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `forgejo`, `homepage`, and `avahi`.
   - Frontend AI applications (`sillytavern`, `open-webui`, `hermes-agent`) route model completion calls internally to `llama-swap:8080`.
 
 ### Deployment Topologies

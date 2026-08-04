@@ -10,6 +10,7 @@ forgejo_data_dir: "{{ homelab_data_dir }}/forgejo"
 forgejo_admin_user: "{{ vault_forgejo_admin_user | default('admin') }}"
 forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"
 forgejo_admin_email: "{{ vault_forgejo_admin_email | default('admin@homelab.local') }}"
+forgejo_api_token: "{{ vault_forgejo_api_token | default('') }}"
 
 sillytavern_user: "{{ vault_sillytavern_user | default('admin') }}"
 sillytavern_password: "{{ vault_sillytavern_password | default('') }}"

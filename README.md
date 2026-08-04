@@ -127,6 +127,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
 | **Forgejo (SSH)**| — | `ssh://git@<host-ip>:222` | Git over SSH | Git clone and push operations over SSH using port `222`. | `service_hosts` |
 | **Caddy Proxy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Proxy | Reverse proxy routing `.local` requests to Quadlet containers. | `service_hosts` |
+| **Homepage** | `http://homepage.local` | `http://<host-ip>:3002` | Web UI (HTTP) | Single-page dashboard for all local services with bookmarks, site monitoring, and widgets. Proxied via Caddy. | `service_hosts` |
 | **Avahi Aliases**| Host native (`avahi-tools`) | mDNS (`*.local`) | mDNS Publishing | Publishes LAN mDNS aliases for local service resolution. | `service_hosts` |
 
 ---
