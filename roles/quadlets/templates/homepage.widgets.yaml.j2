@@ -6,3 +6,17 @@
     format:
       timeStyle: short
       hour12: false
+- glances:
+    url: http://glances:61208
+{% if glances_password %}
+    username: "{{ glances_username }}"
+    password: "{{ glances_password }}"
+{% endif %}
+    version: 4
+    cpu: true
+    mem: true
+    cputemp: true
+    uptime: true
+    disk: /host
+    expanded: true
+    label: "{{ inventory_hostname }}"
