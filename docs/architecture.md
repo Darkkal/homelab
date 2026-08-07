@@ -161,6 +161,38 @@ All rootless Podman bridge networks live in a single shared network namespace, a
 
 ---
 
+## Container Auto-Update & Lifecycle Management
+
+Service containers pulled from remote registries include Quadlet `AutoUpdate={{ <service>_autoupdate | default('registry') }}` directives.
+
+### How Automated Updates Work
+
+1. **Systemd User Timer (`podman-auto-update.timer`)**:
+   - Automated updates are managed by the user systemd unit `podman-auto-update.timer`.
+   - The default schedule is set to `weekly` via a systemd drop-in override (`~/.config/systemd/user/podman-auto-update.timer.d/override.conf`).
+   - When triggered, `podman auto-update` checks remote container registries for updated image tags. If a newer image is available, Podman pulls the image and restarts the container service cleanly.
+
+2. **Holding Off or Disabling Updates for Specific Services**:
+   - **Disable via Inventory Variable**: Set `<service>_autoupdate: "disabled"` in `inventory/group_vars/service_hosts.yml` or `inference_hosts.yml` (e.g. `openwebui_autoupdate: "disabled"`). Re-run the site playbook to update the Quadlet unit definition.
+   - **Pin Container Image Version**: Override the service image tag in Quadlet templates or inventory variables (e.g. `codeberg.org/forgejo/forgejo:10.0.0`).
+
+3. **Manual Update Execution**:
+   - Check for updates without applying:
+     ```bash
+     podman auto-update --dry-run
+     ```
+   - Trigger immediate updates across all tracked services:
+     ```bash
+     podman auto-update
+     ```
+   - Manually pull and restart a single service:
+     ```bash
+     podman pull ghcr.io/open-webui/open-webui:main
+     systemctl --user restart open-webui.service
+     ```
+
+---
+
 ## Repository Structure
 
 ```

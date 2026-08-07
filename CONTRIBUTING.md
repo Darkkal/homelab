@@ -45,6 +45,7 @@ PR titles and issue titles do **not** use Conventional Commits syntax — use pl
 - All containers run as **rootless systemd user units** under `~/.config/containers/systemd/`.
 - Ensure systemd user lingering is enabled for persistent container background execution.
 - Use `quadlet_no_block: true` in group/host variables when containers require background build units or non-blocking systemd starts to prevent Ansible playbook delays.
+- **Container Auto-Updates**: Quadlet templates for registry images must include `AutoUpdate={{ <service>_autoupdate | default('registry') }}` under `[Container]` to support automated update cycles via `podman-auto-update.timer` and per-service overrides (`disabled`), unless explicitly necessary to pin to a fixed version number.
 
 ### Volume Mounting & Data Persistence Audit Strategy
 When persisting data for containerized services, follow this strategy to distinguish user state from application code:
