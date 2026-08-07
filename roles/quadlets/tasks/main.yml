@@ -69,20 +69,19 @@
   when: "'homepage' in quadlet_services"
   notify: Restart homepage service
 
-- name: Sync Open WebUI OpenAI connections in SQLite database
-  ansible.builtin.command:
-    cmd: >
-      python3 -c "import sqlite3, json, os; db_path = '{{ openwebui_data_dir }}/webui.db'; (os.path.exists(db_path) and (conn := sqlite3.connect(db_path)) and (cur := conn.cursor()) and (cur.execute(\"SELECT name FROM sqlite_master WHERE type='table' AND name='config'\").fetchone()) and (base_urls := '{{ openwebui_openai_api_base_urls | default('http://llama-swap:8080/v1;http://hermes:8642/v1') }}'.split(';')) and (api_keys := '{{ openwebui_openai_api_keys | default('sk-dummy;' + hermes_api_server_key) }}'.split(';')) and (api_configs := {str(i): {'enable': True, 'tags': [], 'prefix_id': '', 'model_ids': [], 'connection_type': 'external', 'auth_type': 'bearer', 'passthrough_params': []} for i in range(len(base_urls))}) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('openai.api_base_urls', json.dumps(base_urls))) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('openai.api_keys', json.dumps(api_keys))) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('openai.api_configs', json.dumps(api_configs))) and conn.commit() and conn.close())"
+- name: Deploy Open WebUI database sync script
+  ansible.builtin.template:
+    src: sync_openwebui_db.py.j2
+    dest: "{{ openwebui_data_dir }}/sync_openwebui_db.py"
+    mode: "0755"
   when: "'open-webui' in quadlet_services"
-  changed_when: false
-  notify: Restart open-webui service
 
-- name: Sync Open WebUI web search and web loader settings in SQLite database
+- name: Sync Open WebUI SQLite configuration
   ansible.builtin.command:
-    cmd: >
-      python3 -c "import sqlite3, json, os; db_path = '{{ openwebui_data_dir }}/webui.db'; (os.path.exists(db_path) and (conn := sqlite3.connect(db_path)) and (cur := conn.cursor()) and (cur.execute(\"SELECT name FROM sqlite_master WHERE type='table' AND name='config'\").fetchone()) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('web.search.enable', 'true')) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('web.search.engine', json.dumps('{{ openwebui_web_search_engine | default('searxng') }}'))) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('web.search.searxng_query_url', json.dumps('{{ openwebui_searxng_query_url | default('http://searxng:8080/search?q=<query>') }}'))) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('web.loader.engine', json.dumps('{{ openwebui_web_loader_engine | default('playwright') }}'))) and cur.execute('INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)', ('web.loader.playwright_ws_url', json.dumps('{{ openwebui_playwright_ws_uri | default('ws://playwright:3000') }}'))) and conn.commit() and conn.close())"
+    cmd: "python3 {{ openwebui_data_dir }}/sync_openwebui_db.py"
   when: "'open-webui' in quadlet_services"
-  changed_when: false
+  register: openwebui_db_sync_result
+  changed_when: "'Successfully synced' in openwebui_db_sync_result.stdout"
   notify: Restart open-webui service
 
 - name: Deploy SwarmUI Quadlet build definition
