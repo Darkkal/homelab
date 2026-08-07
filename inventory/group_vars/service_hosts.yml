@@ -24,6 +24,7 @@ glances_port: 61208
 
 searxng_data_dir: "{{ homelab_data_dir }}/searxng"
 searxng_port: 8082
+playwright_port: 3004
 
 avahi_aliases:
   - sillytavern.local
