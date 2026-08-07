@@ -26,5 +26,5 @@ glances_password: "{{ vault_glances_password | default('') }}"
 searxng_secret_key: "{{ vault_searxng_secret_key | default(lookup('password', homelab_data_dir + '/.searxng_secret_key length=64 chars=hexdigits')) }}"
 
 # LAN subnet for firewall rich rules (HTTP port 80 & mDNS port 5353)
-lan_subnet: "{{ host_lan_subnet | default(ansible_default_ipv4.network + '/24') }}"
+lan_subnet: "{{ host_lan_subnet | default(ansible_facts['default_ipv4']['network'] + '/24') }}"
 
