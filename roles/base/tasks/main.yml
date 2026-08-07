@@ -7,6 +7,7 @@
     - "{{ homelab_data_dir }}"
     - "{{ quadlet_dir }}"
     - "~/.config/containers/registries.conf.d"
+    - "~/.config/systemd/user/podman-auto-update.timer.d"
 
 - name: Ensure service host data directories exist
   ansible.builtin.file:
@@ -159,3 +160,17 @@
   loop:
     - homelab.network
   notify: Reload user systemd
+
+- name: Deploy Podman auto-update timer schedule override
+  ansible.builtin.template:
+    src: podman-auto-update.timer.override.conf.j2
+    dest: "~/.config/systemd/user/podman-auto-update.timer.d/override.conf"
+    mode: '0644'
+  notify: Reload user systemd
+
+- name: Manage Podman auto-update systemd user timer
+  ansible.builtin.systemd:
+    name: podman-auto-update.timer
+    state: "{{ 'started' if (enable_podman_auto_update | default(true)) else 'stopped' }}"
+    enabled: "{{ enable_podman_auto_update | default(true) }}"
+    scope: user
