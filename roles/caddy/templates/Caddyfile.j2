@@ -33,3 +33,8 @@ http://homepage.local {
 http://glances.local {
     reverse_proxy {{ glances_upstream }}
 }
+
+http://searxng.local {
+    reverse_proxy {{ searxng_upstream }}
+}
+

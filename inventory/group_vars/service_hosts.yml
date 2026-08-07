@@ -44,3 +44,4 @@ avahi_aliases:
   - wan2gp.local
   - homepage.local
   - glances.local
+  - searxng.local

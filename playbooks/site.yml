@@ -32,6 +32,8 @@
           - forgejo
           - open-webui
           - hermes-agent
+          - searxng
+          - playwright
           - homepage
           - glances
 
