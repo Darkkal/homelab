@@ -35,6 +35,14 @@
   failed_when: false
   notify: Restart hermes-agent service
 
+- name: Deploy SearXNG configuration file
+  ansible.builtin.template:
+    src: searxng_settings.yml.j2
+    dest: "{{ searxng_data_dir }}/settings.yml"
+    mode: "0644"
+  when: "'searxng' in quadlet_services"
+  notify: Restart searxng service
+
 - name: Deploy Glances password file
   ansible.builtin.template:
     src: glances.pwd.j2
