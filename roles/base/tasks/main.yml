@@ -6,8 +6,9 @@
   loop:
     - "{{ homelab_data_dir }}"
     - "{{ quadlet_dir }}"
-    - "~/.config/containers/registries.conf.d"
-    - "~/.config/systemd/user/podman-auto-update.timer.d"
+    - "{{ homelab_user_home }}/.config/containers/registries.conf.d"
+    - "{{ homelab_user_home }}/.config/systemd/user/podman-auto-update.timer.d"
+    - "{{ homelab_user_home }}/.config/systemd/user/podman-auto-update.service.d"
 
 - name: Ensure service host data directories exist
   ansible.builtin.file:
@@ -164,7 +165,14 @@
 - name: Deploy Podman auto-update timer schedule override
   ansible.builtin.template:
     src: podman-auto-update.timer.override.conf.j2
-    dest: "~/.config/systemd/user/podman-auto-update.timer.d/override.conf"
+    dest: "{{ homelab_user_home }}/.config/systemd/user/podman-auto-update.timer.d/override.conf"
+    mode: '0644'
+  notify: Reload user systemd
+
+- name: Deploy Podman auto-update service local rebuild override
+  ansible.builtin.template:
+    src: podman-auto-update.service.override.conf.j2
+    dest: "{{ homelab_user_home }}/.config/systemd/user/podman-auto-update.service.d/override.conf"
     mode: '0644'
   notify: Reload user systemd
 
