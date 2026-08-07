@@ -29,9 +29,11 @@ graph TD
         Caddy -->|homelab.network| SillyTavern[SillyTavern]
         Caddy -->|homelab.network| OpenWebUI[Open WebUI]
         Caddy -->|homelab.network| Hermes[Hermes Agent]
+        Caddy -->|homelab.network| SearXNG[SearXNG]
         Caddy -->|Port 3003 / 222| Forgejo[Forgejo Git]
         Caddy -->|homelab.network| Homepage[Homepage]
         Caddy -->|homelab.network| Glances[Glances]
+        OpenWebUI -->|WebSocket ws://playwright:3000| Playwright[Playwright]
     end
 
     subgraph inference_hosts ["inference_hosts (GPU Node)"]
@@ -42,7 +44,9 @@ graph TD
 
     SillyTavern -->|OpenAI API / homelab.network:8080| LlamaSwap
     OpenWebUI -->|OpenAI API / homelab.network:8080| LlamaSwap
+    OpenWebUI -->|Search API / searxng:8080| SearXNG
     Hermes -->|OpenAI API / homelab.network:8080| LlamaSwap
+    Hermes -->|Search API / searxng:8080| SearXNG
 ```
 
 ### Host Group Descriptions
@@ -53,8 +57,10 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `forgejo`, `homepage`, `glances`, and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `searxng`, `playwright`, `forgejo`, `homepage`, `glances`, and `avahi`.
   - Frontend AI applications (`sillytavern`, `open-webui`, `hermes-agent`) route model completion calls internally to `llama-swap:8080`.
+  - `searxng` acts as the self-hosted search aggregator for Open WebUI and Hermes Agent web search operations over `homelab.network:8080`.
+  - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
   - `glances` monitors the host (CPU, memory, temp, uptime, disk) and exposes a REST API that Homepage's Glances info widget consumes over `homelab.network`.
 
 ### Deployment Topologies
