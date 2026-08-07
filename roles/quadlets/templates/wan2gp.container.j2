@@ -6,6 +6,7 @@ Wants=wan2gp-build.service
 [Container]
 ContainerName=wan2gp
 Image={{ wan2gp_image | default('localhost/wan2gp:latest') }}
+AutoUpdate={{ wan2gp_autoupdate | default('local') }}
 Network={{ network_name }}
 PublishPort={{ wan2gp_port | default(7860) }}:7860
 
