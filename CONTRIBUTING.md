@@ -62,10 +62,11 @@ When persisting data for containerized services, follow this strategy to disting
   2. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
   3. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
 - Multi-host overrides should be configured cleanly in `inventory/group_vars/service_hosts.yml`.
-- **Homepage Service Discovery Labeling Requirement**: Homepage populates the dashboard from container labels read over the Podman socket (see `docs/architecture.md` for the full strategy). Every new web-accessible service must be labeled for discovery:
-  1. Add `homepage.group`, `homepage.name`, `homepage.icon`, `homepage.href`, `homepage.description` labels to the container quadlet template.
-  2. Use an existing group (`Inference`, `Web Services`, `Infrastructure`) or add a matching `layout:` entry to `homepage.settings.yaml.j2`.
-  3. **Quote multi-word label values** (`Label=homepage.group="Web Services"`) and single-quote JSON arrays (`Label=homepage.widget.fields='["a","b"]'`) — the Quadlet generator splits unquoted values on whitespace and strips surrounding quotes.
+- **Homepage Service Discovery & Labeling Requirements**: Homepage populates the dashboard dynamically from container labels read over the Podman socket (see `docs/architecture.md` and `docs/configuration.md` for full details). Every new web-accessible service must be configured for Homepage discovery:
+  1. **Add Homepage Labels**: Add `homepage.group`, `homepage.name`, `homepage.icon`, `homepage.href`, and `homepage.description` labels to the container's `.container.j2` Quadlet template.
+  2. **Group Alignment & Layout**: Select an existing dashboard group (`Inference`, `Web Services`, `Infrastructure`) or add a matching layout entry to `homepage.settings.yaml.j2` if adding a new group.
+  3. **Strict Quadlet Quoting Rules**: Always double-quote multi-word string values (`Label=homepage.group="Web Services"`) and single-quote JSON arrays (`Label=homepage.widget.fields='["a","b"]'`). Unquoted values will be split by the Podman Quadlet generator on whitespace and result in broken container labels.
+
 
 
 ---

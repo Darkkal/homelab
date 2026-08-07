@@ -106,6 +106,35 @@ These settings apply to target hosts in the `service_hosts` group:
 | `glances_port` | `61208` | Host web port for direct Glances access (container internal port `61208`). |
 | `glances_username` | `glances` | Glances web server basic auth username (from `vault_glances_username`). |
 | `glances_password` | `""` | Glances web server basic auth password (from `vault_glances_password`). When empty, Glances runs without authentication. |
+| `searxng_data_dir` | `~/homelab/searxng` | Directory for SearXNG settings and configuration. |
+| `searxng_port` | `8082` | Host web port for direct SearXNG search interface access (container internal port `8080`). |
+| `playwright_port` | `3004` | Host web port for direct Playwright browser scraping service access (container internal port `3000`). |
+
+#### Adding New Services to the Homepage Dashboard
+
+To register a new containerized service on the Homepage dashboard:
+
+1. **Add Discovery Labels in Quadlet Template (`<service>.container.j2`)**:
+   Add standard `homepage.*` labels to the `[Container]` block of your Jinja2 template:
+   ```ini
+   Label=homepage.group="Web Services"
+   Label=homepage.name="SearXNG"
+   Label=homepage.icon=searxng.png
+   Label=homepage.href=http://searxng.local
+   Label=homepage.description="Self-hosted search aggregator"
+   ```
+
+2. **Select or Create a Dashboard Group**:
+   - Assign `homepage.group` to an existing layout group: `Inference`, `Web Services`, or `Infrastructure`.
+   - If creating a new group, add a matching entry under `layout:` in `roles/quadlets/templates/homepage.settings.yaml.j2`.
+
+3. **Configure mDNS & Reverse Proxy**:
+   - Add `.local` hostname to `avahi_aliases` in `inventory/group_vars/service_hosts.yml`.
+   - Add default upstream in `roles/caddy/defaults/main.yml` and routing block in `roles/caddy/templates/Caddyfile.j2`.
+
+4. **Adhere to Quadlet Quoting Rules**:
+   - Double-quote multi-word label strings: `Label=homepage.group="Web Services"`
+   - Single-quote JSON arrays: `Label=homepage.widget.fields='["upstreams","requests"]'`
 
 #### Glances Runtime Configuration
 
