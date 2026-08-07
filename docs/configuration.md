@@ -18,7 +18,7 @@ These settings apply to all target hosts across all host groups:
 | `quadlet_dir` | `~/.config/containers/systemd` | Directory path where user systemd Podman Quadlet container files are deployed. |
 | `network_name` | `homelab.network` | Shared Podman bridge network name connecting container instances. |
 | `enable_podman_auto_update` | `true` | Enables and starts the `podman-auto-update.timer` user systemd unit for automated container updates. |
-| `podman_auto_update_schedule` | `weekly` | Schedule format for `podman-auto-update.timer` (e.g. `weekly`, `daily`, or systemd `OnCalendar` expression). |
+| `podman_auto_update_schedule` | `Tue *-*-* 04:00:00` | Schedule format for `podman-auto-update.timer` (every Tuesday at 4am; systemd `OnCalendar` expression). |
 | `<service>_autoupdate` | `registry` | Per-service auto-update policy set in Quadlet `AutoUpdate` directive (`registry`, `disabled`, or `local`). |
 
 #### Managing Persistent Service Directories
