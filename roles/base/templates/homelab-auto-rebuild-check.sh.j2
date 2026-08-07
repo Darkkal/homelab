@@ -1,0 +1,62 @@
+#!/usr/bin/env bash
+# Ansible managed: homelab auto-rebuild git SHA pre-check script
+# Checks remote Git commit SHAs for locally built Quadlet services (SwarmUI, Wan2GP)
+# before triggering expensive container image rebuilds.
+
+set -euo pipefail
+
+HOMELAB_DATA_DIR="{{ homelab_data_dir }}"
+
+SERVICES=(
+    "swarmui|https://github.com/mcmonkeyprojects/SwarmUI.git|${HOMELAB_DATA_DIR}/swarmui"
+    "wan2gp|https://github.com/deepbeepmeep/Wan2GP.git|${HOMELAB_DATA_DIR}/wan2gp"
+)
+
+check_and_rebuild() {
+    local service="$1"
+    local repo_url="$2"
+    local data_dir="$3"
+    local state_file="${data_dir}/.last_built_commit"
+
+    if ! systemctl --user list-unit-files "${service}-build.service" &>/dev/null; then
+        return 0
+    fi
+
+    echo "Checking upstream Git status for ${service}..."
+    local remote_sha
+    if ! remote_sha=$(git ls-remote "${repo_url}" HEAD | awk '{print $1}'); then
+        echo "WARNING: Failed to fetch remote commit for ${service} (${repo_url}). Skipping rebuild."
+        return 0
+    fi
+
+    if [[ -z "${remote_sha}" ]]; then
+        echo "WARNING: Empty SHA returned for ${service}. Skipping."
+        return 0
+    fi
+
+    local last_sha=""
+    if [[ -f "${state_file}" ]]; then
+        last_sha=$(cat "${state_file}" 2>/dev/null || true)
+    fi
+
+    if [[ "${remote_sha}" == "${last_sha}" ]]; then
+        echo "No upstream changes for ${service} (SHA: ${remote_sha}). Rebuild skipped."
+    else
+        echo "New upstream commit detected for ${service}!"
+        echo "  Current SHA: ${last_sha:-none}"
+        echo "  Remote SHA:  ${remote_sha}"
+        echo "Triggering ${service}-build.service..."
+        if systemctl --user restart "${service}-build.service"; then
+            mkdir -p "${data_dir}"
+            echo "${remote_sha}" > "${state_file}"
+            echo "Successfully updated state file for ${service}."
+        else
+            echo "ERROR: Failed to restart ${service}-build.service."
+        fi
+    fi
+}
+
+for entry in "${SERVICES[@]}"; do
+    IFS="|" read -r sname surl sdir <<< "${entry}"
+    check_and_rebuild "${sname}" "${surl}" "${sdir}"
+done

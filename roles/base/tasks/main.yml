@@ -5,6 +5,7 @@
     state: directory
   loop:
     - "{{ homelab_data_dir }}"
+    - "{{ homelab_data_dir }}/bin"
     - "{{ quadlet_dir }}"
     - "{{ homelab_user_home }}/.config/containers/registries.conf.d"
     - "{{ homelab_user_home }}/.config/systemd/user/podman-auto-update.timer.d"
@@ -168,6 +169,12 @@
     dest: "{{ homelab_user_home }}/.config/systemd/user/podman-auto-update.timer.d/override.conf"
     mode: '0644'
   notify: Reload user systemd
+
+- name: Deploy homelab auto-rebuild git SHA pre-check script
+  ansible.builtin.template:
+    src: homelab-auto-rebuild-check.sh.j2
+    dest: "{{ homelab_data_dir }}/bin/homelab-auto-rebuild-check.sh"
+    mode: '0755'
 
 - name: Deploy Podman auto-update service local rebuild override
   ansible.builtin.template:

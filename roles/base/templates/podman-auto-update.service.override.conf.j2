@@ -1,2 +1,2 @@
 [Service]
-ExecStartPre=-/usr/bin/systemctl --user restart swarmui-build.service wan2gp-build.service
+ExecStartPre=-{{ homelab_data_dir }}/bin/homelab-auto-rebuild-check.sh
