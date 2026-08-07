@@ -6,6 +6,7 @@ Wants=swarmui-build.service
 [Container]
 ContainerName=swarmui
 Image={{ swarmui_image | default('localhost/swarmui:latest') }}
+AutoUpdate={{ swarmui_autoupdate | default('local') }}
 Network={{ network_name }}
 PublishPort={{ swarmui_port | default(7801) }}:7801
 

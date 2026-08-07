@@ -5,6 +5,7 @@ Wants=network-online.target
 
 [Container]
 Image=docker.io/library/caddy:latest
+AutoUpdate={{ caddy_autoupdate | default('registry') }}
 ContainerName=caddy
 Network={{ network_name }}
 PublishPort=80:80

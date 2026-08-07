@@ -4,6 +4,7 @@ After=network-online.target
 
 [Container]
 Image=ghcr.io/mostlygeek/llama-swap:unified-cuda
+AutoUpdate={{ llama_swap_autoupdate | default('registry') }}
 ContainerName=llama-swap
 Network={{ network_name }}
 PublishPort={{ llama_swap_port | default(8080) }}:8080

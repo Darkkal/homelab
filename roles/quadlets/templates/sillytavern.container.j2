@@ -4,6 +4,7 @@ After=network-online.target
 
 [Container]
 Image=ghcr.io/sillytavern/sillytavern:latest
+AutoUpdate={{ sillytavern_autoupdate | default('registry') }}
 ContainerName=sillytavern
 Network={{ network_name }}
 PublishPort={{ sillytavern_port | default(8000) }}:8000

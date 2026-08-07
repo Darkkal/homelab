@@ -5,6 +5,7 @@ After=network-online.target
 [Container]
 ContainerName=open-webui
 Image=ghcr.io/open-webui/open-webui:main
+AutoUpdate={{ openwebui_autoupdate | default('registry') }}
 Network={{ network_name }}
 Environment=PORT={{ openwebui_port | default(8081) }}
 Environment=OPENAI_API_BASE_URL={{ openwebui_openai_api_base_url | default('http://llama-swap:8080/v1') }}
