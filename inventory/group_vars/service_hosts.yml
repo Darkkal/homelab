@@ -20,6 +20,9 @@ hermes_default_model: "qwen3.6-35b-mtp"
 hermes_api_server_enabled: true
 hermes_api_server_host: "0.0.0.0"
 hermes_api_server_port: 8642
+hermes_web_search_enabled: true
+hermes_web_search_provider: "searxng"
+hermes_searxng_url: "http://searxng:8080"
 
 homepage_data_dir: "{{ homelab_data_dir }}/homepage"
 homepage_port: 3002
