@@ -5,6 +5,7 @@ After=network-online.target
 [Container]
 ContainerName=glances
 Image=docker.io/nicolargo/glances:latest
+AutoUpdate={{ glances_autoupdate | default('registry') }}
 Network={{ network_name }}
 {% if glances_password %}
 Environment="GLANCES_OPT=-w --password -u {{ glances_username }}"

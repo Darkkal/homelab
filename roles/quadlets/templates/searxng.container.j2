@@ -5,6 +5,7 @@ After=network-online.target
 [Container]
 ContainerName=searxng
 Image=docker.io/searxng/searxng:latest
+AutoUpdate={{ searxng_autoupdate | default('registry') }}
 Network={{ network_name }}
 Environment=SEARXNG_BASE_URL=http://searxng.local/
 Environment=UWSGI_WORKERS=4
