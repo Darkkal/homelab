@@ -22,7 +22,7 @@ if not table_check:
     conn.close()
     exit(0)
 
-# 1. Sync OpenAI Connections
+# Target configurations to sync
 base_urls = "{{ openwebui_openai_api_base_urls | default('http://llama-swap:8080/v1;http://hermes:8642/v1') }}".split(";")
 api_keys = "{{ openwebui_openai_api_keys | default('sk-dummy;' + hermes_api_server_key) }}".split(";")
 api_configs = {
@@ -38,17 +38,28 @@ api_configs = {
     for i in range(len(base_urls))
 }
 
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("openai.api_base_urls", json.dumps(base_urls)))
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("openai.api_keys", json.dumps(api_keys)))
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("openai.api_configs", json.dumps(api_configs)))
+desired_config = {
+    "openai.api_base_urls": json.dumps(base_urls),
+    "openai.api_keys": json.dumps(api_keys),
+    "openai.api_configs": json.dumps(api_configs),
+    "web.search.enable": "true",
+    "web.search.engine": json.dumps("{{ openwebui_web_search_engine | default('searxng') }}"),
+    "web.search.searxng_query_url": json.dumps("{{ openwebui_searxng_query_url | default('http://searxng:8080/search?q=<query>') }}"),
+    "web.loader.engine": json.dumps("{{ openwebui_web_loader_engine | default('playwright') }}"),
+    "web.loader.playwright_ws_url": json.dumps("{{ openwebui_playwright_ws_uri | default('ws://playwright:3000') }}"),
+}
 
-# 2. Sync Web Search & Web Loader Configuration
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("web.search.enable", "true"))
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("web.search.engine", json.dumps("{{ openwebui_web_search_engine | default('searxng') }}")))
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("web.search.searxng_query_url", json.dumps("{{ openwebui_searxng_query_url | default('http://searxng:8080/search?q=<query>') }}")))
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("web.loader.engine", json.dumps("{{ openwebui_web_loader_engine | default('playwright') }}")))
-cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", ("web.loader.playwright_ws_url", json.dumps("{{ openwebui_playwright_ws_uri | default('ws://playwright:3000') }}")))
+changes_made = 0
+for key, desired_val in desired_config.items():
+    cur_val = cur.execute("SELECT value FROM config WHERE key = ?", (key,)).fetchone()
+    if cur_val is None or str(cur_val[0]) != str(desired_val):
+        cur.execute("INSERT OR REPLACE INTO config (key, value) VALUES (?, ?)", (key, desired_val))
+        changes_made += 1
 
-conn.commit()
-conn.close()
-print("Successfully synced Open WebUI SQLite configuration.")
+if changes_made > 0:
+    conn.commit()
+    conn.close()
+    print(f"Updated {changes_made} configuration keys in Open WebUI SQLite database.")
+else:
+    conn.close()
+    print("No changes needed. SQLite database is already up to date.")

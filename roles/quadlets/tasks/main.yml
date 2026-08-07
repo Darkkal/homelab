@@ -81,7 +81,7 @@
     cmd: "python3 {{ openwebui_data_dir }}/sync_openwebui_db.py"
   when: "'open-webui' in quadlet_services"
   register: openwebui_db_sync_result
-  changed_when: "'Successfully synced' in openwebui_db_sync_result.stdout"
+  changed_when: "'Updated' in openwebui_db_sync_result.stdout"
   notify: Restart open-webui service
 
 - name: Deploy SwarmUI Quadlet build definition
