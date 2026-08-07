@@ -13,7 +13,8 @@
     expanded: true
     label: "{{ inventory_hostname }}"
 - search:
-    provider: google
+    provider: searxng
+    url: http://searxng.local
     target: _blank
 - datetime:
     text_size: xl
