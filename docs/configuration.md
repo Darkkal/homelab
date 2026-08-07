@@ -18,6 +18,25 @@ These settings apply to all target hosts across all host groups:
 | `quadlet_dir` | `~/.config/containers/systemd` | Directory path where user systemd Podman Quadlet container files are deployed. |
 | `network_name` | `homelab.network` | Shared Podman bridge network name connecting container instances. |
 
+#### Managing Persistent Service Directories
+
+All application container data is stored under subdirectories of `homelab_data_dir` (`~/homelab/<service>`).
+
+When implementing a new service or expanding configuration storage:
+
+1. **Define Data Directory Variables**:
+   Define `<service>_data_dir: "{{ homelab_data_dir }}/<service>"` in `inventory/group_vars/service_hosts.yml` or `inventory/group_vars/inference_hosts.yml`.
+2. **Register Directory Creation in Base Role (`roles/base/tasks/main.yml`)**:
+   Add `{{ homelab_data_dir }}/<service>` (and any required subdirectories) to the directory loops in `roles/base/tasks/main.yml`:
+   - Under `Ensure service host data directories exist` for app services (`service_hosts`).
+   - Under `Ensure inference host data directories exist` for AI/GPU model services (`inference_hosts`).
+   *Note: This step is mandatory so Ansible creates the target directory before any template deployment tasks or systemd container services run.*
+3. **Mount Subfolders & Apply SELinux Relabeling**:
+   Mount persistent directories in container Quadlet templates (`.container.j2`) with SELinux `:Z` flags:
+   ```ini
+   Volume={{ searxng_data_dir }}:/etc/searxng:Z
+   ```
+
 ---
 
 ### Inference Host Configuration (`inventory/group_vars/inference_hosts.yml`)
