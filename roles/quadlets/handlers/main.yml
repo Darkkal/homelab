@@ -33,3 +33,15 @@
     name: glances.service
     state: restarted
     scope: user
+
+- name: Restart searxng service
+  ansible.builtin.systemd:
+    name: searxng.service
+    state: restarted
+    scope: user
+
+- name: Restart open-webui service
+  ansible.builtin.systemd:
+    name: open-webui.service
+    state: restarted
+    scope: user

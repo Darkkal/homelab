@@ -1,0 +1,15 @@
+[Unit]
+Description=Playwright Browserless Scraping Service
+After=network-online.target
+
+[Container]
+ContainerName=playwright
+Image=ghcr.io/browserless/chrome:latest
+Network={{ network_name }}
+PublishPort={{ playwright_port | default(3004) }}:3000
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -11,3 +11,8 @@ dashboard:
   basic_auth:
     username: "{{ hermes_admin_user | default('admin') }}"
     password_hash: "{{ hermes_admin_password | hermes_scrypt }}"
+web_search:
+  enabled: {{ hermes_web_search_enabled | default(true) | lower }}
+  provider: "{{ hermes_web_search_provider | default('searxng') }}"
+  searxng_url: "{{ hermes_searxng_url | default('http://searxng:8080') }}"
+

@@ -25,6 +25,7 @@
     - "{{ homelab_data_dir }}/homepage"
     - "{{ homelab_data_dir }}/homepage/config"
     - "{{ homelab_data_dir }}/glances"
+    - "{{ homelab_data_dir }}/searxng"
   when: "'service_hosts' in group_names"
 
 - name: Ensure inference host data directories exist

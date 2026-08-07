@@ -52,6 +52,7 @@ When persisting data for containerized services, follow this strategy to disting
 2. **Never Mask App Code / Python Packages**: Directories containing Python modules (`__init__.py`, source code) or application binaries must **not** be mounted as volumes over the host. Mounting over code packages causes `ModuleNotFoundError` or missing executable crashes (exit code 127/1).
 3. **Isolate User State**: Mount only true user data directories (checkpoints, models, outputs, presets, user plugins, settings) to subfolders under `~/homelab/<service>/`.
 4. **Rootless SELinux Labels**: Always append `:Z` relabeling flags to volume mounts (e.g. `Volume={{ wan2gp_data_dir }}/ckpts:/workspace/ckpts:Z`) for rootless SELinux permissions.
+5. **Register Host Data Directories in `base` Role**: Every new service host persistent data path (e.g. `{{ homelab_data_dir }}/<service>`) **must** be registered in `roles/base/tasks/main.yml` under `Ensure service host data directories exist` (or `Ensure inference host data directories exist`). This guarantees the target host directory exists before any configuration templates (`ansible.builtin.template`) or Quadlet units attempt to write files to it.
 
 
 ### Network & Routing
@@ -62,10 +63,11 @@ When persisting data for containerized services, follow this strategy to disting
   2. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
   3. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
 - Multi-host overrides should be configured cleanly in `inventory/group_vars/service_hosts.yml`.
-- **Homepage Service Discovery Labeling Requirement**: Homepage populates the dashboard from container labels read over the Podman socket (see `docs/architecture.md` for the full strategy). Every new web-accessible service must be labeled for discovery:
-  1. Add `homepage.group`, `homepage.name`, `homepage.icon`, `homepage.href`, `homepage.description` labels to the container quadlet template.
-  2. Use an existing group (`Inference`, `Web Services`, `Infrastructure`) or add a matching `layout:` entry to `homepage.settings.yaml.j2`.
-  3. **Quote multi-word label values** (`Label=homepage.group="Web Services"`) and single-quote JSON arrays (`Label=homepage.widget.fields='["a","b"]'`) — the Quadlet generator splits unquoted values on whitespace and strips surrounding quotes.
+- **Homepage Service Discovery & Labeling Requirements**: Homepage populates the dashboard dynamically from container labels read over the Podman socket (see `docs/architecture.md` and `docs/configuration.md` for full details). Every new web-accessible service must be configured for Homepage discovery:
+  1. **Add Homepage Labels**: Add `homepage.group`, `homepage.name`, `homepage.icon`, `homepage.href`, and `homepage.description` labels to the container's `.container.j2` Quadlet template.
+  2. **Group Alignment & Layout**: Select an existing dashboard group (`Inference`, `Web Services`, `Infrastructure`) or add a matching layout entry to `homepage.settings.yaml.j2` if adding a new group.
+  3. **Strict Quadlet Quoting Rules**: Always double-quote multi-word string values (`Label=homepage.group="Web Services"`) and single-quote JSON arrays (`Label=homepage.widget.fields='["a","b"]'`). Unquoted values will be split by the Podman Quadlet generator on whitespace and result in broken container labels.
+
 
 
 ---
