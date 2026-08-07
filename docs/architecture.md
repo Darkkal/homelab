@@ -171,6 +171,7 @@ Service containers pulled from remote registries include Quadlet `AutoUpdate={{ 
    - Automated updates are managed by the user systemd unit `podman-auto-update.timer`.
    - The default schedule is set to `weekly` via a systemd drop-in override (`~/.config/systemd/user/podman-auto-update.timer.d/override.conf`).
    - When triggered, `podman auto-update` checks remote container registries for updated image tags. If a newer image is available, Podman pulls the image and restarts the container service cleanly.
+   - **Locally Built Services (SwarmUI & Wan2GP)**: Services built natively on the host from Git/Dockerfiles via `.build` Quadlet units do not specify `AutoUpdate=registry`. `podman auto-update` completely skips these services and will **never** trigger automatic background image builds.
 
 2. **Holding Off or Disabling Updates for Specific Services**:
    - **Disable via Inventory Variable**: Set `<service>_autoupdate: "disabled"` in `inventory/group_vars/service_hosts.yml` or `inference_hosts.yml` (e.g. `openwebui_autoupdate: "disabled"`). Re-run the site playbook to update the Quadlet unit definition.
