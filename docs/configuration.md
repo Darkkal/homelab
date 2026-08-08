@@ -243,14 +243,14 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_forgejo_admin_user` | Initial admin username for Forgejo | `admin` |
 | `vault_forgejo_admin_password` | Initial admin password for Forgejo | `""` (no default password) |
 | `vault_forgejo_admin_email` | Initial admin email for Forgejo | `admin@homelab.local` |
-| `vault_forgejo_api_token` | API access token for Forgejo (used by the Homepage dashboard widget) | `""` (no widget) |
+| `vault_forgejo_api_token_homepage` | API access token for Forgejo (used by the Homepage dashboard widget; fallback: `vault_forgejo_api_token`) | `""` (no widget) |
 | `vault_sillytavern_user` | HTTP basic auth username for SillyTavern | `admin` |
 | `vault_sillytavern_password` | HTTP basic auth password for SillyTavern | `""` (no basic auth password) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
 | `vault_hermes_admin_user` | Basic auth username for Hermes Agent | `admin` |
 | `vault_hermes_admin_password` | Basic auth password for Hermes Agent | `admin` |
 | `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | Auto-generated unique 64-char hex secret (`~/homelab/.hermes_api_key`) |
-| `vault_forgejo_api_token_nobara_desktop_hermes` | Forgejo API access token for Hermes Agent container | `""` |
+| `vault_forgejo_api_token_hermes` | Forgejo API access token for Hermes Agent container | `""` |
 | `vault_glances_username` | Basic auth username for the Glances web server | `glances` |
 | `vault_glances_password` | Basic auth password for the Glances web server | `""` (no auth) |
 
@@ -260,11 +260,11 @@ Unencrypted template structure before executing `ansible-vault encrypt`:
 
 ```yaml
 ---
-# Forgejo Initial Credentials
+# Forgejo Initial Credentials & Dashboard Tokens
 vault_forgejo_admin_user: "admin"
 vault_forgejo_admin_password: "SuperSecretForgejoPassword"
 vault_forgejo_admin_email: "admin@homelab.local"
-vault_forgejo_api_token: "SuperSecretForgejoApiToken"
+vault_forgejo_api_token_homepage: "SuperSecretForgejoApiTokenForHomepage"
 
 # SillyTavern Authentication
 vault_sillytavern_user: "admin"
@@ -275,7 +275,7 @@ vault_sillytavern_api_key: ""
 vault_hermes_admin_user: "admin"
 vault_hermes_admin_password: "SuperSecretHermesPassword"
 vault_hermes_api_server_key: "SuperSecretHermesApiKey"
-vault_forgejo_api_token_nobara_desktop_hermes: "SuperSecretForgejoApiTokenForHermes"
+vault_forgejo_api_token_hermes: "SuperSecretForgejoApiTokenForHermes"
 
 # Glances Authentication
 vault_glances_username: "glances"
