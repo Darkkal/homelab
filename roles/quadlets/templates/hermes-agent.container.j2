@@ -26,7 +26,6 @@ Environment=FORGEJO_API_TOKEN={{ hermes_forgejo_api_token }}
 PublishPort={{ hermes_port | default(8383) }}:9119
 PublishPort={{ hermes_api_server_port | default(8642) }}:{{ hermes_api_server_port | default(8642) }}
 Volume={{ hermes_data_dir }}:/opt/data:Z
-Volume={{ hermes_shared_projects_dir }}:/workspace/shared_projects:Z
 Exec=gateway run
 
 Label=homepage.group="Web Services"

@@ -92,10 +92,6 @@ Wan2GP persistent data, checkpoints, and generated videos are stored in isolated
 | `~/homelab/wan2gp/plugins` | `/workspace/plugins` | Installed third-party user plugins (e.g. Gallery, LoRA Manager, Wildcards) |
 | `~/homelab/wan2gp/finetunes` | `/workspace/finetunes` | Custom finetune JSON configurations |
 
-
-
-
-
 ---
 
 ### Service Host Configuration (`inventory/group_vars/service_hosts.yml`)
@@ -108,7 +104,6 @@ These settings apply to target hosts in the `service_hosts` group:
 | `forgejo_port` | `3003` | Host web port for direct Forgejo access. |
 | `forgejo_root_url` | `/` | Forgejo `ROOT_URL`. Set to a relative root (`/`) so generated links follow whatever hostname/IP is used to access Forgejo; override with an absolute URL (e.g. `http://forgejo.local/`) if needed. |
 | `hermes_data_dir` | `~/homelab/hermes` | Directory for Hermes Agent persistent data. |
-| `hermes_shared_projects_dir` | `~/homelab/shared_projects` | Shared directory for host user and Hermes container coding projects (`0777` permissions). |
 | `hermes_port` | `8383` | Host web port for direct Hermes Agent access. |
 | `hermes_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Hermes Agent backend calls. |
 | `hermes_api_server_enabled` | `true` | Enable Hermes Agent built-in OpenAI-compatible API server. |
@@ -205,7 +200,6 @@ Hermes Agent maintains its active platform channels (e.g. Discord, Telegram), AP
 
 - **Initial Setup**: Ansible deploys `hermes_config.yaml.j2` on initial installation with `force: false`.
 - **Runtime Persistence**: Because `force: false` is configured, settings and credentials added via the Hermes Web UI or CLI are preserved across playbook runs and will not be overwritten by Ansible.
-- **Shared Projects Directory (`hermes_shared_projects_dir`)**: Coding projects shared between the host user (`darkkal`) and Hermes Agent are stored in `~/homelab/shared_projects` and mounted inside the container at `/workspace/shared_projects:Z`. To ensure both the host user and the container process (running under rootless Podman subUID mapping) have full access, Ansible initializes this host directory with `mode: '0777'`.
 
 ---
 

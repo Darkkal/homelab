@@ -32,4 +32,3 @@ lan_subnet: "{{ host_lan_subnet | default(ansible_facts['default_ipv4']['network
 # Podman container auto-update configuration
 enable_podman_auto_update: true
 podman_auto_update_schedule: "Tue *-*-* 04:00:00"
-
