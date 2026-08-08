@@ -19,6 +19,10 @@ Environment=API_SERVER_KEY={{ hermes_api_server_key }}
 {% if hermes_openai_api_key is defined and hermes_openai_api_key %}
 Environment=OPENAI_API_KEY={{ hermes_openai_api_key }}
 {% endif %}
+{% if hermes_forgejo_api_token is defined and hermes_forgejo_api_token %}
+Environment=FORGEJO_TOKEN={{ hermes_forgejo_api_token }}
+Environment=FORGEJO_API_TOKEN={{ hermes_forgejo_api_token }}
+{% endif %}
 PublishPort={{ hermes_port | default(8383) }}:9119
 PublishPort={{ hermes_api_server_port | default(8642) }}:{{ hermes_api_server_port | default(8642) }}
 Volume={{ hermes_data_dir }}:/opt/data:Z

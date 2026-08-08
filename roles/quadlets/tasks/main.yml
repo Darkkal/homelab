@@ -35,6 +35,19 @@
   failed_when: false
   notify: Restart hermes-agent service
 
+- name: Ensure Hermes .env FORGEJO_TOKEN matches Ansible configuration
+  ansible.builtin.lineinfile:
+    path: "{{ hermes_data_dir }}/.env"
+    regexp: "^FORGEJO_TOKEN="
+    line: "FORGEJO_TOKEN={{ hermes_forgejo_api_token }}"
+    create: false
+  when:
+    - "'hermes-agent' in quadlet_services"
+    - hermes_forgejo_api_token != ''
+  become: true
+  failed_when: false
+  notify: Restart hermes-agent service
+
 - name: Deploy SearXNG configuration file
   ansible.builtin.template:
     src: searxng_settings.yml.j2

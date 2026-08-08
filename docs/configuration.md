@@ -250,6 +250,7 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_hermes_admin_user` | Basic auth username for Hermes Agent | `admin` |
 | `vault_hermes_admin_password` | Basic auth password for Hermes Agent | `admin` |
 | `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | Auto-generated unique 64-char hex secret (`~/homelab/.hermes_api_key`) |
+| `vault_forgejo_api_token_nobara_desktop_hermes` | Forgejo API access token for Hermes Agent container | `""` |
 | `vault_glances_username` | Basic auth username for the Glances web server | `glances` |
 | `vault_glances_password` | Basic auth password for the Glances web server | `""` (no auth) |
 
@@ -270,10 +271,11 @@ vault_sillytavern_user: "admin"
 vault_sillytavern_password: "SuperSecretSillyTavernPassword"
 vault_sillytavern_api_key: ""
 
-# Hermes Agent Authentication
+# Hermes Agent Authentication & Tokens
 vault_hermes_admin_user: "admin"
 vault_hermes_admin_password: "SuperSecretHermesPassword"
 vault_hermes_api_server_key: "SuperSecretHermesApiKey"
+vault_forgejo_api_token_nobara_desktop_hermes: "SuperSecretForgejoApiTokenForHermes"
 
 # Glances Authentication
 vault_glances_username: "glances"

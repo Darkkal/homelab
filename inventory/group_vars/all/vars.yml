@@ -19,6 +19,7 @@ sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
 hermes_admin_user: "{{ vault_hermes_admin_user | default('admin') }}"
 hermes_admin_password: "{{ vault_hermes_admin_password | default('admin') }}"
 hermes_api_server_key: "{{ vault_hermes_api_server_key | default(lookup('password', homelab_data_dir + '/.hermes_api_key length=64 chars=hexdigits')) }}"
+hermes_forgejo_api_token: "{{ vault_forgejo_api_token_nobara_desktop_hermes | default(vault_hermes_forgejo_token | default('')) }}"
 
 glances_username: "{{ vault_glances_username | default('glances') }}"
 glances_password: "{{ vault_glances_password | default('') }}"
