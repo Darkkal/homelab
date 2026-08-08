@@ -14,6 +14,7 @@ openwebui_searxng_query_url: "http://searxng:8080/search?q=<query>"
 openwebui_web_loader_engine: "playwright"
 openwebui_playwright_ws_uri: "ws://playwright:3000"
 hermes_data_dir: "{{ homelab_data_dir }}/hermes"
+hermes_shared_projects_dir: "{{ homelab_data_dir }}/shared_projects"
 hermes_port: 8383
 hermes_openai_api_base_url: "http://llama-swap:8080/v1"
 hermes_default_model: "qwen3.6-35b-mtp"

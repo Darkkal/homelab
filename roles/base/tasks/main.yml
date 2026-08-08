@@ -31,6 +31,13 @@
     - "{{ homelab_data_dir }}/searxng"
   when: "'service_hosts' in group_names"
 
+- name: Ensure Hermes shared projects directory exists with write permissions for host and container user
+  ansible.builtin.file:
+    path: "{{ hermes_shared_projects_dir }}"
+    state: directory
+    mode: '0777'
+  when: "'service_hosts' in group_names"
+
 - name: Ensure inference host data directories exist
   ansible.builtin.file:
     path: "{{ item }}"
