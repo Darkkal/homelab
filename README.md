@@ -101,7 +101,7 @@ ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vau
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern open-webui hermes-agent llama-swap forgejo glances searxng playwright
+systemctl --user status caddy sillytavern open-webui hermes-agent llama-swap forgejo glances searxng playwright piclaw
 ```
 
 Verify mDNS address resolution from your local workstation:
@@ -124,6 +124,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:8383`<br>`http://<host-ip>:8642` | Web UI / API | Hermes agent service backend & UI (port 8383) and OpenAI-compatible API server (port 8642). Basic HTTP auth supported. | `service_hosts` |
 | **SearXNG** | `http://searxng.local` | `http://<host-ip>:8082` | Web UI / API | Self-hosted search aggregator for Open WebUI and Hermes Agent. Proxied via Caddy. | `service_hosts` |
 | **Playwright** | — | `http://<host-ip>:3004` | WebSocket / HTTP | Headless browser scraping service for Open WebUI web loader (`ws://playwright:3000`). | `service_hosts` |
+| **PiClaw** | `http://piclaw.local` | `http://<host-ip>:8083` | Web UI (HTTP) | Stateful AI coding agent & workspace interface. Proxied via Caddy. Data in `~/homelab/piclaw`. | `service_hosts` |
 | **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:7801` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
 | **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:7860` | Web UI (HTTP) | Generative video creation server. Proxied via Caddy. | `inference_hosts` |
 | **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |

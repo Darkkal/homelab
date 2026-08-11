@@ -1,0 +1,35 @@
+[Unit]
+Description=PiClaw AI Workspace & Coding Agent
+After=network-online.target
+
+[Container]
+ContainerName=piclaw
+Image=ghcr.io/rcarmo/piclaw:latest
+AutoUpdate={{ piclaw_autoupdate | default('registry') }}
+Network={{ network_name }}
+Environment=PICLAW_WEB_PORT=8080
+Environment=PICLAW_ASSISTANT_NAME={{ piclaw_assistant_name | default('PiClaw') }}
+Environment=PICLAW_TRUST_PROXY=1
+{% if piclaw_api_token is defined and piclaw_api_token %}
+Environment=PICLAW_WEB_STATE_TOKEN={{ piclaw_api_token }}
+Environment=PICLAW_STATE_TOKEN={{ piclaw_api_token }}
+{% endif %}
+{% if piclaw_forgejo_api_token is defined and piclaw_forgejo_api_token %}
+Environment=FORGEJO_TOKEN={{ piclaw_forgejo_api_token }}
+Environment=GH_TOKEN={{ piclaw_forgejo_api_token }}
+{% endif %}
+PublishPort={{ piclaw_port | default(8083) }}:8080
+Volume={{ piclaw_data_dir }}/config:/config:Z
+Volume={{ piclaw_data_dir }}/workspace:/workspace:Z
+
+Label=homepage.group="Web Services"
+Label=homepage.name="PiClaw"
+Label=homepage.icon=code.png
+Label=homepage.href=http://piclaw.local
+Label=homepage.description="Stateful AI Workspace & Coding Agent"
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

@@ -57,7 +57,7 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `searxng`, `playwright`, `forgejo`, `homepage`, `glances`, and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, and `avahi`.
   - Frontend AI applications (`sillytavern`, `open-webui`, `hermes-agent`) route model completion calls internally to `llama-swap:8080`.
   - `searxng` acts as the self-hosted search aggregator for Open WebUI and Hermes Agent web search operations over `homelab.network:8080`.
   - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
