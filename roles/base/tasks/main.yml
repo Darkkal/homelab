@@ -29,6 +29,9 @@
     - "{{ homelab_data_dir }}/homepage/config"
     - "{{ homelab_data_dir }}/glances"
     - "{{ homelab_data_dir }}/searxng"
+    - "{{ homelab_data_dir }}/piclaw"
+    - "{{ homelab_data_dir }}/piclaw/config"
+    - "{{ homelab_data_dir }}/piclaw/workspace"
   when: "'service_hosts' in group_names"
 
 - name: Ensure inference host data directories exist
@@ -42,6 +45,8 @@
     - "{{ homelab_data_dir }}/swarmui/Data"
     - "{{ homelab_data_dir }}/swarmui/Models"
     - "{{ homelab_data_dir }}/swarmui/Output"
+    - "{{ homelab_data_dir }}/swarmui/dlbackend"
+    - "{{ homelab_data_dir }}/swarmui/DLNodes"
   when: "'inference_hosts' in group_names"
 
 - name: Ensure Wan2GP data directories exist with write permissions for rootless container user

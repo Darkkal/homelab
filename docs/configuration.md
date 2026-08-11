@@ -77,6 +77,8 @@ SwarmUI persistent data, models, and generated outputs are stored in isolated su
 | `~/homelab/swarmui/Data` | `/SwarmUI/Data` | Core application settings and state |
 | `~/homelab/swarmui/Models` | `/SwarmUI/Models` | SwarmUI image models (SDXL, Flux, LoRAs, VAEs) |
 | `~/homelab/swarmui/Output` | `/SwarmUI/Output` | Generated images and media output |
+| `~/homelab/swarmui/dlbackend` | `/SwarmUI/dlbackend` | Deep learning backends, venvs, and self-starting ComfyUI dependencies |
+| `~/homelab/swarmui/DLNodes` | `/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes` | Downloaded custom nodes and backend extension nodes |
 
 #### Wan2GP Volume Structure
 
@@ -94,7 +96,7 @@ Wan2GP persistent data, checkpoints, and generated videos are stored in isolated
 
 ---
 
-### Service Host Configuration (`inventory/group_vars/service_hosts.yml`)
+## Service Host Configuration (`inventory/group_vars/service_hosts.yml`)
 
 These settings apply to target hosts in the `service_hosts` group:
 
@@ -127,6 +129,8 @@ These settings apply to target hosts in the `service_hosts` group:
 | `searxng_data_dir` | `~/homelab/searxng` | Directory for SearXNG settings and configuration. |
 | `searxng_port` | `8082` | Host web port for direct SearXNG search interface access (container internal port `8080`). |
 | `playwright_port` | `3004` | Host web port for direct Playwright browser scraping service access (container internal port `3000`). |
+| `piclaw_data_dir` | `~/homelab/piclaw` | Directory for PiClaw persistent configuration and workspace files. |
+| `piclaw_port` | `8083` | Host web port for direct PiClaw AI workspace access (container internal port `8080`). |
 
 #### Adding New Services to the Homepage Dashboard
 
@@ -220,6 +224,7 @@ Caddy upstream variables define where requests to `*.local` hostnames are routed
 | `wan2gp_upstream` | `wan2gp:7860` | `wan2gp.local` |
 | `homepage_upstream` | `homepage:3000` | `homepage.local` |
 | `glances_upstream` | `glances:61208` | `glances.local` |
+| `piclaw_upstream` | `piclaw:8080` | `piclaw.local` |
 
 ---
 
@@ -245,6 +250,8 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_hermes_admin_password` | Basic auth password for Hermes Agent | `admin` |
 | `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | Auto-generated unique 64-char hex secret (`~/homelab/.hermes_api_key`) |
 | `vault_forgejo_api_token_hermes` | Forgejo API access token for Hermes Agent container | `""` |
+| `vault_forgejo_api_token_piclaw` | Forgejo API access token for PiClaw container | `""` |
+| `vault_piclaw_api_token` | Bearer token API key for PiClaw state APIs (`/api/state`, `/api/state/events`) | Auto-generated unique 64-char hex secret (`~/homelab/.piclaw_api_token`) |
 | `vault_glances_username` | Basic auth username for the Glances web server | `glances` |
 | `vault_glances_password` | Basic auth password for the Glances web server | `""` (no auth) |
 
@@ -259,6 +266,10 @@ vault_forgejo_admin_user: "admin"
 vault_forgejo_admin_password: "SuperSecretForgejoPassword"
 vault_forgejo_admin_email: "admin@homelab.local"
 vault_forgejo_api_token_homepage: "SuperSecretForgejoApiTokenForHomepage"
+vault_forgejo_api_token_piclaw: "SuperSecretForgejoApiTokenForPiclaw"
+
+# PiClaw API State Token
+vault_piclaw_api_token: "SuperSecretPiclawApiToken"
 
 # SillyTavern Authentication
 vault_sillytavern_user: "admin"

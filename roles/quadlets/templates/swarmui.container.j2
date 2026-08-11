@@ -10,10 +10,14 @@ AutoUpdate={{ swarmui_autoupdate | default('local') }}
 Network={{ network_name }}
 PublishPort={{ swarmui_port | default(7801) }}:7801
 
+Environment=PIP_BREAK_SYSTEM_PACKAGES=1
+
 AddDevice=nvidia.com/gpu=all
 Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/Data:/SwarmUI/Data:Z
 Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/Models:/SwarmUI/Models:Z
 Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/Output:/SwarmUI/Output:Z
+Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/dlbackend:/SwarmUI/dlbackend:Z
+Volume={{ swarmui_data_dir | default(homelab_data_dir + '/swarmui') }}/DLNodes:/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes:Z
 
 Label=homepage.group="Inference"
 Label=homepage.name=SwarmUI
