@@ -104,7 +104,11 @@ These settings apply to target hosts in the `service_hosts` group:
 | :--- | :--- | :--- |
 | `avahi_aliases` | List of `.local` hostnames | Hostnames published via LAN mDNS (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`). |
 | `forgejo_port` | `3003` | Host web port for direct Forgejo access. |
-| `forgejo_root_url` | `/` | Forgejo `ROOT_URL`. Set to a relative root (`/`) so generated links follow whatever hostname/IP is used to access Forgejo; override with an absolute URL (e.g. `http://forgejo.local/`) if needed. |
+| `forgejo_image` | `codeberg.org/forgejo/forgejo:16` | Forgejo container image. Tracks the latest major (auto-updated via the `registry` label). Bumped off the old `:10` pin for the LFS upload quota nil-pointer fix (v10/v12 crash on LFS batch uploads when `ctx.Doer` is nil). Forgejo publishes no `:latest` tag, so `:16` is the newest major. |
+| `forgejo_root_url` | `http://forgejo.local/` | Forgejo `ROOT_URL` (`[server] ROOT_URL`). Must match the primary site URL so generated links (web UI, mail, webhooks, OAuth2) are correct and the admin-page mismatch warning is not shown. |
+| `forgejo_populate_squash_comment_with_commit_messages` | `true` | Include all PR commit messages in default squash-merge messages (`[repository] POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES`). |
+| `forgejo_lfs_start_server` | `true` | Enable Git LFS support (`[server] LFS_START_SERVER`). |
+| `forgejo_lfs_path` | `/data/git/lfs` | Container path for Git LFS content (`[lfs] PATH`). Must be under a directory writable by the container's git user; maps to host `~/homelab/forgejo/git/lfs` via the `/data` volume mount. |
 | `hermes_data_dir` | `~/homelab/hermes` | Directory for Hermes Agent persistent data. |
 | `hermes_port` | `8383` | Host web port for direct Hermes Agent access. |
 | `hermes_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Hermes Agent backend calls. |
