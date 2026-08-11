@@ -34,6 +34,9 @@ searxng_data_dir: "{{ homelab_data_dir }}/searxng"
 searxng_port: 8082
 playwright_port: 3004
 
+piclaw_data_dir: "{{ homelab_data_dir }}/piclaw"
+piclaw_port: 8083
+
 avahi_aliases:
   - sillytavern.local
   - forgejo.local
@@ -45,3 +48,4 @@ avahi_aliases:
   - homepage.local
   - glances.local
   - searxng.local
+  - piclaw.local

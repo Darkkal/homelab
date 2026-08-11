@@ -36,6 +36,7 @@
           - playwright
           - homepage
           - glances
+          - piclaw
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts
