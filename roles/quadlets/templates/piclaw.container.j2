@@ -10,13 +10,17 @@ Network={{ network_name }}
 Environment=PICLAW_WEB_PORT=8080
 Environment=PICLAW_ASSISTANT_NAME={{ piclaw_assistant_name | default('PiClaw') }}
 Environment=PICLAW_TRUST_PROXY=1
+Environment=FORGEJO_URL={{ piclaw_forgejo_url | default('http://forgejo:3003') }}
 {% if piclaw_api_token is defined and piclaw_api_token %}
 Environment=PICLAW_WEB_STATE_TOKEN={{ piclaw_api_token }}
 Environment=PICLAW_STATE_TOKEN={{ piclaw_api_token }}
 {% endif %}
 {% if piclaw_forgejo_api_token is defined and piclaw_forgejo_api_token %}
 Environment=FORGEJO_TOKEN={{ piclaw_forgejo_api_token }}
-Environment=GH_TOKEN={{ piclaw_forgejo_api_token }}
+{% endif %}
+{% if piclaw_github_api_token is defined and piclaw_github_api_token %}
+Environment=GH_TOKEN={{ piclaw_github_api_token }}
+Environment=GITHUB_TOKEN={{ piclaw_github_api_token }}
 {% endif %}
 PublishPort={{ piclaw_port | default(8083) }}:8080
 Volume={{ piclaw_data_dir }}/config:/config:Z

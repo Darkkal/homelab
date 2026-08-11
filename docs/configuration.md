@@ -251,6 +251,7 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | Auto-generated unique 64-char hex secret (`~/homelab/.hermes_api_key`) |
 | `vault_forgejo_api_token_hermes` | Forgejo API access token for Hermes Agent container | `""` |
 | `vault_forgejo_api_token_piclaw` | Forgejo API access token for PiClaw container | `""` |
+| `vault_github_api_token_piclaw` | GitHub Personal Access Token for PiClaw container (`GH_TOKEN` / `GITHUB_TOKEN`) | `""` |
 | `vault_piclaw_api_token` | Bearer token API key for PiClaw state APIs (`/api/state`, `/api/state/events`) | Auto-generated unique 64-char hex secret (`~/homelab/.piclaw_api_token`) |
 | `vault_glances_username` | Basic auth username for the Glances web server | `glances` |
 | `vault_glances_password` | Basic auth password for the Glances web server | `""` (no auth) |
@@ -267,6 +268,7 @@ vault_forgejo_admin_password: "SuperSecretForgejoPassword"
 vault_forgejo_admin_email: "admin@homelab.local"
 vault_forgejo_api_token_homepage: "SuperSecretForgejoApiTokenForHomepage"
 vault_forgejo_api_token_piclaw: "SuperSecretForgejoApiTokenForPiclaw"
+vault_github_api_token_piclaw: "SuperSecretGitHubTokenForPiclaw"
 
 # PiClaw API State Token
 vault_piclaw_api_token: "SuperSecretPiclawApiToken"
