@@ -90,7 +90,7 @@ graph TD
 5. **Direct Port Exposure**:
    - Every web-accessible service publishes a direct host port (see the README service table) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy.
    - Forgejo binds web port `3003` and SSH port `222` directly to the host for non-proxied or SSH access.
-   - The Homepage dashboard rewrites service links to the direct `host:port` form when it is accessed via IP instead of mDNS (see `homepage.custom.js`).
+   - The Homepage dashboard rewrites service links to the direct `host:port` form when it is accessed via IP instead of mDNS (see `homepage.custom.js`). The rewrite map is templated from the same port variables as the Quadlet `PublishPort` directives, so every discovered service is covered.
 
 > [!NOTE]
 > Direct host-port access and the Homepage IP-aware link rewriting assume a **single-host deployment** (both `inference_hosts` and `service_hosts` on the same machine, the default topology). On a split-host topology, the direct port of each service belongs to its own host, so `<host-ip>:<port>` links must be resolved per-host. This is a known limitation to be addressed in a future release.

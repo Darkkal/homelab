@@ -14,6 +14,8 @@
     'forgejo.local': {{ forgejo_port | default(3003) }},
     'homepage.local': {{ homepage_port | default(3002) }},
     'glances.local': {{ glances_port | default(61208) }},
+    'searxng.local': {{ searxng_port | default(8082) }},
+    'piclaw.local': {{ piclaw_port | default(8083) }},
   };
 
   const origin = window.location.protocol + '//' + hostname;
@@ -24,13 +26,22 @@
       if (!href) {
         return;
       }
-      for (const service of Object.keys(servicePorts)) {
-        const prefix = window.location.protocol + '//' + service;
-        if (href.startsWith(prefix)) {
-          const path = href.slice(prefix.length);
-          anchor.setAttribute('href', origin + ':' + servicePorts[service] + path);
-          break;
-        }
+      let url;
+      try {
+        url = new URL(href, window.location.href);
+      } catch (e) {
+        return;
+      }
+      if (!url.hostname.endsWith('.local')) {
+        return;
+      }
+      const port = servicePorts[url.hostname];
+      if (!port) {
+        return;
+      }
+      const rewritten = origin + ':' + port + url.pathname + url.search + url.hash;
+      if (anchor.getAttribute('href') !== rewritten) {
+        anchor.setAttribute('href', rewritten);
       }
     });
   };
@@ -40,5 +51,7 @@
   const observer = new MutationObserver(function () {
     rewrite(document);
   });
-  observer.observe(document.body, { childList: true, subtree: true });
+  observer.observe(document.body, { childList: true, subtree: true, attributes: true, attributeFilter: ['href'] });
+  window.setTimeout(function () { rewrite(document); }, 1000);
+  window.setTimeout(function () { rewrite(document); }, 3000);
 })();
