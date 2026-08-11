@@ -4,16 +4,19 @@ After=network-online.target
 
 [Container]
 ContainerName=forgejo
-Image=codeberg.org/forgejo/forgejo:10
+Image={{ forgejo_image | default('codeberg.org/forgejo/forgejo:16') }}
 AutoUpdate={{ forgejo_autoupdate | default('registry') }}
 Network={{ network_name }}
 Environment=USER_UID=1000
 Environment=USER_GID=1000
-Environment=FORGEJO__server__ROOT_URL={{ forgejo_root_url | default('/') }}
+Environment=FORGEJO__server__ROOT_URL={{ forgejo_root_url | default('http://forgejo.local/') }}
 Environment=FORGEJO__server__DOMAIN=forgejo.local
 Environment=FORGEJO__server__HTTP_PORT={{ forgejo_port | default(3003) }}
 Environment=FORGEJO__server__SSH_PORT=222
 Environment=FORGEJO__server__SSH_DOMAIN=forgejo.local
+Environment=FORGEJO__repository__POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES={{ forgejo_populate_squash_comment_with_commit_messages | default('false') }}
+Environment=FORGEJO__server__LFS_START_SERVER={{ forgejo_lfs_start_server | default('false') }}
+Environment=FORGEJO__lfs__PATH={{ forgejo_lfs_path | default('/data/git/lfs') }}
 {% if forgejo_admin_user is defined and forgejo_admin_user %}
 Environment=FORGEJO_ADMIN_USER={{ forgejo_admin_user }}
 {% endif %}
