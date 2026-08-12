@@ -33,12 +33,12 @@ piclaw_port: 8083
 
 uptrace_data_dir: "{{ homelab_data_dir }}/uptrace"
 uptrace_port: 14318
-uptrace_image: "uptrace/uptrace:2.0.3"
+uptrace_image: "docker.io/uptrace/uptrace:2.0.3"
 uptrace_autoupdate: disabled
-uptrace_clickhouse_image: "clickhouse/clickhouse-server:26.3"
-uptrace_postgres_image: "postgres:17-alpine"
-uptrace_redis_image: "redis:6.2.2-alpine"
-uptrace_otelcol_image: "otel/opentelemetry-collector-contrib:0.123.0"
+uptrace_clickhouse_image: "docker.io/clickhouse/clickhouse-server:26.3"
+uptrace_postgres_image: "docker.io/library/postgres:17-alpine"
+uptrace_redis_image: "docker.io/library/redis:6.2.2-alpine"
+uptrace_otelcol_image: "docker.io/otel/opentelemetry-collector-contrib:0.123.0"
 
 avahi_aliases:
   - sillytavern.local
