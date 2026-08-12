@@ -14,40 +14,6 @@
   when: "'llama-swap' in quadlet_services"
   notify: Restart llama-swap service
 
-- name: Deploy Hermes configuration file
-  ansible.builtin.template:
-    src: hermes_config.yaml.j2
-    dest: "{{ hermes_data_dir }}/config.yaml"
-    mode: "0644"
-    force: false
-  when: "'hermes-agent' in quadlet_services"
-  become: true
-  notify: Restart hermes-agent service
-
-- name: Ensure Hermes .env API_SERVER_KEY matches Ansible configuration
-  ansible.builtin.lineinfile:
-    path: "{{ hermes_data_dir }}/.env"
-    regexp: "^API_SERVER_KEY="
-    line: "API_SERVER_KEY={{ hermes_api_server_key }}"
-    create: false
-  when: "'hermes-agent' in quadlet_services"
-  become: true
-  failed_when: false
-  notify: Restart hermes-agent service
-
-- name: Ensure Hermes .env FORGEJO_TOKEN matches Ansible configuration
-  ansible.builtin.lineinfile:
-    path: "{{ hermes_data_dir }}/.env"
-    regexp: "^FORGEJO_TOKEN="
-    line: "FORGEJO_TOKEN={{ hermes_forgejo_api_token }}"
-    create: false
-  when:
-    - "'hermes-agent' in quadlet_services"
-    - hermes_forgejo_api_token != ''
-  become: true
-  failed_when: false
-  notify: Restart hermes-agent service
-
 - name: Deploy SearXNG configuration file
   ansible.builtin.template:
     src: searxng_settings.yml.j2
@@ -103,22 +69,6 @@
     dest: "{{ quadlet_dir }}/swarmui.build"
     mode: "0644"
   when: "'swarmui' in quadlet_services"
-  notify: Reload user systemd
-
-- name: Deploy Wan2GP Dockerfile template
-  ansible.builtin.template:
-    src: wan2gp.Dockerfile.j2
-    dest: "{{ quadlet_dir }}/wan2gp.Dockerfile"
-    mode: "0644"
-  when: "'wan2gp' in quadlet_services"
-  notify: Reload user systemd
-
-- name: Deploy Wan2GP Quadlet build definition
-  ansible.builtin.template:
-    src: wan2gp.build.j2
-    dest: "{{ quadlet_dir }}/wan2gp.build"
-    mode: "0644"
-  when: "'wan2gp' in quadlet_services"
   notify: Reload user systemd
 
 - name: Deploy Quadlet container definitions
