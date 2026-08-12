@@ -28,7 +28,6 @@ graph TD
     subgraph service_hosts ["service_hosts (App & Proxy Node)"]
         Caddy -->|homelab.network| SillyTavern[SillyTavern]
         Caddy -->|homelab.network| OpenWebUI[Open WebUI]
-        Caddy -->|homelab.network| Hermes[Hermes Agent]
         Caddy -->|homelab.network| SearXNG[SearXNG]
         Caddy -->|Port 3003 / 222| Forgejo[Forgejo Git]
         Caddy -->|homelab.network| Homepage[Homepage]
@@ -39,27 +38,24 @@ graph TD
     subgraph inference_hosts ["inference_hosts (GPU Node)"]
         Caddy -->|homelab.network / LAN IP| LlamaSwap[llama-swap]
         Caddy -->|homelab.network / LAN IP| SwarmUI[SwarmUI]
-        Caddy -->|homelab.network / LAN IP| Wan2GP[Wan2GP]
     end
 
     SillyTavern -->|OpenAI API / homelab.network:8080| LlamaSwap
     OpenWebUI -->|OpenAI API / homelab.network:8080| LlamaSwap
     OpenWebUI -->|Search API / searxng:8080| SearXNG
-    Hermes -->|OpenAI API / homelab.network:8080| LlamaSwap
-    Hermes -->|Search API / searxng:8080| SearXNG
 ```
 
 ### Host Group Descriptions
 
 - **`inference_hosts`**:
   - Hosts equipped with GPUs for artificial intelligence and machine learning workloads.
-  - Deploys NVIDIA Container Toolkit (CDI generation) and Quadlet services such as `llama-swap`, `SwarmUI`, and `Wan2GP`.
+  - Deploys NVIDIA Container Toolkit (CDI generation) and Quadlet services such as `llama-swap` and `SwarmUI`.
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `hermes-agent`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, and `avahi`.
-  - Frontend AI applications (`sillytavern`, `open-webui`, `hermes-agent`) route model completion calls internally to `llama-swap:8080`.
-  - `searxng` acts as the self-hosted search aggregator for Open WebUI and Hermes Agent web search operations over `homelab.network:8080`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, and `avahi`.
+  - Frontend AI applications (`sillytavern`, `open-webui`) route model completion calls internally to `llama-swap:8080`.
+  - `searxng` acts as the self-hosted search aggregator for Open WebUI web search operations over `homelab.network:8080`.
   - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
   - `glances` monitors the host (CPU, memory, temp, uptime, disk) and exposes a REST API that Homepage's Glances info widget consumes over `homelab.network`.
 
@@ -85,7 +81,7 @@ graph TD
    - Caddy inspects the incoming HTTP `Host` header and forwards traffic to the corresponding container service port.
 4. **Unified LLM Inference Routing**:
    - `SillyTavern` connects directly to `http://llama-swap:8080/v1` over `homelab.network`.
-   - `Open WebUI` connects to both `http://llama-swap:8080/v1` (for raw model completions) and Hermes Agent's OpenAI-compatible API server at `http://hermes:8642/v1` (for agent-assisted chats) over `homelab.network`.
+   - `Open WebUI` connects to `http://llama-swap:8080/v1` for raw model completions over `homelab.network`.
    - `llama-swap` handles model swapping, VRAM allocation, and TTL-based model auto-unloading dynamically.
 5. **Direct Port Exposure**:
    - Every web-accessible service publishes a direct host port (see the README service table) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy.
@@ -171,7 +167,7 @@ Service containers pulled from remote registries include Quadlet `AutoUpdate={{ 
    - Automated updates are managed by the user systemd unit `podman-auto-update.timer`.
    - The default schedule is set to **every Tuesday at 4:00 AM** (`Tue *-*-* 04:00:00`) via a systemd drop-in override (`~/.config/systemd/user/podman-auto-update.timer.d/override.conf`).
    - When triggered, `podman auto-update` checks remote container registries for updated image tags. If a newer image is available, Podman pulls the image and restarts the container service cleanly.
-   - **Smart Pre-Check for Locally Built Services (SwarmUI & Wan2GP)**: To prevent expensive 10GB+ RAM/CPU container rebuilds when no code has changed, systemd service drop-in override (`~/.config/systemd/user/podman-auto-update.service.d/override.conf`) runs `~/homelab/bin/homelab-auto-rebuild-check.sh` before `podman auto-update`. The script checks upstream Git commit SHAs via `git ls-remote` in ~0.5 seconds. Rebuilds (`systemctl --user restart <service>-build.service`) are only triggered if new commits exist upstream; otherwise rebuilds are skipped entirely.
+   - **Smart Pre-Check for Locally Built Services (SwarmUI)**: To prevent expensive 10GB+ RAM/CPU container rebuilds when no code has changed, systemd service drop-in override (`~/.config/systemd/user/podman-auto-update.service.d/override.conf`) runs `~/homelab/bin/homelab-auto-rebuild-check.sh` before `podman auto-update`. The script checks upstream Git commit SHAs via `git ls-remote` in ~0.5 seconds. Rebuilds (`systemctl --user restart <service>-build.service`) are only triggered if new commits exist upstream; otherwise rebuilds are skipped entirely.
 
 2. **Holding Off or Disabling Updates for Specific Services**:
    - **Disable via Inventory Variable**: Set `<service>_autoupdate: "disabled"` in `inventory/group_vars/service_hosts.yml` or `inference_hosts.yml` (e.g. `openwebui_autoupdate: "disabled"`). Re-run the site playbook to update the Quadlet unit definition.

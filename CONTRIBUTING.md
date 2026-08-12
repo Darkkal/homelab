@@ -52,7 +52,7 @@ When persisting data for containerized services, follow this strategy to disting
 1. **Audit Application Structure**: Inspect the container image filesystem (`podman run --entrypoint /bin/ls ...`) and search codebase imports/references to determine directory roles.
 2. **Never Mask App Code / Python Packages**: Directories containing Python modules (`__init__.py`, source code) or application binaries must **not** be mounted as volumes over the host. Mounting over code packages causes `ModuleNotFoundError` or missing executable crashes (exit code 127/1).
 3. **Isolate User State**: Mount only true user data directories (checkpoints, models, outputs, presets, user plugins, settings) to subfolders under `~/homelab/<service>/`.
-4. **Rootless SELinux Labels**: Always append `:Z` relabeling flags to volume mounts (e.g. `Volume={{ wan2gp_data_dir }}/ckpts:/workspace/ckpts:Z`) for rootless SELinux permissions.
+4. **Rootless SELinux Labels**: Always append `:Z` relabeling flags to volume mounts (e.g. `Volume={{ swarmui_data_dir }}/Models:/SwarmUI/Models:Z`) for rootless SELinux permissions.
 5. **Register Host Data Directories in `base` Role**: Every new service host persistent data path (e.g. `{{ homelab_data_dir }}/<service>`) **must** be registered in `roles/base/tasks/main.yml` under `Ensure service host data directories exist` (or `Ensure inference host data directories exist`). This guarantees the target host directory exists before any configuration templates (`ansible.builtin.template`) or Quadlet units attempt to write files to it.
 
 
@@ -98,7 +98,7 @@ Before committing any playbook, role, or template changes, verify your changes:
 3. **Deployment Verification**:
    Ensure services build and systemd user services report healthy status:
    ```bash
-   systemctl --user status caddy sillytavern open-webui hermes-agent llama-swap forgejo
+   systemctl --user status caddy sillytavern open-webui llama-swap forgejo
    ```
 
 > **Note:** Build verification is not strictly required when solely modifying markdown documentation files.

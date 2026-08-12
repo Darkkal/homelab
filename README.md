@@ -101,7 +101,7 @@ ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vau
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern open-webui hermes-agent llama-swap forgejo glances searxng playwright piclaw
+systemctl --user status caddy sillytavern open-webui llama-swap forgejo glances searxng playwright piclaw
 ```
 
 Verify mDNS address resolution from your local workstation:
@@ -121,12 +121,10 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
 | **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:8000` | Web UI (HTTP) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
 | **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
-| **Hermes Agent** | `http://hermes.local` | `http://<host-ip>:8383`<br>`http://<host-ip>:8642` | Web UI / API | Hermes agent service backend & UI (port 8383) and OpenAI-compatible API server (port 8642). Basic HTTP auth supported. | `service_hosts` |
-| **SearXNG** | `http://searxng.local` | `http://<host-ip>:8082` | Web UI / API | Self-hosted search aggregator for Open WebUI and Hermes Agent. Proxied via Caddy. | `service_hosts` |
+| **SearXNG** | `http://searxng.local` | `http://<host-ip>:8082` | Web UI / API | Self-hosted search aggregator for Open WebUI. Proxied via Caddy. | `service_hosts` |
 | **Playwright** | — | `http://<host-ip>:3004` | WebSocket / HTTP | Headless browser scraping service for Open WebUI web loader (`ws://playwright:3000`). | `service_hosts` |
 | **PiClaw** | `http://piclaw.local` | `http://<host-ip>:8083` | Web UI (HTTP) | Stateful AI coding agent & workspace interface. Proxied via Caddy. Data in `~/homelab/piclaw`. | `service_hosts` |
 | **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:7801` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
-| **Wan2GP** | `http://wan2gp.local` | `http://<host-ip>:7860` | Web UI (HTTP) | Generative video creation server. Proxied via Caddy. | `inference_hosts` |
 | **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
 | **Forgejo (SSH)**| — | `ssh://git@<host-ip>:222` | Git over SSH | Git clone and push operations over SSH using port `222`. | `service_hosts` |
 | **Caddy Proxy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Proxy | Reverse proxy routing `.local` requests to Quadlet containers. | `service_hosts` |
@@ -159,7 +157,7 @@ If a device cannot resolve `.local` mDNS hostnames:
 2. **Static Host Overrides (`/etc/hosts` or `C:\Windows\System32\drivers\etc\hosts`)**:
    Add target host IP address and service hostnames:
    ```text
-   192.168.1.100  sillytavern.local hermes.local llamaswap.local forgejo.local openwebui.local glances.local
+   192.168.1.100  sillytavern.local llamaswap.local forgejo.local openwebui.local glances.local
    ```
 3. **Direct HTTP Host Header Verification**:
    ```bash
