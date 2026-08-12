@@ -141,3 +141,9 @@
     no_block: "{{ quadlet_no_block | default(false) }}"
     scope: user
   loop: "{{ quadlet_services }}"
+
+- name: Provision Uptrace dashboards
+  ansible.builtin.include_tasks: uptrace-dashboards.yml
+  when:
+    - "'uptrace' in quadlet_services"
+    - enable_uptrace_dashboards | default(true)

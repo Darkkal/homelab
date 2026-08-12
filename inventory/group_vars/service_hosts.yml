@@ -39,6 +39,8 @@ uptrace_clickhouse_image: "docker.io/clickhouse/clickhouse-server:26.3"
 uptrace_postgres_image: "docker.io/library/postgres:17-alpine"
 uptrace_redis_image: "docker.io/library/redis:6.2.2-alpine"
 uptrace_otelcol_image: "docker.io/otel/opentelemetry-collector-contrib:0.123.0"
+enable_uptrace_dashboards: true
+uptrace_project_id: 1
 
 avahi_aliases:
   - sillytavern.local

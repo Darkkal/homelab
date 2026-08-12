@@ -1,0 +1,109 @@
+---
+# Provisions Uptrace dashboards from roles/quadlets/files/dashboards/*.yml via
+# the Uptrace internal HTTP API. Idempotent: a dashboard is created (POST) when
+# missing, updated (PUT) when its local file hash differs from the last
+# provisioned hash, and skipped when unchanged.
+- name: Login to Uptrace API
+  ansible.builtin.uri:
+    url: "http://localhost:{{ uptrace_port | default(14318) }}/internal/v1/users/login"
+    method: POST
+    body_format: json
+    body:
+      email: "{{ uptrace_admin_email }}"
+      password: "{{ uptrace_admin_password }}"
+    headers:
+      Content-Type: application/json
+  register: uptrace_login
+  no_log: true
+  until: uptrace_login.status == 200
+  retries: 30
+  delay: 5
+
+- name: Extract Uptrace session token
+  ansible.builtin.set_fact:
+    uptrace_session_token: "{{ uptrace_login.set_cookie | regex_search('token=([^;]+)', '\\1') | first }}"
+  no_log: true
+
+- name: Fetch existing Uptrace dashboards
+  ansible.builtin.uri:
+    url: "http://localhost:{{ uptrace_port | default(14318) }}/internal/v1/metrics/{{ uptrace_project_id | default(1) }}/dashboards"
+    method: GET
+    headers:
+      Cookie: "token={{ uptrace_session_token }}"
+  register: uptrace_dashboards
+
+- name: Build map of existing dashboards by name
+  ansible.builtin.set_fact:
+    uptrace_existing: "{{ dict(uptrace_dashboards.json.dashboards | map(attribute='name') | zip(uptrace_dashboards.json.dashboards | map(attribute='id'))) }}"
+  when: uptrace_dashboards.json.dashboards is defined
+
+- name: Load prior dashboard provisioning state
+  ansible.builtin.set_fact:
+    uptrace_state: "{{ lookup('file', uptrace_data_dir + '/.dashboards.sha256', errors='ignore') | default('{}', true) | from_yaml | default({}) }}"
+
+- name: Compute dashboard file metadata
+  ansible.builtin.set_fact:
+    uptrace_dash_files: "{{ uptrace_dash_files | default([]) + [ { 'path': item, 'content': lookup('file', item), 'name': (lookup('file', item) | regex_search('name:\\s*[\"\\']?([^\"\\']+)', '\\1') | first), 'hash': (lookup('file', item) | hash('sha256')) } ] }}"
+  loop: "{{ query('fileglob', role_path + '/files/dashboards/*.yml') }}"
+
+- name: Provision Uptrace dashboards
+  ansible.builtin.uri:
+    url: "http://localhost:{{ uptrace_port | default(14318) }}/internal/v1/metrics/{{ uptrace_project_id | default(1) }}/dashboards{{ ('/' ~ uptrace_existing[item.name] ~ '/yaml') if item.name in uptrace_existing else '/yaml' }}"
+    method: "{{ 'PUT' if item.name in uptrace_existing else 'POST' }}"
+    body_format: raw
+    body: "{{ item.content }}"
+    headers:
+      Content-Type: text/yaml
+      Cookie: "token={{ uptrace_session_token }}"
+  loop: "{{ uptrace_dash_files }}"
+  when: "(item.name not in uptrace_existing) or (uptrace_state.get(item.name, '') != item.hash)"
+  no_log: true
+  register: uptrace_dash_prov
+
+- name: Write dashboard provisioning state
+  ansible.builtin.copy:
+    content: "{{ uptrace_dash_files | items2dict(key_name='name', value_name='hash') | to_nice_yaml }}"
+    dest: "{{ uptrace_data_dir }}/.dashboards.sha256"
+    mode: "0644"
+
+- name: Fetch existing Uptrace monitors
+  ansible.builtin.uri:
+    url: "http://localhost:{{ uptrace_port | default(14318) }}/internal/v1/projects/{{ uptrace_project_id | default(1) }}/monitors"
+    method: GET
+    headers:
+      Cookie: "token={{ uptrace_session_token }}"
+  register: uptrace_monitors
+
+- name: Build map of existing monitors by name
+  ansible.builtin.set_fact:
+    uptrace_existing_monitors: "{{ dict(uptrace_monitors.json.monitors | map(attribute='name') | zip(uptrace_monitors.json.monitors | map(attribute='id'))) }}"
+  when: uptrace_monitors.json.monitors is defined
+
+- name: Load prior monitor provisioning state
+  ansible.builtin.set_fact:
+    uptrace_monitor_state: "{{ lookup('file', uptrace_data_dir + '/.monitors.sha256', errors='ignore') | default('{}', true) | from_yaml | default({}) }}"
+
+- name: Build monitor payloads from dashboard templates
+  ansible.builtin.set_fact:
+    uptrace_monitor_payloads: "{{ uptrace_monitor_payloads | default([]) + (lookup('file', item) | uptrace_monitors) }}"
+  loop: "{{ query('fileglob', role_path + '/files/dashboards/*.yml') }}"
+
+- name: Provision Uptrace metric monitors
+  ansible.builtin.uri:
+    url: "http://localhost:{{ uptrace_port | default(14318) }}/internal/v1/projects/{{ uptrace_project_id | default(1) }}/monitors{{ ('/' ~ uptrace_existing_monitors[item.name]) if item.name in uptrace_existing_monitors else '' }}"
+    method: "{{ 'PUT' if item.name in uptrace_existing_monitors else 'POST' }}"
+    body_format: json
+    body: "{{ item.payload }}"
+    headers:
+      Content-Type: application/json
+      Cookie: "token={{ uptrace_session_token }}"
+  loop: "{{ uptrace_monitor_payloads }}"
+  when: "(item.name not in uptrace_existing_monitors) or (uptrace_monitor_state.get(item.name, '') != item.hash)"
+  no_log: true
+  register: uptrace_monitor_prov
+
+- name: Write monitor provisioning state
+  ansible.builtin.copy:
+    content: "{{ uptrace_monitor_payloads | items2dict(key_name='name', value_name='hash') | to_nice_yaml }}"
+    dest: "{{ uptrace_data_dir }}/.monitors.sha256"
+    mode: "0644"
