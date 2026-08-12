@@ -31,6 +31,15 @@ playwright_port: 3004
 piclaw_data_dir: "{{ homelab_data_dir }}/piclaw"
 piclaw_port: 8083
 
+uptrace_data_dir: "{{ homelab_data_dir }}/uptrace"
+uptrace_port: 14318
+uptrace_image: "uptrace/uptrace:2.0.3"
+uptrace_autoupdate: disabled
+uptrace_clickhouse_image: "clickhouse/clickhouse-server:26.3"
+uptrace_postgres_image: "postgres:17-alpine"
+uptrace_redis_image: "redis:6.2.2-alpine"
+uptrace_otelcol_image: "otel/opentelemetry-collector-contrib:0.123.0"
+
 avahi_aliases:
   - sillytavern.local
   - forgejo.local
@@ -41,3 +50,4 @@ avahi_aliases:
   - glances.local
   - searxng.local
   - piclaw.local
+  - uptrace.local
