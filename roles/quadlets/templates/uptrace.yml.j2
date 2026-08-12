@@ -4,7 +4,7 @@
 # =============================================================================
 service:
   env: production
-  secret: {{ uptrace_secret }}
+  secret: {{ uptrace_secret | to_json }}
 
 site:
   url: http://uptrace.local
@@ -16,9 +16,6 @@ listen:
   grpc:
     addr: :4317
 
-auth:
-  sign_up_disabled: true
-
 seed_data:
   update: true
   delete: false
@@ -26,8 +23,8 @@ seed_data:
   users:
     - key: user1
       name: Admin
-      email: {{ uptrace_admin_email }}
-      password: {{ uptrace_admin_password }}
+      email: {{ uptrace_admin_email | to_json }}
+      password: {{ uptrace_admin_password | to_json }}
       email_confirmed: true
 
   orgs:
@@ -48,7 +45,7 @@ seed_data:
   project_tokens:
     - key: project_token1
       project_key: project1
-      token: {{ uptrace_project_token }}
+      token: {{ uptrace_project_token | to_json }}
 
   project_users:
     - key: project_user1
@@ -65,7 +62,7 @@ ch_cluster:
         - addr: uptrace-clickhouse:9000
           database: uptrace
           user: uptrace
-          password: {{ uptrace_ch_password }}
+          password: {{ uptrace_ch_password | to_json }}
           dial_timeout: 3s
           write_timeout: 5s
           max_retries: 3
@@ -74,7 +71,7 @@ ch_cluster:
 pg:
   addr: uptrace-postgres:5432
   user: uptrace
-  password: {{ uptrace_pg_password }}
+  password: {{ uptrace_pg_password | to_json }}
   database: uptrace
 
 redis_cache:
@@ -84,18 +81,36 @@ redis_cache:
 ch_schema:
   compression: ZSTD(1)
 
-ch:
-  retention:
-    ttl:
-      traces: {{ uptrace_retention_traces | default('7 DAY') }}
-      metrics: {{ uptrace_retention_metrics | default('30 DAY') }}
-      logs: {{ uptrace_retention_logs | default('7 DAY') }}
+  spans_index:
+    storage_policy: 'default'
+    ttl_delete: {{ uptrace_retention_traces | default('7 DAY') }}
+  spans_data:
+    storage_policy: 'default'
+    ttl_delete: {{ uptrace_retention_traces | default('7 DAY') }}
+
+  logs_index:
+    storage_policy: 'default'
+    ttl_delete: {{ uptrace_retention_logs | default('7 DAY') }}
+  logs_data:
+    storage_policy: 'default'
+    ttl_delete: {{ uptrace_retention_logs | default('7 DAY') }}
+
+  events_index:
+    storage_policy: 'default'
+    ttl_delete: {{ uptrace_retention_logs | default('7 DAY') }}
+  events_data:
+    storage_policy: 'default'
+    ttl_delete: {{ uptrace_retention_logs | default('7 DAY') }}
+
+  metrics:
+    storage_policy: 'default'
+    ttl_delete: {{ uptrace_retention_metrics | default('30 DAY') }}
 
 alerting: {}
 service_graph: {}
 
 self_monitoring:
-  dsn: http://{{ uptrace_project_token }}@uptrace.local?grpc=14317
+  dsn: "http://{{ uptrace_project_token }}@uptrace.local?grpc=14317"
 
 logging:
   level: INFO

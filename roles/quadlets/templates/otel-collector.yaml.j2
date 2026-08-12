@@ -62,7 +62,7 @@ receivers:
     endpoint: uptrace-postgres:5432
     transport: tcp
     username: uptrace
-    password: {{ uptrace_pg_password }}
+    password: "{{ uptrace_pg_password }}"
     databases:
       - uptrace
     tls:
