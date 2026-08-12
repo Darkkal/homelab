@@ -47,7 +47,7 @@ receivers:
           Host: homepage.local
 {% if sillytavern_password %}
       - method: GET
-        endpoint: http://sillytavern:8000/api/status
+        endpoint: http://sillytavern:8000/
         headers:
           Authorization: "Basic {{ (sillytavern_user ~ ':' ~ sillytavern_password) | b64encode }}"
 {% endif %}
