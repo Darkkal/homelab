@@ -17,6 +17,7 @@ Environment=FORGEJO__server__SSH_DOMAIN=forgejo.local
 Environment=FORGEJO__repository__POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES={{ forgejo_populate_squash_comment_with_commit_messages | default('false') }}
 Environment=FORGEJO__server__LFS_START_SERVER={{ forgejo_lfs_start_server | default('false') }}
 Environment=FORGEJO__lfs__PATH={{ forgejo_lfs_path | default('/data/git/lfs') }}
+Environment=FORGEJO__metrics__ENABLED=true
 {% if forgejo_admin_user is defined and forgejo_admin_user %}
 Environment=FORGEJO_ADMIN_USER={{ forgejo_admin_user }}
 {% endif %}
