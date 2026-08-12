@@ -14,6 +14,7 @@
     'glances.local': {{ glances_port | default(61208) }},
     'searxng.local': {{ searxng_port | default(8082) }},
     'piclaw.local': {{ piclaw_port | default(8083) }},
+    'uptrace.local': {{ uptrace_port | default(14318) }},
   };
 
   const origin = window.location.protocol + '//' + hostname;
