@@ -14,16 +14,8 @@ http://openwebui.local {
     reverse_proxy {{ openwebui_upstream }}
 }
 
-http://hermes.local {
-    reverse_proxy {{ hermes_upstream }}
-}
-
 http://swarmui.local {
     reverse_proxy {{ swarmui_upstream }}
-}
-
-http://wan2gp.local {
-    reverse_proxy {{ wan2gp_upstream }}
 }
 
 http://homepage.local {
