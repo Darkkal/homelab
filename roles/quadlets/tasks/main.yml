@@ -79,10 +79,10 @@
   when: "'uptrace-otelcol' in quadlet_services"
   notify: Restart uptrace-otelcol service
 
-- name: Deploy Uptrace ClickHouse Prometheus configuration
+- name: Deploy Uptrace ClickHouse configuration
   ansible.builtin.template:
-    src: uptrace-prometheus.xml.j2
-    dest: "{{ uptrace_data_dir }}/ch-config/prometheus.xml"
+    src: uptrace-clickhouse.xml.j2
+    dest: "{{ uptrace_data_dir }}/ch-config/uptrace.xml"
     mode: "0644"
   when: "'uptrace-clickhouse' in quadlet_services"
   notify: Restart uptrace-clickhouse service
