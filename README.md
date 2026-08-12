@@ -101,7 +101,7 @@ ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vau
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern open-webui llama-swap forgejo glances searxng playwright piclaw
+systemctl --user status caddy sillytavern open-webui llama-swap forgejo glances searxng playwright piclaw uptrace uptrace-clickhouse uptrace-postgres uptrace-redis uptrace-otelcol
 ```
 
 Verify mDNS address resolution from your local workstation:
@@ -130,6 +130,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | **Caddy Proxy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Proxy | Reverse proxy routing `.local` requests to Quadlet containers. | `service_hosts` |
 | **Homepage** | `http://homepage.local` | `http://<host-ip>:3002` | Web UI (HTTP) | Single-page dashboard for all local services with bookmarks, site monitoring, and widgets. Proxied via Caddy. | `service_hosts` |
 | **Glances** | `http://glances.local` | `http://<host-ip>:61208` | Web UI / REST API | Host resource monitoring (CPU, memory, temp, uptime, disk) exposing the REST API consumed by the Homepage Glances info widget. Basic auth enabled. Proxied via Caddy. | `service_hosts` |
+| **Uptrace** | `http://uptrace.local` | `http://<host-ip>:14318` | Web UI / API (OTLP) | OpenTelemetry-based observability (distributed traces, metrics, logs) with ClickHouse, PostgreSQL, Redis, and an OTel Collector handling host metrics, synthetic health checks, and Prometheus scraping of llama-swap / Forgejo / ClickHouse. Proxied via Caddy. | `service_hosts` |
 | **Avahi Aliases**| Host native (`avahi-tools`) | mDNS (`*.local`) | mDNS Publishing | Publishes LAN mDNS aliases for local service resolution. | `service_hosts` |
 
 ---

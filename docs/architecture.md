@@ -33,6 +33,11 @@ graph TD
         Caddy -->|homelab.network| Homepage[Homepage]
         Caddy -->|homelab.network| Glances[Glances]
         OpenWebUI -->|WebSocket ws://playwright:3000| Playwright[Playwright]
+        UptraceCol[Uptrace OTel Collector] -->|OTLP / remote write| Uptrace[Uptrace]
+        UptraceCol -->|hostmetrics / synthetic checks| Services[All web services]
+        UptraceCol -->|Prometheus scrape| LlamaSwapMetrics[llama-swap /metrics]
+        UptraceCol -->|Prometheus scrape| ForgejoMetrics[Forgejo /metrics]
+        Uptrace -->|ClickHouse / PostgreSQL / Redis| UptraceDBs[(uptrace DBs)]
     end
 
     subgraph inference_hosts ["inference_hosts (GPU Node)"]
@@ -53,7 +58,7 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), and `avahi`.
   - Frontend AI applications (`sillytavern`, `open-webui`) route model completion calls internally to `llama-swap:8080`.
   - `searxng` acts as the self-hosted search aggregator for Open WebUI web search operations over `homelab.network:8080`.
   - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
@@ -133,6 +138,19 @@ Label groups match the `settings.yaml` layout keys so row layouts apply. Current
 ### Host resource monitoring
 
 The `glances` container publishes its REST API to the shared network, and the Homepage **Glances** info widget (`homepage.widgets.yaml.j2`) shows real **host** CPU, memory, temperature, uptime, and disk usage. Unlike the built-in `resources` widget (which reads only the Homepage container's own stats via `systeminformation`), the Glances widget reads host statistics from the Glances REST API. Glances runs with `--pid=host`, read-only `/sys`, `/etc/os-release`, and host-root (`/:/host`) mounts; the widget monitors host disk via `disk: /host`. Authentication is enforced with basic auth (`--password`) wired through `vault_glances_username` / `vault_glances_password`. A small `custom.css` rule (see below) makes the Glances widget span the full header row above the search/datetime widgets.
+
+### Uptrace observability
+
+Uptrace is the homelab's centralized OpenTelemetry observability platform (traces, metrics, logs). It runs as five Quadlet services on `service_hosts` — `uptrace` (APM UI + API + OTLP ingest), `uptrace-clickhouse`, `uptrace-postgres`, `uptrace-redis`, and `uptrace-otelcol` — all on the shared `homelab.network`. Only the Uptrace UI is published to the host (`14318`); all telemetry ingestion is internal to the network.
+
+The OTel Collector (`uptrace-otelcol`) is the integration hub and gathers telemetry through four paths:
+
+1. **Host metrics** — the `hostmetrics` receiver with `root_path: /host`, `--pid=host`, and read-only `/sys` + `/:/host` mounts (same pattern as Glances) reports host CPU/memory/disk/network/load.
+2. **Synthetic checks** — the `httpcheck` receiver polls each web service's health endpoint (e.g. `open-webui:8081/health`, `searxng:8080/healthz`, `llama-swap:8080/health`, `homepage:3000/`, `forgejo:3003/`, `caddy:80/` with a `Host` header) for availability/latency, using vault basic-auth credentials for the auth-protected services (`sillytavern`, `glances`).
+3. **Prometheus scrape → remote write** — the `prometheus` receiver scrapes llama-swap's `/metrics` (GPU temp, VRAM, util %, power draw), Forgejo's `/metrics` (enabled via `FORGEJO__metrics__ENABLED=true`), ClickHouse's Prometheus endpoint (enabled via a `config.d/prometheus.xml` drop-in on port `9363`), and the collector's own telemetry, exported to Uptrace via `prometheusremotewrite`.
+4. **Database receivers** — the `postgresql` and `redis` receivers monitor Uptrace's own PostgreSQL and Redis.
+
+An `otlp` receiver is also wired, so any homelab service can be instrumented later to stream traces/metrics/logs directly to Uptrace. A project DSN (`http://<project_token>@uptrace.local?grpc=14317`) authenticates ingestion; Uptrace self-monitors via the same DSN so the `uptrace` service appears in the UI automatically.
 
 ### Config files in the homepage config dir
 

@@ -112,6 +112,22 @@ These settings apply to target hosts in the `service_hosts` group:
 | `playwright_port` | `3004` | Host web port for direct Playwright browser scraping service access (container internal port `3000`). |
 | `piclaw_data_dir` | `~/homelab/piclaw` | Directory for PiClaw persistent configuration and workspace files. |
 | `piclaw_port` | `8083` | Host web port for direct PiClaw AI workspace access (container internal port `8080`). |
+| `uptrace_data_dir` | `~/homelab/uptrace` | Directory for Uptrace config, ClickHouse (`uptrace/ch`), PostgreSQL (`uptrace/pg`), and the ClickHouse Prometheus drop-in (`uptrace/ch-config`). |
+| `uptrace_port` | `14318` | Host web port for direct Uptrace UI access (container internal port `80`). |
+| `uptrace_image` | `uptrace/uptrace:2.0.3` | Uptrace container image. Pinned to a stable release; Uptrace only supports next-minor upgrades, so `uptrace_autoupdate` defaults to `disabled`. |
+| `uptrace_clickhouse_image` | `clickhouse/clickhouse-server:26.3` | ClickHouse telemetry store image. |
+| `uptrace_postgres_image` | `postgres:17-alpine` | Uptrace PostgreSQL metadata store image. |
+| `uptrace_redis_image` | `redis:6.2.2-alpine` | Uptrace Redis cache image. |
+| `uptrace_otelcol_image` | `otel/opentelemetry-collector-contrib:0.123.0` | OpenTelemetry Collector image handling host metrics, synthetic checks, and Prometheus scraping. |
+| `uptrace_admin_email` | `admin@homelab.local` | Initial Uptrace admin login email (from `vault_uptrace_admin_email`). |
+| `uptrace_admin_password` | `""` | Initial Uptrace admin login password (from `vault_uptrace_admin_password`). |
+| `uptrace_project_token` | auto-generated (`~/homelab/.uptrace_project_token`) | Write-only OTLP project token used in DSNs and collector ingestion. |
+| `uptrace_secret` | auto-generated (`~/homelab/.uptrace_secret`) | Uptrace `service.secret` for cryptographic operations. |
+| `uptrace_pg_password` | auto-generated (`~/homelab/.uptrace_pg_password`) | Uptrace PostgreSQL password. |
+| `uptrace_ch_password` | auto-generated (`~/homelab/.uptrace_ch_password`) | Uptrace ClickHouse password. |
+| `uptrace_retention_traces` | `7 DAY` | ClickHouse TTL for trace data. |
+| `uptrace_retention_metrics` | `30 DAY` | ClickHouse TTL for metric data. |
+| `uptrace_retention_logs` | `7 DAY` | ClickHouse TTL for log data. |
 
 #### Adding New Services to the Homepage Dashboard
 
@@ -197,6 +213,7 @@ Caddy upstream variables define where requests to `*.local` hostnames are routed
 | `homepage_upstream` | `homepage:3000` | `homepage.local` |
 | `glances_upstream` | `glances:61208` | `glances.local` |
 | `piclaw_upstream` | `piclaw:8080` | `piclaw.local` |
+| `uptrace_upstream` | `uptrace:80` | `uptrace.local` |
 
 ---
 
@@ -223,6 +240,9 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_piclaw_api_token` | Bearer token API key for PiClaw state APIs (`/api/state`, `/api/state/events`) | Auto-generated unique 64-char hex secret (`~/homelab/.piclaw_api_token`) |
 | `vault_glances_username` | Basic auth username for the Glances web server | `glances` |
 | `vault_glances_password` | Basic auth password for the Glances web server | `""` (no auth) |
+| `vault_uptrace_admin_email` | Initial Uptrace admin login email (seeded via `seed_data`) | `admin@homelab.local` |
+| `vault_uptrace_admin_password` | Initial Uptrace admin login password (seeded via `seed_data`) | `""` |
+| `vault_uptrace_project_token` | Uptrace project token used in OTLP DSNs and collector ingestion | Auto-generated (`~/homelab/.uptrace_project_token`) |
 
 ### `vault.yml` File Template
 
@@ -249,6 +269,11 @@ vault_sillytavern_api_key: ""
 # Glances Authentication
 vault_glances_username: "glances"
 vault_glances_password: "SuperSecretGlancesPassword"
+
+# Uptrace Observability
+vault_uptrace_admin_email: "admin@homelab.local"
+vault_uptrace_admin_password: "SuperSecretUptraceAdminPassword"
+# vault_uptrace_project_token: "SuperSecretUptraceProjectToken" (optional; auto-generated if omitted)
 ```
 
 ### Ansible Vault Utility Commands
