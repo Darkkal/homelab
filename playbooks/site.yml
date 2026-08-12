@@ -35,6 +35,11 @@
           - homepage
           - glances
           - piclaw
+          - uptrace-clickhouse
+          - uptrace-postgres
+          - uptrace-redis
+          - uptrace
+          - uptrace-otelcol
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts
