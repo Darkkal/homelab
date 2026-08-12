@@ -1,0 +1,20 @@
+[Unit]
+Description=Uptrace OpenTelemetry Collector
+After=network-online.target uptrace.service
+Requires=uptrace.service
+
+[Container]
+ContainerName=uptrace-otelcol
+Image={{ uptrace_otelcol_image | default('otel/opentelemetry-collector-contrib:0.123.0') }}
+AutoUpdate={{ uptrace_otelcol_autoupdate | default('registry') }}
+Network={{ network_name }}
+PodmanArgs=--pid=host
+Volume=/sys:/sys:ro
+Volume=/:/host:ro
+Volume={{ uptrace_data_dir }}/otel-collector.yaml:/etc/otelcol-contrib/config.yaml:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

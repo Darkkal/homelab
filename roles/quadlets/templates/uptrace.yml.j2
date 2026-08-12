@@ -1,0 +1,104 @@
+# =============================================================================
+# Uptrace Configuration (templated by Ansible)
+# Reference: https://uptrace.dev/get/hosted/config
+# =============================================================================
+service:
+  env: production
+  secret: {{ uptrace_secret }}
+
+site:
+  url: http://uptrace.local
+  ingest_url: http://uptrace.local?grpc=14317
+
+listen:
+  http:
+    addr: :80
+  grpc:
+    addr: :4317
+
+auth:
+  sign_up_disabled: true
+
+seed_data:
+  update: true
+  delete: false
+
+  users:
+    - key: user1
+      name: Admin
+      email: {{ uptrace_admin_email }}
+      password: {{ uptrace_admin_password }}
+      email_confirmed: true
+
+  orgs:
+    - key: org1
+      name: Homelab
+
+  org_users:
+    - key: org_user1
+      org_key: org1
+      user_key: user1
+      role: owner
+
+  projects:
+    - key: project1
+      name: Homelab
+      org_key: org1
+
+  project_tokens:
+    - key: project_token1
+      project_key: project1
+      token: {{ uptrace_project_token }}
+
+  project_users:
+    - key: project_user1
+      project_key: project1
+      org_user_key: org_user1
+      perm_level: admin
+
+ch_cluster:
+  cluster: uptrace1
+  replicated: false
+  distributed: false
+  shards:
+    - replicas:
+        - addr: uptrace-clickhouse:9000
+          database: uptrace
+          user: uptrace
+          password: {{ uptrace_ch_password }}
+          dial_timeout: 3s
+          write_timeout: 5s
+          max_retries: 3
+          max_execution_time: 15s
+
+pg:
+  addr: uptrace-postgres:5432
+  user: uptrace
+  password: {{ uptrace_pg_password }}
+  database: uptrace
+
+redis_cache:
+  addrs:
+    1: uptrace-redis:6379
+
+ch_schema:
+  compression: ZSTD(1)
+
+ch:
+  retention:
+    ttl:
+      traces: {{ uptrace_retention_traces | default('7 DAY') }}
+      metrics: {{ uptrace_retention_metrics | default('30 DAY') }}
+      logs: {{ uptrace_retention_logs | default('7 DAY') }}
+
+alerting: {}
+service_graph: {}
+
+self_monitoring:
+  dsn: http://{{ uptrace_project_token }}@uptrace.local?grpc=14317
+
+logging:
+  level: INFO
+
+license:
+  key: ''

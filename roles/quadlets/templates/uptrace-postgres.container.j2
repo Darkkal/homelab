@@ -1,0 +1,20 @@
+[Unit]
+Description=Uptrace PostgreSQL Metadata Store
+After=network-online.target
+
+[Container]
+ContainerName=uptrace-postgres
+Image={{ uptrace_postgres_image | default('postgres:17-alpine') }}
+AutoUpdate={{ uptrace_postgres_autoupdate | default('registry') }}
+Network={{ network_name }}
+Environment=PGDATA=/var/lib/postgresql/data/pgdata
+Environment=POSTGRES_USER=uptrace
+Environment=POSTGRES_PASSWORD={{ uptrace_pg_password }}
+Environment=POSTGRES_DB=uptrace
+Volume={{ uptrace_data_dir }}/pg:/var/lib/postgresql/data/pgdata:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

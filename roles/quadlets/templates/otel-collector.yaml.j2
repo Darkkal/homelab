@@ -1,0 +1,151 @@
+# =============================================================================
+# OpenTelemetry Collector configuration for Uptrace (templated by Ansible)
+# =============================================================================
+extensions:
+  health_check:
+  zpages:
+    endpoint: 0.0.0.0:55679
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+      http:
+
+  hostmetrics:
+    root_path: /host
+    collection_interval: 30s
+    scrapers:
+      cpu: {}
+      disk: {}
+      load: {}
+      filesystem: {}
+      memory: {}
+      network: {}
+      paging: {}
+
+  httpcheck:
+    collection_interval: 30s
+    targets:
+      - method: GET
+        endpoint: http://open-webui:8081/health
+      - method: GET
+        endpoint: http://searxng:8080/healthz
+      - method: GET
+        endpoint: http://llama-swap:8080/health
+      - method: GET
+        endpoint: http://homepage:3000/
+      - method: GET
+        endpoint: http://piclaw:8080/
+      - method: GET
+        endpoint: http://forgejo:3003/
+      - method: GET
+        endpoint: http://swarmui:7801/
+      - method: GET
+        endpoint: http://caddy:80/
+        headers:
+          Host: homepage.local
+{% if sillytavern_password %}
+      - method: GET
+        endpoint: http://sillytavern:8000/api/status
+        headers:
+          Authorization: "Basic {{ (sillytavern_user ~ ':' ~ sillytavern_password) | b64encode }}"
+{% endif %}
+{% if glances_password %}
+      - method: GET
+        endpoint: http://glances:61208/api/4/uptime
+        headers:
+          Authorization: "Basic {{ (glances_username ~ ':' ~ glances_password) | b64encode }}"
+{% endif %}
+
+  postgresql:
+    endpoint: uptrace-postgres:5432
+    transport: tcp
+    username: uptrace
+    password: {{ uptrace_pg_password }}
+    databases:
+      - uptrace
+    tls:
+      insecure: true
+    collection_interval: 30s
+
+  redis:
+    endpoint: uptrace-redis:6379
+    collection_interval: 30s
+
+  prometheus:
+    config:
+      scrape_configs:
+        - job_name: llama-swap
+          scrape_interval: 30s
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - llama-swap:8080
+        - job_name: forgejo
+          scrape_interval: 30s
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - forgejo:3003
+        - job_name: clickhouse
+          scrape_interval: 30s
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - uptrace-clickhouse:9363
+        - job_name: otelcol
+          scrape_interval: 30s
+          metrics_path: /metrics
+          static_configs:
+            - targets:
+                - 0.0.0.0:8888
+
+processors:
+  resourcedetection:
+    detectors: [system]
+  batch:
+    send_batch_size: 10000
+    timeout: 10s
+
+exporters:
+  otlp/uptrace:
+    endpoint: http://uptrace:4317
+    tls:
+      insecure: true
+    headers:
+      uptrace-dsn: 'http://{{ uptrace_project_token }}@uptrace.local?grpc=14317'
+  prometheusremotewrite/uptrace:
+    endpoint: http://uptrace:80/api/v1/prometheus/write
+    tls:
+      insecure: true
+    headers:
+      uptrace-dsn: 'http://{{ uptrace_project_token }}@uptrace.local?grpc=14317'
+
+service:
+  telemetry:
+    metrics:
+      address: :8888
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/uptrace]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/uptrace]
+    metrics/host:
+      receivers: [hostmetrics, httpcheck, postgresql, redis]
+      processors: [batch, resourcedetection]
+      exporters: [otlp/uptrace]
+    metrics/prom:
+      receivers: [prometheus]
+      processors: [batch]
+      exporters: [prometheusremotewrite/uptrace]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [otlp/uptrace]
+
+  extensions: [health_check, zpages]
