@@ -24,7 +24,6 @@
     - "{{ homelab_data_dir }}/forgejo"
     - "{{ homelab_data_dir }}/caddy"
     - "{{ homelab_data_dir }}/open-webui"
-    - "{{ homelab_data_dir }}/hermes"
     - "{{ homelab_data_dir }}/homepage"
     - "{{ homelab_data_dir }}/homepage/config"
     - "{{ homelab_data_dir }}/glances"
@@ -48,23 +47,6 @@
     - "{{ homelab_data_dir }}/swarmui/dlbackend"
     - "{{ homelab_data_dir }}/swarmui/DLNodes"
   when: "'inference_hosts' in group_names"
-
-- name: Ensure Wan2GP data directories exist with write permissions for rootless container user
-  ansible.builtin.file:
-    path: "{{ item }}"
-    state: directory
-    mode: '0777'
-  loop:
-    - "{{ homelab_data_dir }}/wan2gp"
-    - "{{ homelab_data_dir }}/wan2gp/ckpts"
-    - "{{ homelab_data_dir }}/wan2gp/loras"
-    - "{{ homelab_data_dir }}/wan2gp/outputs"
-    - "{{ homelab_data_dir }}/wan2gp/settings"
-    - "{{ homelab_data_dir }}/wan2gp/profiles"
-    - "{{ homelab_data_dir }}/wan2gp/plugins"
-    - "{{ homelab_data_dir }}/wan2gp/finetunes"
-  when: "'inference_hosts' in group_names"
-
 
 - name: Deploy Podman short-name resolution aliases configuration
   ansible.builtin.copy:
