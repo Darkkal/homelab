@@ -1,0 +1,74 @@
+schema: v2
+name: 'Homelab: Service Health'
+version: v26.08.12
+
+table_grid_items:
+  - title: Services up
+    type: gauge
+    template: ${num_up} of ${num_all} up
+    metrics:
+      - httpcheck_status as $status
+    query:
+      - uniq($status{http_status_class="2xx"}) as num_all
+      - uniq($status{http_status_class="2xx", _value=1}) as num_up
+
+table:
+  - metrics:
+      - httpcheck_status as $status
+      - httpcheck_duration as $duration
+    query:
+      - group by http_url
+      - sum($status{http_status_class="2xx"}) as status_2xx
+      - sum($status{http_status_class="2xx"}) / sum($status) as availability
+      - avg($duration) as latency_ms
+    columns:
+      availability: { unit: utilization, agg_func: avg }
+      latency_ms: { unit: milliseconds }
+
+grid_rows:
+  - title: Gauges
+    items:
+      - title: Status
+        type: gauge
+        metrics:
+          - httpcheck_status as $status
+        query:
+          - sum($status{http_status_class="2xx"})
+        value_mappings:
+          - op: gte
+            value: 1
+            text: UP
+            color: green
+          - op: eq
+            value: 0
+            text: DOWN
+            color: red
+          - op: any
+            text: UNKNOWN
+            color: gray
+
+  - title: General
+    items:
+      - title: HTTP check result
+        metrics:
+          - httpcheck_status as $status
+        query:
+          - $status group by http_status_code
+      - title: Response time
+        metrics:
+          - httpcheck_duration as $duration
+        query:
+          - avg($duration) group by http_url
+
+monitors:
+  - name: Service is down
+    metrics:
+      - httpcheck_status as $status
+    query:
+      - sum($status{http_status_class="2xx"}) as status_2xx
+      - group by http_url
+    column: status_2xx
+    min_allowed_value: 1
+    max_allowed_value: 1
+    check_num_point: 1
+    null_points: allow

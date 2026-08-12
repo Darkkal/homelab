@@ -1,0 +1,115 @@
+schema: v2
+name: 'Homelab: Host'
+version: v26.08.12
+
+table_grid_items:
+  - title: Hosts
+    type: gauge
+    template: ${num_hosts}
+    metrics:
+      - system_memory_usage as $mem
+    query:
+      - uniq($mem, host_name) as num_hosts
+
+  - title: Memory utilization
+    type: gauge
+    metrics:
+      - system_memory_usage as $mem
+    query:
+      - sum($mem{state!="free"}) / sum($mem) as mem_util
+    columns:
+      mem_util: { unit: utilization }
+
+  - title: CPU load (15m)
+    type: gauge
+    metrics:
+      - system_cpu_load_average_15m as $load
+    query:
+      - avg($load) as load
+    columns:
+      load: { unit: "1" }
+
+table:
+  - metrics:
+      - system_cpu_load_average_1m as $load1m
+      - system_memory_usage as $mem
+    query:
+      - group by host_name
+      - avg($load1m) as load_1m
+      - sum($mem{state!="free"}) / sum($mem) as mem_util
+    columns:
+      load_1m: { unit: "1" }
+      mem_util: { unit: utilization, agg_func: avg }
+
+grid_rows:
+  - title: CPU
+    items:
+      - title: CPU load average
+        metrics:
+          - system_cpu_load_average_1m as $load1m
+          - system_cpu_load_average_5m as $load5m
+          - system_cpu_load_average_15m as $load15m
+        query:
+          - avg($load1m)
+          - avg($load5m)
+          - avg($load15m)
+      - title: CPU time by state
+        metrics:
+          - system_cpu_time as $cpu_time
+        query:
+          - per_min(sum($cpu_time)) as cpu_time group by state
+
+  - title: Memory
+    items:
+      - title: RAM usage
+        metrics:
+          - system_memory_usage as $mem
+        query:
+          - sum($mem) group by state
+        columns:
+          mem: { unit: bytes }
+      - title: Swap usage
+        metrics:
+          - system_paging_usage as $paging
+        query:
+          - sum($paging) group by state
+        columns:
+          paging: { unit: bytes }
+
+  - title: Disk
+    items:
+      - title: Filesystem usage
+        metrics:
+          - system_filesystem_usage as $fs
+        query:
+          - sum($fs{state="used"}) / sum($fs) as fs_util group by mountpoint
+        columns:
+          fs_util: { unit: utilization }
+      - title: Disk I/O
+        metrics:
+          - system_disk_io as $io
+        query:
+          - per_min(sum($io)) as io group by device, direction
+        columns:
+          io: { unit: bytes }
+
+  - title: Network
+    items:
+      - title: Connections
+        metrics:
+          - system_network_connections as $conn
+        query:
+          - sum($conn) group by protocol
+
+monitors:
+  - name: Filesystem usage high
+    metrics:
+      - system_filesystem_usage as $fs
+    query:
+      - sum($fs{state="used"}) / sum($fs) as fs_util
+      - group by host_name, mountpoint
+    column: fs_util
+    column_unit: utilization
+    max_allowed_value: 0.9
+    check_num_point: 3
+    null_points: allow

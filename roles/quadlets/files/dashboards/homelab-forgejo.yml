@@ -1,0 +1,67 @@
+schema: v2
+name: 'Homelab: Forgejo'
+version: v26.08.12
+
+grid_rows:
+  - title: Forgejo
+    items:
+      - title: Repositories
+        metrics:
+          - gitea_repositories as $v
+        query:
+          - max($v)
+      - title: Open issues
+        metrics:
+          - gitea_issues_open as $v
+        query:
+          - max($v)
+      - title: Closed issues
+        metrics:
+          - gitea_issues_closed as $v
+        query:
+          - max($v)
+      - title: Users
+        metrics:
+          - gitea_users as $v
+        query:
+          - max($v)
+      - title: Webhooks
+        metrics:
+          - gitea_webhooks as $v
+        query:
+          - max($v)
+      - title: Attachments
+        metrics:
+          - gitea_attachments as $v
+        query:
+          - max($v)
+      - title: Comments
+        metrics:
+          - gitea_comments as $v
+        query:
+          - max($v)
+      - title: Stars
+        metrics:
+          - gitea_stars as $v
+        query:
+          - max($v)
+      - title: Watches
+        metrics:
+          - gitea_watches as $v
+        query:
+          - max($v)
+      - title: Milestones
+        metrics:
+          - gitea_milestones as $v
+        query:
+          - max($v)
+      - title: Mirrors
+        metrics:
+          - gitea_mirrors as $v
+        query:
+          - max($v)
+      - title: Access rate
+        metrics:
+          - gitea_accesses as $v
+        query:
+          - per_min(sum($v))
