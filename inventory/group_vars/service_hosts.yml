@@ -10,23 +10,13 @@ forgejo_lfs_path: "/data/git/lfs"
 openwebui_data_dir: "{{ homelab_data_dir }}/open-webui"
 openwebui_port: 8081
 openwebui_openai_api_base_url: "http://llama-swap:8080/v1"
-openwebui_openai_api_base_urls: "http://llama-swap:8080/v1;http://hermes:8642/v1"
-openwebui_openai_api_keys: "sk-dummy;{{ hermes_api_server_key }}"
+openwebui_openai_api_base_urls: "http://llama-swap:8080/v1"
+openwebui_openai_api_keys: "sk-dummy"
 openwebui_enable_web_search: true
 openwebui_web_search_engine: "searxng"
 openwebui_searxng_query_url: "http://searxng:8080/search?q=<query>"
 openwebui_web_loader_engine: "playwright"
 openwebui_playwright_ws_uri: "ws://playwright:3000"
-hermes_data_dir: "{{ homelab_data_dir }}/hermes"
-hermes_port: 8383
-hermes_openai_api_base_url: "http://llama-swap:8080/v1"
-hermes_default_model: "qwen3.6-35b-mtp"
-hermes_api_server_enabled: true
-hermes_api_server_host: "0.0.0.0"
-hermes_api_server_port: 8642
-hermes_web_search_enabled: true
-hermes_web_search_provider: "searxng"
-hermes_searxng_url: "http://searxng:8080"
 
 homepage_data_dir: "{{ homelab_data_dir }}/homepage"
 homepage_port: 3002
@@ -46,9 +36,7 @@ avahi_aliases:
   - forgejo.local
   - llamaswap.local
   - openwebui.local
-  - hermes.local
   - swarmui.local
-  - wan2gp.local
   - homepage.local
   - glances.local
   - searxng.local

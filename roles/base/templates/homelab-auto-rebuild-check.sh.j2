@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Ansible managed: homelab auto-rebuild git SHA pre-check script
-# Checks remote Git commit SHAs for locally built Quadlet services (SwarmUI, Wan2GP)
+# Checks remote Git commit SHAs for locally built Quadlet services (SwarmUI)
 # before triggering expensive container image rebuilds.
 
 set -euo pipefail
@@ -9,7 +9,6 @@ HOMELAB_DATA_DIR="{{ homelab_data_dir }}"
 
 SERVICES=(
     "swarmui|https://github.com/mcmonkeyprojects/SwarmUI.git|${HOMELAB_DATA_DIR}/swarmui"
-    "wan2gp|https://github.com/deepbeepmeep/Wan2GP.git|${HOMELAB_DATA_DIR}/wan2gp"
 )
 
 check_and_rebuild() {

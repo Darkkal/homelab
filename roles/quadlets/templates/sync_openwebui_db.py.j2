@@ -23,8 +23,8 @@ if not table_check:
     exit(0)
 
 # Target configurations to sync
-base_urls = "{{ openwebui_openai_api_base_urls | default('http://llama-swap:8080/v1;http://hermes:8642/v1') }}".split(";")
-api_keys = "{{ openwebui_openai_api_keys | default('sk-dummy;' + hermes_api_server_key) }}".split(";")
+base_urls = "{{ openwebui_openai_api_base_urls | default('http://llama-swap:8080/v1') }}".split(";")
+api_keys = "{{ openwebui_openai_api_keys | default('sk-dummy') }}".split(";")
 api_configs = {
     str(i): {
         "enable": True,

@@ -9,9 +9,9 @@ AutoUpdate={{ openwebui_autoupdate | default('registry') }}
 Network={{ network_name }}
 Environment=PORT={{ openwebui_port | default(8081) }}
 Environment=OPENAI_API_BASE_URL={{ openwebui_openai_api_base_url | default('http://llama-swap:8080/v1') }}
-Environment=OPENAI_API_BASE_URLS={{ openwebui_openai_api_base_urls | default('http://llama-swap:8080/v1;http://hermes:8642/v1') }}
+Environment=OPENAI_API_BASE_URLS={{ openwebui_openai_api_base_urls | default('http://llama-swap:8080/v1') }}
 Environment=OPENAI_API_KEY={{ openwebui_openai_api_key | default('sk-dummy') }}
-Environment=OPENAI_API_KEYS={{ openwebui_openai_api_keys | default('sk-dummy;' + hermes_api_server_key) }}
+Environment=OPENAI_API_KEYS={{ openwebui_openai_api_keys | default('sk-dummy') }}
 Environment=ENABLE_RAG_WEB_SEARCH={{ openwebui_enable_web_search | default(true) | lower }}
 Environment=RAG_WEB_SEARCH_ENGINE={{ openwebui_web_search_engine | default('searxng') }}
 Environment=SEARXNG_QUERY_URL={{ openwebui_searxng_query_url | default('http://searxng:8080/search?q=<query>') }}

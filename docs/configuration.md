@@ -57,9 +57,6 @@ These settings apply to target hosts in the `inference_hosts` group:
 | `swarmui_data_dir` | `~/homelab/swarmui` | Directory for SwarmUI persistent data and outputs. |
 | `swarmui_port` | `7801` | Host web port for direct SwarmUI WebUI access. |
 | `swarmui_image` | `localhost/swarmui:latest` | Container image repository and tag for SwarmUI built natively from Git by systemd Quadlet. |
-| `wan2gp_data_dir` | `~/homelab/wan2gp` | Directory for Wan2GP persistent data, models, and outputs. |
-| `wan2gp_port` | `7860` | Host web port for direct Wan2GP WebUI access. |
-| `wan2gp_image` | `localhost/wan2gp:latest` | Container image repository and tag for Wan2GP built natively from Git by systemd Quadlet. |
 | `quadlet_no_block` | `true` | When `true`, Ansible issues non-blocking systemd service start and restart commands (`no_block: true`). |
 
 #### Non-Blocking Systemd Service Starts (`quadlet_no_block`)
@@ -80,20 +77,6 @@ SwarmUI persistent data, models, and generated outputs are stored in isolated su
 | `~/homelab/swarmui/dlbackend` | `/SwarmUI/dlbackend` | Deep learning backends, venvs, and self-starting ComfyUI dependencies |
 | `~/homelab/swarmui/DLNodes` | `/SwarmUI/src/BuiltinExtensions/ComfyUIBackend/DLNodes` | Downloaded custom nodes and backend extension nodes |
 
-#### Wan2GP Volume Structure
-
-Wan2GP persistent data, checkpoints, and generated videos are stored in isolated subdirectories within `wan2gp_data_dir` (`~/homelab/wan2gp`):
-
-| Host Path | Container Target | Purpose |
-| :--- | :--- | :--- |
-| `~/homelab/wan2gp/ckpts` | `/workspace/ckpts` | Model checkpoints (Wan 2.1, LTX Video, VAEs, T5/CLIP encoders) |
-| `~/homelab/wan2gp/loras` | `/workspace/loras` | LoRA weights and adapters |
-| `~/homelab/wan2gp/outputs` | `/workspace/outputs` | Generated videos, images, and media outputs |
-| `~/homelab/wan2gp/settings` | `/workspace/settings` | User UI presets and generation parameter settings |
-| `~/homelab/wan2gp/profiles` | `/workspace/profiles` | Hardware VRAM/RAM allocation profiles and memory overrides |
-| `~/homelab/wan2gp/plugins` | `/workspace/plugins` | Installed third-party user plugins (e.g. Gallery, LoRA Manager, Wildcards) |
-| `~/homelab/wan2gp/finetunes` | `/workspace/finetunes` | Custom finetune JSON configurations |
-
 ---
 
 ## Service Host Configuration (`inventory/group_vars/service_hosts.yml`)
@@ -102,24 +85,18 @@ These settings apply to target hosts in the `service_hosts` group:
 
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
-| `avahi_aliases` | List of `.local` hostnames | Hostnames published via LAN mDNS (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `hermes.local`, `swarmui.local`, `wan2gp.local`). |
+| `avahi_aliases` | List of `.local` hostnames | Hostnames published via LAN mDNS (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `swarmui.local`). |
 | `forgejo_port` | `3003` | Host web port for direct Forgejo access. |
 | `forgejo_image` | `codeberg.org/forgejo/forgejo:16` | Forgejo container image. Tracks the latest major (auto-updated via the `registry` label). Bumped off the old `:10` pin for the LFS upload quota nil-pointer fix (v10/v12 crash on LFS batch uploads when `ctx.Doer` is nil). Forgejo publishes no `:latest` tag, so `:16` is the newest major. |
 | `forgejo_root_url` | `http://forgejo.local/` | Forgejo `ROOT_URL` (`[server] ROOT_URL`). Must match the primary site URL so generated links (web UI, mail, webhooks, OAuth2) are correct and the admin-page mismatch warning is not shown. |
 | `forgejo_populate_squash_comment_with_commit_messages` | `true` | Include all PR commit messages in default squash-merge messages (`[repository] POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES`). |
 | `forgejo_lfs_start_server` | `true` | Enable Git LFS support (`[server] LFS_START_SERVER`). |
 | `forgejo_lfs_path` | `/data/git/lfs` | Container path for Git LFS content (`[lfs] PATH`). Must be under a directory writable by the container's git user; maps to host `~/homelab/forgejo/git/lfs` via the `/data` volume mount. |
-| `hermes_data_dir` | `~/homelab/hermes` | Directory for Hermes Agent persistent data. |
-| `hermes_port` | `8383` | Host web port for direct Hermes Agent access. |
-| `hermes_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for Hermes Agent backend calls. |
-| `hermes_api_server_enabled` | `true` | Enable Hermes Agent built-in OpenAI-compatible API server. |
-| `hermes_api_server_host` | `0.0.0.0` | Bind host address for Hermes Agent API server. |
-| `hermes_api_server_port` | `8642` | Host port for Hermes Agent OpenAI-compatible API server. |
 | `openwebui_data_dir` | `~/homelab/open-webui` | Directory for Open WebUI persistent data. |
 | `openwebui_port` | `8081` | Host web port for direct Open WebUI access. |
 | `openwebui_openai_api_base_url` | `http://llama-swap:8080/v1` | Primary OpenAI-compatible API endpoint for Open WebUI backend calls. |
-| `openwebui_openai_api_base_urls` | `http://llama-swap:8080/v1;http://hermes:8642/v1` | Semicolon-separated list of OpenAI-compatible API endpoints for Open WebUI. |
-| `openwebui_openai_api_keys` | `sk-dummy;{{ hermes_api_server_key }}` | Semicolon-separated list of OpenAI API keys corresponding to `openwebui_openai_api_base_urls`. |
+| `openwebui_openai_api_base_urls` | `http://llama-swap:8080/v1` | Semicolon-separated list of OpenAI-compatible API endpoints for Open WebUI. |
+| `openwebui_openai_api_keys` | `sk-dummy` | Semicolon-separated list of OpenAI API keys corresponding to `openwebui_openai_api_base_urls`. |
 | `st_data_dir` | `~/homelab/sillytavern` | Directory for SillyTavern persistent data. |
 | `sillytavern_port` | `8000` | Host web port for direct SillyTavern access (container internal port `8000`). |
 | `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
@@ -202,13 +179,6 @@ To migrate characters, chats, and settings from a standalone Docker Compose inst
    ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vault-pass
    ```
 
-#### Hermes Agent Runtime Configuration & Persistence
-
-Hermes Agent maintains its active platform channels (e.g. Discord, Telegram), API keys, and plugin state inside `hermes_data_dir/config.yaml` (`~/homelab/hermes/config.yaml`).
-
-- **Initial Setup**: Ansible deploys `hermes_config.yaml.j2` on initial installation with `force: false`.
-- **Runtime Persistence**: Because `force: false` is configured, settings and credentials added via the Hermes Web UI or CLI are preserved across playbook runs and will not be overwritten by Ansible.
-
 ---
 
 ## Role Defaults & Upstreams
@@ -223,9 +193,7 @@ Caddy upstream variables define where requests to `*.local` hostnames are routed
 | `forgejo_upstream` | `forgejo:3003` | `forgejo.local` |
 | `llama_swap_upstream` | `llama-swap:8080` | `llamaswap.local` |
 | `openwebui_upstream` | `open-webui:8081` | `openwebui.local` |
-| `hermes_upstream` | `hermes:9119` | `hermes.local` |
 | `swarmui_upstream` | `swarmui:7801` | `swarmui.local` |
-| `wan2gp_upstream` | `wan2gp:7860` | `wan2gp.local` |
 | `homepage_upstream` | `homepage:3000` | `homepage.local` |
 | `glances_upstream` | `glances:61208` | `glances.local` |
 | `piclaw_upstream` | `piclaw:8080` | `piclaw.local` |
@@ -250,10 +218,6 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_sillytavern_user` | HTTP basic auth username for SillyTavern | `admin` |
 | `vault_sillytavern_password` | HTTP basic auth password for SillyTavern | `""` (no basic auth password) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
-| `vault_hermes_admin_user` | Basic auth username for Hermes Agent | `admin` |
-| `vault_hermes_admin_password` | Basic auth password for Hermes Agent | `admin` |
-| `vault_hermes_api_server_key` | Bearer token API key for Hermes Agent API server | Auto-generated unique 64-char hex secret (`~/homelab/.hermes_api_key`) |
-| `vault_forgejo_api_token_hermes` | Forgejo API access token for Hermes Agent container | `""` |
 | `vault_forgejo_api_token_piclaw` | Forgejo API access token for PiClaw container | `""` |
 | `vault_github_api_token_piclaw` | GitHub Personal Access Token for PiClaw container (`GH_TOKEN` / `GITHUB_TOKEN`) | `""` |
 | `vault_piclaw_api_token` | Bearer token API key for PiClaw state APIs (`/api/state`, `/api/state/events`) | Auto-generated unique 64-char hex secret (`~/homelab/.piclaw_api_token`) |
@@ -281,12 +245,6 @@ vault_piclaw_api_token: "SuperSecretPiclawApiToken"
 vault_sillytavern_user: "admin"
 vault_sillytavern_password: "SuperSecretSillyTavernPassword"
 vault_sillytavern_api_key: ""
-
-# Hermes Agent Authentication & Tokens
-vault_hermes_admin_user: "admin"
-vault_hermes_admin_password: "SuperSecretHermesPassword"
-vault_hermes_api_server_key: "SuperSecretHermesApiKey"
-vault_forgejo_api_token_hermes: "SuperSecretForgejoApiTokenForHermes"
 
 # Glances Authentication
 vault_glances_username: "glances"

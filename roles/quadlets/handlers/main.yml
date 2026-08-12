@@ -16,12 +16,6 @@
     state: restarted
     scope: user
 
-- name: Restart hermes-agent service
-  ansible.builtin.systemd:
-    name: hermes-agent.service
-    state: restarted
-    scope: user
-
 - name: Restart homepage service
   ansible.builtin.systemd:
     name: homepage.service
