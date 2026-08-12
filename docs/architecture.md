@@ -152,6 +152,23 @@ The OTel Collector (`uptrace-otelcol`) is the integration hub and gathers teleme
 
 An `otlp` receiver is also wired, so any homelab service can be instrumented later to stream traces/metrics/logs directly to Uptrace. A project DSN (`http://<project_token>@uptrace.local?grpc=14317`) authenticates ingestion; Uptrace self-monitors via the same DSN so the `uptrace` service appears in the UI automatically.
 
+#### Uptrace dashboards & monitors
+
+Uptrace dashboards are defined as declarative YAML templates (schema v2) in `roles/quadlets/files/dashboards/` and provisioned automatically on every playbook run (when `enable_uptrace_dashboards` is true) via the Uptrace internal HTTP API: the playbook logs in as the seeded admin user, then creates (POST) or updates (PUT) each dashboard and its bundled metric monitors. Provisioning is idempotent — a `sha256` state file under `{{ uptrace_data_dir }}` records the last-provisioned hash of each file so unchanged dashboards are skipped (no API writes, `changed=0`).
+
+| Dashboard | Data source | Notable widgets |
+| :--- | :--- | :--- |
+| `Homelab: Host` | `system_*` hostmetrics | table per host; CPU/load, RAM & swap per `state`, filesystem per `mountpoint`, disk I/O, network connections |
+| `Homelab: Service Health` | `httpcheck_*` synthetic checks | availability + latency per `http_url`, UP/DOWN gauges |
+| `Homelab: GPU` | `llamaswap_gpu_*` | table per GPU; temperature, util %, VRAM usage, power draw, fan speed |
+| `Homelab: Forgejo` | `gitea_*` | repositories, issues, users, webhooks, accesses, stars/watches |
+| `Homelab: ClickHouse` | `ClickHouse*` Prometheus metrics | memory, disk, load average, threads, merge/partition health |
+| `Homelab: Uptrace Databases` | `postgresql_*`, `redis_*` | postgres table/index sizes and rows read; redis connected/blocked clients |
+
+Bundled **metric monitors** (manual thresholds, evaluated on the Uptrace Alerts page — notifications are UI-only; no SMTP/Telegram channel is configured): GPU temperature > 90°C, GPU VRAM usage > 95%, HTTP service down, filesystem usage > 90%.
+
+> **Note:** Uptrace 2.0.x stores the bundled `monitors:` section only in the dashboard template files — the `/dashboards/yaml` import endpoint ignores it, so monitors are provisioned separately via the monitors API (`/monitors`) from the same YAML files (see `roles/quadlets/filter_plugins/uptrace_monitors.py`).
+
 ### Config files in the homepage config dir
 
 | File | Purpose |

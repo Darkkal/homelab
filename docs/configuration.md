@@ -119,6 +119,8 @@ These settings apply to target hosts in the `service_hosts` group:
 | `uptrace_postgres_image` | `docker.io/library/postgres:17-alpine` | Uptrace PostgreSQL metadata store image. |
 | `uptrace_redis_image` | `docker.io/library/redis:6.2.2-alpine` | Uptrace Redis cache image. |
 | `uptrace_otelcol_image` | `docker.io/otel/opentelemetry-collector-contrib:0.123.0` | OpenTelemetry Collector image handling host metrics, synthetic checks, and Prometheus scraping. |
+| `enable_uptrace_dashboards` | `true` | Provision Uptrace dashboards and metric monitors (from `roles/quadlets/files/dashboards/*.yml`) via the Uptrace internal HTTP API on each playbook run. |
+| `uptrace_project_id` | `1` | Uptrace project ID (the first seeded project, `Homelab`) used by the dashboard/monitor provisioning API. |
 | `uptrace_admin_email` | `admin@homelab.local` | Initial Uptrace admin login email (from `vault_uptrace_admin_email`). |
 | `uptrace_admin_password` | `""` | Initial Uptrace admin login password (from `vault_uptrace_admin_password`). |
 | `uptrace_project_token` | auto-generated (`~/homelab/.uptrace_project_token`) | Write-only OTLP project token used in DSNs and collector ingestion. |
