@@ -26,11 +26,16 @@
     - "{{ homelab_data_dir }}/open-webui"
     - "{{ homelab_data_dir }}/homepage"
     - "{{ homelab_data_dir }}/homepage/config"
+    - "{{ homelab_data_dir }}/homepage/images"
     - "{{ homelab_data_dir }}/glances"
     - "{{ homelab_data_dir }}/searxng"
     - "{{ homelab_data_dir }}/piclaw"
     - "{{ homelab_data_dir }}/piclaw/config"
     - "{{ homelab_data_dir }}/piclaw/workspace"
+    - "{{ homelab_data_dir }}/uptrace"
+    - "{{ homelab_data_dir }}/uptrace/ch"
+    - "{{ homelab_data_dir }}/uptrace/pg"
+    - "{{ homelab_data_dir }}/uptrace/ch-config"
   when: "'service_hosts' in group_names"
 
 - name: Ensure inference host data directories exist
