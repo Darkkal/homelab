@@ -1,0 +1,20 @@
+[Unit]
+Description=Uptrace ClickHouse Telemetry Store
+After=network-online.target
+
+[Container]
+ContainerName=uptrace-clickhouse
+Image={{ uptrace_clickhouse_image | default('clickhouse/clickhouse-server:26.3') }}
+AutoUpdate={{ uptrace_clickhouse_autoupdate | default('registry') }}
+Network={{ network_name }}
+Environment=CLICKHOUSE_USER=uptrace
+Environment=CLICKHOUSE_PASSWORD={{ uptrace_ch_password }}
+Environment=CLICKHOUSE_DB=uptrace
+Volume={{ uptrace_data_dir }}/ch:/var/lib/clickhouse:Z
+Volume={{ uptrace_data_dir }}/ch-config:/etc/clickhouse-server/config.d:Z
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

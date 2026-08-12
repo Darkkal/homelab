@@ -39,3 +39,21 @@
     name: open-webui.service
     state: restarted
     scope: user
+
+- name: Restart uptrace service
+  ansible.builtin.systemd:
+    name: uptrace.service
+    state: restarted
+    scope: user
+
+- name: Restart uptrace-otelcol service
+  ansible.builtin.systemd:
+    name: uptrace-otelcol.service
+    state: restarted
+    scope: user
+
+- name: Restart uptrace-clickhouse service
+  ansible.builtin.systemd:
+    name: uptrace-clickhouse.service
+    state: restarted
+    scope: user

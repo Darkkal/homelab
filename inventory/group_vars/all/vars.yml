@@ -25,6 +25,19 @@ glances_password: "{{ vault_glances_password | default('') }}"
 
 searxng_secret_key: "{{ vault_searxng_secret_key | default(lookup('password', homelab_data_dir + '/.searxng_secret_key length=64 chars=hexdigits')) }}"
 
+# Uptrace observability secrets (auto-generated unless provided in vault)
+uptrace_admin_email: "{{ vault_uptrace_admin_email | default('admin@homelab.local') }}"
+uptrace_admin_password: "{{ vault_uptrace_admin_password | default('') }}"
+uptrace_project_token: "{{ vault_uptrace_project_token | default(lookup('password', homelab_data_dir + '/.uptrace_project_token length=32 chars=hexdigits')) }}"
+uptrace_secret: "{{ lookup('password', homelab_data_dir + '/.uptrace_secret length=64 chars=hexdigits') }}"
+uptrace_pg_password: "{{ lookup('password', homelab_data_dir + '/.uptrace_pg_password length=32 chars=hexdigits') }}"
+uptrace_ch_password: "{{ lookup('password', homelab_data_dir + '/.uptrace_ch_password length=32 chars=hexdigits') }}"
+
+# Data retention (ClickHouse TTL)
+uptrace_retention_traces: "7 DAY"
+uptrace_retention_metrics: "30 DAY"
+uptrace_retention_logs: "7 DAY"
+
 # LAN subnet for firewall rich rules (HTTP port 80 & mDNS port 5353)
 lan_subnet: "{{ host_lan_subnet | default(ansible_facts['default_ipv4']['network'] + '/24') }}"
 

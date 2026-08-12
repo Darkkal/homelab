@@ -1,0 +1,104 @@
+schema: v2
+name: 'Homelab: GPU'
+version: v26.08.12
+
+table_grid_items:
+  - title: Avg GPU temperature
+    type: gauge
+    metrics:
+      - llamaswap_gpu_temperature_celsius as $temp
+    query:
+      - avg($temp) as temp
+    columns:
+      temp: { unit: celsius }
+
+  - title: Avg GPU util
+    type: gauge
+    metrics:
+      - llamaswap_gpu_util_percent as $util
+    query:
+      - avg($util) as util
+    columns:
+      util: { unit: "1" }
+
+table:
+  - metrics:
+      - llamaswap_gpu_temperature_celsius as $temp
+      - llamaswap_gpu_util_percent as $util
+      - llamaswap_gpu_memory_util_percent as $mem_util
+      - llamaswap_gpu_power_draw_watts as $power
+    query:
+      - group by name
+      - avg($temp) as temp
+      - avg($util) as util
+      - avg($mem_util) as mem_util
+      - avg($power) as power
+    columns:
+      temp: { unit: celsius }
+      util: { unit: "1" }
+      mem_util: { unit: "1" }
+      power: { unit: watts }
+
+grid_rows:
+  - title: GPU
+    items:
+      - title: Temperature
+        metrics:
+          - llamaswap_gpu_temperature_celsius as $temp
+        query:
+          - avg($temp) group by name
+        columns:
+          temp: { unit: celsius }
+      - title: Utilization
+        metrics:
+          - llamaswap_gpu_util_percent as $util
+        query:
+          - avg($util) group by name
+        columns:
+          util: { unit: "1" }
+      - title: VRAM usage
+        metrics:
+          - llamaswap_gpu_memory_used_bytes as $used
+          - llamaswap_gpu_memory_total_bytes as $total
+        query:
+          - sum($used) / sum($total) as vram_util group by name
+        columns:
+          vram_util: { unit: "1" }
+      - title: Power draw
+        metrics:
+          - llamaswap_gpu_power_draw_watts as $power
+        query:
+          - avg($power) group by name
+        columns:
+          power: { unit: watts }
+      - title: Fan speed
+        metrics:
+          - llamaswap_gpu_fan_speed_percent as $fan
+        query:
+          - avg($fan) group by name
+        columns:
+          fan: { unit: "1" }
+
+monitors:
+  - name: GPU temperature high
+    metrics:
+      - llamaswap_gpu_temperature_celsius as $temp
+    query:
+      - max($temp) as temp
+      - group by name
+    column: temp
+    column_unit: celsius
+    max_allowed_value: 90
+    check_num_point: 3
+    null_points: allow
+
+  - name: GPU VRAM usage high
+    metrics:
+      - llamaswap_gpu_memory_util_percent as $mem_util
+    query:
+      - max($mem_util) as mem_util
+      - group by name
+    column: mem_util
+    max_allowed_value: 95
+    check_num_point: 3
+    null_points: allow

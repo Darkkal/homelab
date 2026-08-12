@@ -1,0 +1,62 @@
+schema: v2
+name: 'Homelab: Uptrace Databases'
+version: v26.08.12
+
+table_grid_items:
+  - title: PostgreSQL tables
+    type: gauge
+    template: ${num} tables
+    metrics:
+      - postgresql_table_size as $s
+    query:
+      - uniq($s, postgresql_table_name) as num
+
+table:
+  - metrics:
+      - postgresql_table_size as $size
+      - postgresql_index_size as $idx
+    query:
+      - group by postgresql_table_name
+      - sum($size) as table_size
+      - sum($idx) as index_size
+    columns:
+      table_size: { unit: bytes }
+      index_size: { unit: bytes }
+
+grid_rows:
+  - title: PostgreSQL
+    items:
+      - title: Table size
+        metrics:
+          - postgresql_table_size as $s
+        query:
+          - sum($s) group by postgresql_table_name
+        columns:
+          s: { unit: bytes }
+      - title: Index size
+        metrics:
+          - postgresql_index_size as $s
+        query:
+          - sum($s) group by postgresql_table_name
+        columns:
+          s: { unit: bytes }
+      - title: Rows read
+        metrics:
+          - postgresql_rows as $r
+        query:
+          - per_min(sum($r)) group by postgresql_table_name
+        columns:
+          r: { unit: rows }
+
+  - title: Redis
+    items:
+      - title: Connected clients
+        metrics:
+          - redis_clients_connected as $c
+        query:
+          - max($c)
+      - title: Blocked clients
+        metrics:
+          - redis_clients_blocked as $c
+        query:
+          - max($c)

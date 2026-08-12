@@ -1,0 +1,89 @@
+schema: v2
+name: 'Homelab: ClickHouse'
+version: v26.08.12
+
+grid_rows:
+  - title: Memory
+    items:
+      - title: Resident memory
+        metrics:
+          - ClickHouseAsyncMetrics_MemoryResident as $m
+        query:
+          - max($m) as m
+        columns:
+          m: { unit: bytes }
+      - title: Virtual memory
+        metrics:
+          - ClickHouseAsyncMetrics_MemoryVirtual as $m
+        query:
+          - max($m) as m
+        columns:
+          m: { unit: bytes }
+      - title: CGroup memory used
+        metrics:
+          - ClickHouseAsyncMetrics_CGroupMemoryUsed as $m
+        query:
+          - max($m) as m
+        columns:
+          m: { unit: bytes }
+
+  - title: Disk
+    items:
+      - title: Disk used
+        metrics:
+          - ClickHouseAsyncMetrics_DiskUsed_default as $m
+        query:
+          - max($m) as m
+        columns:
+          m: { unit: bytes }
+      - title: Disk available
+        metrics:
+          - ClickHouseAsyncMetrics_DiskAvailable_default as $m
+        query:
+          - max($m) as m
+        columns:
+          m: { unit: bytes }
+      - title: Disk total
+        metrics:
+          - ClickHouseAsyncMetrics_DiskTotal_default as $m
+        query:
+          - max($m) as m
+        columns:
+          m: { unit: bytes }
+
+  - title: Load
+    items:
+      - title: Load average
+        metrics:
+          - ClickHouseAsyncMetrics_LoadAverage1 as $l1
+          - ClickHouseAsyncMetrics_LoadAverage5 as $l5
+          - ClickHouseAsyncMetrics_LoadAverage15 as $l15
+        query:
+          - max($l1)
+          - max($l5)
+          - max($l15)
+
+  - title: Threads & merges
+    items:
+      - title: HTTP threads
+        metrics:
+          - ClickHouseAsyncMetrics_HTTPThreads as $v
+        query:
+          - max($v)
+      - title: Interserver threads
+        metrics:
+          - ClickHouseAsyncMetrics_InterserverThreads as $v
+        query:
+          - max($v)
+      - title: Longest running merge
+        metrics:
+          - ClickHouseAsyncMetrics_LongestRunningMerge as $v
+        query:
+          - max($v) as v
+        columns:
+          v: { unit: seconds }
+      - title: Max parts per partition
+        metrics:
+          - ClickHouseAsyncMetrics_MaxPartCountForPartition as $v
+        query:
+          - max($v)

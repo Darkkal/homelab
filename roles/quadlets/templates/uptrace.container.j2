@@ -1,0 +1,24 @@
+[Unit]
+Description=Uptrace Observability Platform
+After=network-online.target uptrace-clickhouse.service uptrace-postgres.service uptrace-redis.service
+Requires=uptrace-clickhouse.service uptrace-postgres.service uptrace-redis.service
+
+[Container]
+ContainerName=uptrace
+Image={{ uptrace_image | default('uptrace/uptrace:2.0.3') }}
+AutoUpdate={{ uptrace_autoupdate | default('disabled') }}
+Network={{ network_name }}
+PublishPort={{ uptrace_port | default(14318) }}:80
+Volume={{ uptrace_data_dir }}/uptrace.yml:/etc/uptrace/config.yml:Z
+
+Label=homepage.group="Infrastructure"
+Label=homepage.name=Uptrace
+Label=homepage.icon=/images/uptrace.svg
+Label=homepage.href=http://uptrace.local
+Label=homepage.description="OpenTelemetry observability (traces, metrics, logs)"
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

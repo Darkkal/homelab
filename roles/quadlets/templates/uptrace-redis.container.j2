@@ -1,0 +1,15 @@
+[Unit]
+Description=Uptrace Redis Cache
+After=network-online.target
+
+[Container]
+ContainerName=uptrace-redis
+Image={{ uptrace_redis_image | default('redis:6.2.2-alpine') }}
+AutoUpdate={{ uptrace_redis_autoupdate | default('registry') }}
+Network={{ network_name }}
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

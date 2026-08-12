@@ -33,6 +33,11 @@ graph TD
         Caddy -->|homelab.network| Homepage[Homepage]
         Caddy -->|homelab.network| Glances[Glances]
         OpenWebUI -->|WebSocket ws://playwright:3000| Playwright[Playwright]
+        UptraceCol[Uptrace OTel Collector] -->|OTLP / remote write| Uptrace[Uptrace]
+        UptraceCol -->|hostmetrics / synthetic checks| Services[All web services]
+        UptraceCol -->|Prometheus scrape| LlamaSwapMetrics[llama-swap /metrics]
+        UptraceCol -->|Prometheus scrape| ForgejoMetrics[Forgejo /metrics]
+        Uptrace -->|ClickHouse / PostgreSQL / Redis| UptraceDBs[(uptrace DBs)]
     end
 
     subgraph inference_hosts ["inference_hosts (GPU Node)"]
@@ -53,7 +58,7 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), and `avahi`.
   - Frontend AI applications (`sillytavern`, `open-webui`) route model completion calls internally to `llama-swap:8080`.
   - `searxng` acts as the self-hosted search aggregator for Open WebUI web search operations over `homelab.network:8080`.
   - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
@@ -133,6 +138,42 @@ Label groups match the `settings.yaml` layout keys so row layouts apply. Current
 ### Host resource monitoring
 
 The `glances` container publishes its REST API to the shared network, and the Homepage **Glances** info widget (`homepage.widgets.yaml.j2`) shows real **host** CPU, memory, temperature, uptime, and disk usage. Unlike the built-in `resources` widget (which reads only the Homepage container's own stats via `systeminformation`), the Glances widget reads host statistics from the Glances REST API. Glances runs with `--pid=host`, read-only `/sys`, `/etc/os-release`, and host-root (`/:/host`) mounts; the widget monitors host disk via `disk: /host`. Authentication is enforced with basic auth (`--password`) wired through `vault_glances_username` / `vault_glances_password`. A small `custom.css` rule (see below) makes the Glances widget span the full header row above the search/datetime widgets.
+
+### Uptrace observability
+
+Uptrace is the homelab's centralized OpenTelemetry observability platform (traces, metrics, logs). It runs as five Quadlet services on `service_hosts` — `uptrace` (APM UI + API + OTLP ingest), `uptrace-clickhouse`, `uptrace-postgres`, `uptrace-redis`, and `uptrace-otelcol` — all on the shared `homelab.network`. Only the Uptrace UI is published to the host (`14318`); all telemetry ingestion is internal to the network.
+
+The OTel Collector (`uptrace-otelcol`) is the integration hub and gathers telemetry through four paths:
+
+1. **Host metrics** — the `hostmetrics` receiver with `root_path: /host`, `--pid=host`, and read-only `/sys` + `/:/host` mounts (same pattern as Glances) reports host CPU/memory/disk/network/load.
+2. **Synthetic checks** — the `httpcheck` receiver polls each web service's health endpoint (e.g. `open-webui:8081/health`, `searxng:8080/healthz`, `llama-swap:8080/health`, `homepage:3000/`, `forgejo:3003/`, `caddy:80/` with a `Host` header) for availability/latency, using vault basic-auth credentials for the auth-protected services (`sillytavern`, `glances`).
+3. **Prometheus scrape → remote write** — the `prometheus` receiver scrapes llama-swap's `/metrics` (GPU temp, VRAM, util %, power draw), Forgejo's `/metrics` (enabled via `FORGEJO__metrics__ENABLED=true`), ClickHouse's Prometheus endpoint (enabled via a `config.d/prometheus.xml` drop-in on port `9363`), and the collector's own telemetry, exported to Uptrace via `prometheusremotewrite`.
+4. **Database receivers** — the `postgresql` and `redis` receivers monitor Uptrace's own PostgreSQL and Redis.
+
+An `otlp` receiver is also wired, so any homelab service can be instrumented later to stream traces/metrics/logs directly to Uptrace. A project DSN (`http://<project_token>@uptrace.local?grpc=14317`) authenticates ingestion; Uptrace self-monitors via the same DSN so the `uptrace` service appears in the UI automatically.
+
+#### Uptrace dashboards & monitors
+
+Uptrace dashboards are defined as declarative YAML templates (schema v2) in `roles/quadlets/files/dashboards/` and provisioned automatically on every playbook run (when `enable_uptrace_dashboards` is true) via the Uptrace internal HTTP API: the playbook logs in as the seeded admin user, then creates (POST) or updates (PUT) each dashboard and its bundled metric monitors.
+
+**Idempotency & UI edits.** Provisioning is idempotent — a `sha256` state file under `{{ uptrace_data_dir }}` records the last-provisioned hash of each file. A dashboard/monitor is written only when (a) its name is missing from Uptrace (POST) or (b) its YAML file in the repo changed since the last run (PUT). The state is compared against the **local files only**, never against the live Uptrace content. Consequently:
+
+- **Tweaks made directly in the Uptrace UI are preserved** — they do not trigger a change in Ansible and are not overwritten, as long as the corresponding YAML file in the repo is left untouched.
+- A managed dashboard/monitor **deleted in the UI is re-created** on the next run (the repo is authoritative for existence).
+- Editing the repo YAML applies that new default wholesale, including any prior UI tweaks to that dashboard.
+
+| Dashboard | Data source | Notable widgets |
+| :--- | :--- | :--- |
+| `Homelab: Host` | `system_*` hostmetrics | table per host; CPU/load, RAM & swap per `state`, filesystem per `mountpoint`, disk I/O, network connections |
+| `Homelab: Service Health` | `httpcheck_*` synthetic checks | availability + latency per `http_url`, UP/DOWN gauges |
+| `Homelab: GPU` | `llamaswap_gpu_*` | table per GPU; temperature, util %, VRAM usage, power draw, fan speed |
+| `Homelab: Forgejo` | `gitea_*` | repositories, issues, users, webhooks, accesses, stars/watches |
+| `Homelab: ClickHouse` | `ClickHouse*` Prometheus metrics | memory, disk, load average, threads, merge/partition health |
+| `Homelab: Uptrace Databases` | `postgresql_*`, `redis_*` | postgres table/index sizes and rows read; redis connected/blocked clients |
+
+Bundled **metric monitors** (manual thresholds, evaluated on the Uptrace Alerts page — notifications are UI-only; no SMTP/Telegram channel is configured): GPU temperature > 90°C, GPU VRAM usage > 95%, HTTP service down, filesystem usage > 90%.
+
+> **Note:** Uptrace 2.0.x stores the bundled `monitors:` section only in the dashboard template files — the `/dashboards/yaml` import endpoint ignores it, so monitors are provisioned separately via the monitors API (`/monitors`) from the same YAML files (see `roles/quadlets/filter_plugins/uptrace_monitors.py`).
 
 ### Config files in the homepage config dir
 
