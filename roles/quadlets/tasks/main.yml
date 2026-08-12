@@ -63,6 +63,37 @@
   changed_when: "'Updated' in openwebui_db_sync_result.stdout"
   notify: Restart open-webui service
 
+- name: Deploy Uptrace configuration file
+  ansible.builtin.template:
+    src: uptrace.yml.j2
+    dest: "{{ uptrace_data_dir }}/uptrace.yml"
+    mode: "0644"
+  when: "'uptrace' in quadlet_services"
+  notify: Restart uptrace service
+
+- name: Deploy Uptrace OpenTelemetry Collector configuration file
+  ansible.builtin.template:
+    src: otel-collector.yaml.j2
+    dest: "{{ uptrace_data_dir }}/otel-collector.yaml"
+    mode: "0644"
+  when: "'uptrace-otelcol' in quadlet_services"
+  notify: Restart uptrace-otelcol service
+
+- name: Deploy Uptrace ClickHouse Prometheus configuration
+  ansible.builtin.template:
+    src: uptrace-prometheus.xml.j2
+    dest: "{{ uptrace_data_dir }}/ch-config/prometheus.xml"
+    mode: "0644"
+  when: "'uptrace-clickhouse' in quadlet_services"
+  notify: Restart uptrace-clickhouse service
+
+- name: Deploy Uptrace Homepage icon
+  ansible.builtin.copy:
+    src: uptrace.svg
+    dest: "{{ homepage_data_dir }}/images/uptrace.svg"
+    mode: "0644"
+  when: "'homepage' in quadlet_services"
+
 - name: Deploy SwarmUI Quadlet build definition
   ansible.builtin.template:
     src: swarmui.build.j2
