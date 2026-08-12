@@ -12,11 +12,6 @@ llama_swap_port: 8080
 swarmui_data_dir: "{{ homelab_data_dir }}/swarmui"
 swarmui_port: 7801
 
-# Wan2GP configuration
-wan2gp_data_dir: "{{ homelab_data_dir }}/wan2gp"
-wan2gp_port: 7860
-wan2gp_image: "localhost/wan2gp:latest"
-
 quadlet_no_block: true
 
 
