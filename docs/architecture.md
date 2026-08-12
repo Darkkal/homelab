@@ -154,7 +154,13 @@ An `otlp` receiver is also wired, so any homelab service can be instrumented lat
 
 #### Uptrace dashboards & monitors
 
-Uptrace dashboards are defined as declarative YAML templates (schema v2) in `roles/quadlets/files/dashboards/` and provisioned automatically on every playbook run (when `enable_uptrace_dashboards` is true) via the Uptrace internal HTTP API: the playbook logs in as the seeded admin user, then creates (POST) or updates (PUT) each dashboard and its bundled metric monitors. Provisioning is idempotent — a `sha256` state file under `{{ uptrace_data_dir }}` records the last-provisioned hash of each file so unchanged dashboards are skipped (no API writes, `changed=0`).
+Uptrace dashboards are defined as declarative YAML templates (schema v2) in `roles/quadlets/files/dashboards/` and provisioned automatically on every playbook run (when `enable_uptrace_dashboards` is true) via the Uptrace internal HTTP API: the playbook logs in as the seeded admin user, then creates (POST) or updates (PUT) each dashboard and its bundled metric monitors.
+
+**Idempotency & UI edits.** Provisioning is idempotent — a `sha256` state file under `{{ uptrace_data_dir }}` records the last-provisioned hash of each file. A dashboard/monitor is written only when (a) its name is missing from Uptrace (POST) or (b) its YAML file in the repo changed since the last run (PUT). The state is compared against the **local files only**, never against the live Uptrace content. Consequently:
+
+- **Tweaks made directly in the Uptrace UI are preserved** — they do not trigger a change in Ansible and are not overwritten, as long as the corresponding YAML file in the repo is left untouched.
+- A managed dashboard/monitor **deleted in the UI is re-created** on the next run (the repo is authoritative for existence).
+- Editing the repo YAML applies that new default wholesale, including any prior UI tweaks to that dashboard.
 
 | Dashboard | Data source | Notable widgets |
 | :--- | :--- | :--- |
