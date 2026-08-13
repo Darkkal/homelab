@@ -116,6 +116,7 @@ These settings apply to target hosts in the `service_hosts` group:
 | `uptrace_port` | `14318` | Host web port for direct Uptrace UI access (container internal port `80`). |
 | `uptrace_image` | `docker.io/uptrace/uptrace:2.0.3` | Uptrace container image. Pinned to a stable release; Uptrace only supports next-minor upgrades, so `uptrace_autoupdate` defaults to `disabled`. |
 | `uptrace_clickhouse_image` | `docker.io/clickhouse/clickhouse-server:26.3` | ClickHouse telemetry store image. |
+| `uptrace_clickhouse_http_port` | `8123` | Host **loopback-only** (`127.0.0.1`) HTTP port exposing ClickHouse to local tooling for **read-only** querying of Uptrace telemetry. Consumed by the local MCP ClickHouse server (`mcp-clickhouse`) that the agent runs on the host. Bound to loopback only and read-only by design (see the rationale in [`docs/architecture.md`](architecture.md)). |
 | `uptrace_postgres_image` | `docker.io/library/postgres:17-alpine` | Uptrace PostgreSQL metadata store image. |
 | `uptrace_redis_image` | `docker.io/library/redis:6.2.2-alpine` | Uptrace Redis cache image. |
 | `uptrace_otelcol_image` | `docker.io/otel/opentelemetry-collector-contrib:0.123.0` | OpenTelemetry Collector image handling host metrics, synthetic checks, and Prometheus scraping. |
