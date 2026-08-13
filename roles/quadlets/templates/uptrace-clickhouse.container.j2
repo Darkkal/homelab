@@ -7,6 +7,7 @@ ContainerName=uptrace-clickhouse
 Image={{ uptrace_clickhouse_image | default('clickhouse/clickhouse-server:26.3') }}
 AutoUpdate={{ uptrace_clickhouse_autoupdate | default('registry') }}
 Network={{ network_name }}
+PublishPort=127.0.0.1:{{ uptrace_clickhouse_http_port | default(8123) }}:8123
 Environment=CLICKHOUSE_USER=uptrace
 Environment=CLICKHOUSE_PASSWORD={{ uptrace_ch_password }}
 Environment=CLICKHOUSE_DB=uptrace

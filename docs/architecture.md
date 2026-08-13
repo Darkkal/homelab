@@ -143,6 +143,8 @@ The `glances` container publishes its REST API to the shared network, and the Ho
 
 Uptrace is the homelab's centralized OpenTelemetry observability platform (traces, metrics, logs). It runs as five Quadlet services on `service_hosts` — `uptrace` (APM UI + API + OTLP ingest), `uptrace-clickhouse`, `uptrace-postgres`, `uptrace-redis`, and `uptrace-otelcol` — all on the shared `homelab.network`. Only the Uptrace UI is published to the host (`14318`); all telemetry ingestion is internal to the network.
 
+**Why the ClickHouse HTTP port is published.** The `uptrace-clickhouse` container additionally publishes its HTTP interface (`8123`) to the **host loopback only** (`PublishPort=127.0.0.1:{{ uptrace_clickhouse_http_port }}:8123`). This exists solely so a **local, read-only agent tool** (the MCP `mcp-clickhouse` server, which runs on the host) can query Uptrace's trace/metric/log tables directly while building or troubleshooting infrastructure. It is deliberately **not** published to the LAN, is **not** used for telemetry ingestion (that stays internal to `homelab.network`), and the MCP server enforces read-only queries (`CLICKHOUSE_ALLOW_WRITE_ACCESS=false`), so no agent operation can mutate or delete stored telemetry.
+
 The OTel Collector (`uptrace-otelcol`) is the integration hub and gathers telemetry through four paths:
 
 1. **Host metrics** — the `hostmetrics` receiver with `root_path: /host`, `--pid=host`, and read-only `/sys` + `/:/host` mounts (same pattern as Glances) reports host CPU/memory/disk/network/load.
