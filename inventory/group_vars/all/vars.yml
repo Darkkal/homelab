@@ -4,7 +4,8 @@ quadlet_dir: "{{ homelab_user_home }}/.config/containers/systemd"
 homelab_data_dir: "{{ homelab_user_home }}/homelab"
 
 network_name: homelab.network
-caddy_file_path: "{{ homelab_data_dir }}/caddy/Caddyfile"
+caddy_data_dir: "{{ homelab_data_dir }}/caddy"
+caddy_file_path: "{{ caddy_data_dir }}/Caddyfile"
 
 forgejo_data_dir: "{{ homelab_data_dir }}/forgejo"
 forgejo_admin_user: "{{ vault_forgejo_admin_user | default('admin') }}"
@@ -38,7 +39,7 @@ uptrace_retention_traces: "7 DAY"
 uptrace_retention_metrics: "30 DAY"
 uptrace_retention_logs: "7 DAY"
 
-# LAN subnet for firewall rich rules (HTTP port 80 & mDNS port 5353)
+# LAN subnet for firewall rich rules (HTTP port 80, HTTPS port 443 & mDNS port 5353)
 lan_subnet: "{{ host_lan_subnet | default(ansible_facts['default_ipv4']['network'] + '/24') }}"
 
 # Podman container auto-update configuration

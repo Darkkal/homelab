@@ -9,7 +9,7 @@ AutoUpdate={{ forgejo_autoupdate | default('registry') }}
 Network={{ network_name }}
 Environment=USER_UID=1000
 Environment=USER_GID=1000
-Environment=FORGEJO__server__ROOT_URL={{ forgejo_root_url | default('http://forgejo.local/') }}
+Environment=FORGEJO__server__ROOT_URL={{ forgejo_root_url | default('https://forgejo.local/') }}
 Environment=FORGEJO__server__DOMAIN=forgejo.local
 Environment=FORGEJO__server__HTTP_PORT={{ forgejo_port | default(3003) }}
 Environment=FORGEJO__server__SSH_PORT=222
@@ -34,7 +34,7 @@ Volume={{ forgejo_data_dir }}:/data:Z
 Label=homepage.group="Web Services"
 Label=homepage.name=Forgejo
 Label=homepage.icon=forgejo.png
-Label=homepage.href=http://forgejo.local
+Label=homepage.href=https://forgejo.local
 Label=homepage.description="Git hosting"
 Label=homepage.widget.type=gitea
 Label=homepage.widget.url=http://forgejo:3003

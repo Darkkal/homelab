@@ -23,6 +23,7 @@
     - "{{ homelab_data_dir }}/sillytavern/extensions"
     - "{{ homelab_data_dir }}/forgejo"
     - "{{ homelab_data_dir }}/caddy"
+    - "{{ homelab_data_dir }}/caddy/data"
     - "{{ homelab_data_dir }}/open-webui"
     - "{{ homelab_data_dir }}/homepage"
     - "{{ homelab_data_dir }}/homepage/config"
@@ -99,6 +100,15 @@
         state: enabled
       become: true
 
+    - name: Allow LAN access to HTTPS (port 443) in firewalld
+      ansible.posix.firewalld:
+        zone: public
+        rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="443" protocol="tcp" accept'
+        permanent: true
+        immediate: true
+        state: enabled
+      become: true
+
     - name: Allow LAN access to mDNS (port 5353) in firewalld
       ansible.posix.firewalld:
         zone: public
@@ -124,6 +134,14 @@
         rule: allow
         from_ip: "{{ lan_subnet }}"
         port: '80'
+        proto: tcp
+      become: true
+
+    - name: Allow LAN access to HTTPS (port 443) in ufw
+      community.general.ufw:
+        rule: allow
+        from_ip: "{{ lan_subnet }}"
+        port: '443'
         proto: tcp
       become: true
 

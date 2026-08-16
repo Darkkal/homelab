@@ -1,41 +1,49 @@
-http://sillytavern.local {
+# Automatic HTTPS is enabled for all sites below (no scheme in the site address).
+# Local-only names (*.local) are served certificates from Caddy's internal CA
+# (see https://caddyserver.com/docs/automatic-https#local-https), and HTTP is
+# redirected to HTTPS automatically.
+{
+    local_certs
+    skip_install_trust
+}
+
+sillytavern.local {
     reverse_proxy {{ sillytavern_upstream }}
 }
 
-http://forgejo.local {
+forgejo.local {
     reverse_proxy {{ forgejo_upstream }}
 }
 
-http://llamaswap.local {
+llamaswap.local {
     reverse_proxy {{ llama_swap_upstream }}
 }
 
-http://openwebui.local {
+openwebui.local {
     reverse_proxy {{ openwebui_upstream }}
 }
 
-http://swarmui.local {
+swarmui.local {
     reverse_proxy {{ swarmui_upstream }}
 }
 
-http://homepage.local {
+homepage.local {
     reverse_proxy {{ homepage_upstream }}
 }
 
-http://glances.local {
+glances.local {
     reverse_proxy {{ glances_upstream }}
 }
 
-http://searxng.local {
+searxng.local {
     reverse_proxy {{ searxng_upstream }}
 }
 
-http://piclaw.local {
+piclaw.local {
     reverse_proxy {{ piclaw_upstream }}
 }
 
-http://uptrace.local {
+uptrace.local {
     reverse_proxy {{ uptrace_upstream }}
 }
-
 

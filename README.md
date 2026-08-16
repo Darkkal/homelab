@@ -118,19 +118,19 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 
 | Service | Primary LAN URL | Direct Host / Port | Access Protocol | Description & Authentication | Ansible Group |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **llama-swap** | `http://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
-| **SillyTavern** | `http://sillytavern.local` | `http://<host-ip>:8000` | Web UI (HTTP) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
-| **Open WebUI** | `http://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTP) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
-| **SearXNG** | `http://searxng.local` | `http://<host-ip>:8082` | Web UI / API | Self-hosted search aggregator for Open WebUI. Proxied via Caddy. | `service_hosts` |
+| **llama-swap** | `https://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
+| **SillyTavern** | `https://sillytavern.local` | `http://<host-ip>:8000` | Web UI (HTTPS) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
+| **Open WebUI** | `https://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTPS) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
+| **SearXNG** | `https://searxng.local` | `http://<host-ip>:8082` | Web UI / API | Self-hosted search aggregator for Open WebUI. Proxied via Caddy. | `service_hosts` |
 | **Playwright** | — | `http://<host-ip>:3004` | WebSocket / HTTP | Headless browser scraping service for Open WebUI web loader (`ws://playwright:3000`). | `service_hosts` |
-| **PiClaw** | `http://piclaw.local` | `http://<host-ip>:8083` | Web UI (HTTP) | Stateful AI coding agent & workspace interface. Proxied via Caddy. Data in `~/homelab/piclaw`. | `service_hosts` |
-| **SwarmUI** | `http://swarmui.local` | `http://<host-ip>:7801` | Web UI (HTTP) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
-| **Forgejo (Web)** | `http://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
+| **PiClaw** | `https://piclaw.local` | `http://<host-ip>:8083` | Web UI (HTTPS) | Stateful AI coding agent & workspace interface. Proxied via Caddy. Data in `~/homelab/piclaw`. | `service_hosts` |
+| **SwarmUI** | `https://swarmui.local` | `http://<host-ip>:7801` | Web UI (HTTPS) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
+| **Forgejo (Web)** | `https://forgejo.local` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
 | **Forgejo (SSH)**| — | `ssh://git@<host-ip>:222` | Git over SSH | Git clone and push operations over SSH using port `222`. | `service_hosts` |
-| **Caddy Proxy** | `http://<host-ip>:80` | `http://localhost:80` | HTTP Proxy | Reverse proxy routing `.local` requests to Quadlet containers. | `service_hosts` |
-| **Homepage** | `http://homepage.local` | `http://<host-ip>:3002` | Web UI (HTTP) | Single-page dashboard for all local services with bookmarks, site monitoring, and widgets. Proxied via Caddy. | `service_hosts` |
-| **Glances** | `http://glances.local` | `http://<host-ip>:61208` | Web UI / REST API | Host resource monitoring (CPU, memory, temp, uptime, disk) exposing the REST API consumed by the Homepage Glances info widget. Basic auth enabled. Proxied via Caddy. | `service_hosts` |
-| **Uptrace** | `http://uptrace.local` | `http://<host-ip>:14318` | Web UI / API (OTLP) | OpenTelemetry-based observability (distributed traces, metrics, logs) with ClickHouse, PostgreSQL, Redis, and an OTel Collector handling host metrics, synthetic health checks, and Prometheus scraping of llama-swap / Forgejo / ClickHouse. Ships six auto-provisioned dashboards (`Homelab: Host / Service Health / GPU / Forgejo / ClickHouse / Uptrace Databases`) with bundled metric monitors. Proxied via Caddy. | `service_hosts` |
+| **Caddy Proxy** | `https://<host-ip>` | `http://<host-ip>:80` | HTTP/HTTPS Proxy | Reverse proxy routing `.local` requests to Quadlet containers over HTTPS. | `service_hosts` |
+| **Homepage** | `https://homepage.local` | `http://<host-ip>:3002` | Web UI (HTTPS) | Single-page dashboard for all local services with bookmarks, site monitoring, and widgets. Proxied via Caddy. | `service_hosts` |
+| **Glances** | `https://glances.local` | `http://<host-ip>:61208` | Web UI / REST API | Host resource monitoring (CPU, memory, temp, uptime, disk) exposing the REST API consumed by the Homepage Glances info widget. Basic auth enabled. Proxied via Caddy. | `service_hosts` |
+| **Uptrace** | `https://uptrace.local` | `http://<host-ip>:14318` | Web UI / API (OTLP) | OpenTelemetry-based observability (distributed traces, metrics, logs) with ClickHouse, PostgreSQL, Redis, and an OTel Collector handling host metrics, synthetic health checks, and Prometheus scraping of llama-swap / Forgejo / ClickHouse. Ships six auto-provisioned dashboards (`Homelab: Host / Service Health / GPU / Forgejo / ClickHouse / Uptrace Databases`) with bundled metric monitors. Proxied via Caddy. | `service_hosts` |
 | **Avahi Aliases**| Host native (`avahi-tools`) | mDNS (`*.local`) | mDNS Publishing | Publishes LAN mDNS aliases for local service resolution. | `service_hosts` |
 
 ---
@@ -141,11 +141,43 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
    - The `avahi` role publishes `.local` hostnames across your LAN.
    - Any LAN device (Linux, macOS, Windows 10/11, iOS, Android) resolves these hostnames directly without a custom local DNS server.
 2. **Reverse Proxy Routing (Caddy)**:
-   - Caddy binds to host port `80` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 80`).
+   - Caddy binds to host ports `80` and `443` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 80`).
    - Requests to `*.local` domains forward to container backends based on `Host` headers.
-3. **Direct Port Exposure**:
-   - Every service also publishes a direct host port (see the **Direct Host / Port** column above) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy.
+3. **Automatic Local HTTPS**:
+   - All `.local` sites are served over **HTTPS** by default. Caddy uses its built-in internal Certificate Authority (["Local HTTPS"](https://caddyserver.com/docs/automatic-https#local-https)) to sign certificates for `.local` hostnames automatically, and redirects `http://` requests to `https://`.
+   - The internal CA root certificate is generated and stored at `~/homelab/caddy/data/caddy/pki/authorities/local/root.crt` on the host. LAN clients must trust this root certificate to avoid browser security warnings — see [Trusting Caddy's Local CA](#trusting-caddys-local-ca) below.
+4. **Direct Port Exposure**:
+   - Every service also publishes a direct host port (see the **Direct Host / Port** column above) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy. Direct ports remain plain HTTP.
    - Forgejo additionally binds SSH port `222` directly to the host.
+
+---
+
+### Trusting Caddy's Local CA
+
+The `.local` certificates are signed by Caddy's self-hosted internal CA ("Caddy Local Authority"). Browsers and apps will flag the connections as untrusted until you install the CA root certificate on each device that accesses the dashboard.
+
+1. On the server, verify the CA has been generated:
+   ```bash
+   systemctl --user status caddy
+   ls ~/homelab/caddy/data/caddy/pki/authorities/local/
+   ```
+   The file to distribute is `root.crt`.
+2. Install the root certificate as a trusted CA on each LAN client:
+   - **Linux — Debian/Ubuntu**: copy `root.crt` to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`.
+   - **Linux — Fedora/RHEL/Nobara** (uses `p11-kit`): copy `root.crt` to `/etc/pki/ca-trust/source/anchors/` and run `sudo update-ca-trust`.
+     ```bash
+     sudo cp ~/homelab/caddy/data/caddy/pki/authorities/local/root.crt /etc/pki/ca-trust/source/anchors/
+     sudo update-ca-trust
+     trust list | grep -A 2 "Caddy Local Authority"   # verify
+     ```
+   - **macOS**: open `root.crt` in Keychain Access, set *Always Trust*, then verify in *System*.
+   - **Windows**: right-click `root.crt` → *Install Certificate* → *Local Machine* → *Trusted Root Certification Authorities*.
+   - **Android**: Settings → Security → *Install a certificate* (CA certificate) with `root.crt`.
+   - **iOS**: install the profile for `root.crt`, then enable *Full Trust for Root Certificates* in Settings → General → About → Certificate Trust Settings.
+   - **Firefox** (uses its own trust store): Settings → Privacy & Security → Certificates → *View Certificates* → *Authorities* → *Import* `root.crt` and tick "Trust this CA to identify websites".
+
+> [!IMPORTANT]
+> The CA root certificate is private to your homelab. Keep `~/homelab/caddy/data/` backed up — if it is lost, Caddy generates a new CA and every device must re-trust it. The `/data` volume is persistent across container restarts and image auto-updates.
 
 ---
 
@@ -162,8 +194,9 @@ If a device cannot resolve `.local` mDNS hostnames:
    ```
 3. **Direct HTTP Host Header Verification**:
    ```bash
-   curl -H "Host: sillytavern.local" http://<host-ip>
+   curl -k -H "Host: sillytavern.local" https://<host-ip>
    ```
+   (`-k` skips certificate verification; add `--resolve sillytavern.local:443:<host-ip>` if you want to test the `https://` URL directly without touching DNS.)
 4. **Verify mDNS Resolution**:
    ```bash
    avahi-resolve -n sillytavern.local

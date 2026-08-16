@@ -9,7 +9,9 @@ AutoUpdate={{ caddy_autoupdate | default('registry') }}
 ContainerName=caddy
 Network={{ network_name }}
 PublishPort=80:80
+PublishPort=443:443
 Volume={{ caddy_file_path }}:/etc/caddy/Caddyfile:Z
+Volume={{ caddy_data_dir }}/data:/data:Z
 
 Label=homepage.group="Infrastructure"
 Label=homepage.name=Caddy

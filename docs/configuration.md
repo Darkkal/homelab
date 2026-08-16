@@ -88,7 +88,7 @@ These settings apply to target hosts in the `service_hosts` group:
 | `avahi_aliases` | List of `.local` hostnames | Hostnames published via LAN mDNS (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `swarmui.local`). |
 | `forgejo_port` | `3003` | Host web port for direct Forgejo access. |
 | `forgejo_image` | `codeberg.org/forgejo/forgejo:16` | Forgejo container image. Tracks the latest major (auto-updated via the `registry` label). Bumped off the old `:10` pin for the LFS upload quota nil-pointer fix (v10/v12 crash on LFS batch uploads when `ctx.Doer` is nil). Forgejo publishes no `:latest` tag, so `:16` is the newest major. |
-| `forgejo_root_url` | `http://forgejo.local/` | Forgejo `ROOT_URL` (`[server] ROOT_URL`). Must match the primary site URL so generated links (web UI, mail, webhooks, OAuth2) are correct and the admin-page mismatch warning is not shown. |
+| `forgejo_root_url` | `https://forgejo.local/` | Forgejo `ROOT_URL` (`[server] ROOT_URL`). Must match the primary site URL so generated links (web UI, mail, webhooks, OAuth2) are correct and the admin-page mismatch warning is not shown. |
 | `forgejo_populate_squash_comment_with_commit_messages` | `true` | Include all PR commit messages in default squash-merge messages (`[repository] POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES`). |
 | `forgejo_lfs_start_server` | `true` | Enable Git LFS support (`[server] LFS_START_SERVER`). |
 | `forgejo_lfs_path` | `/data/git/lfs` | Container path for Git LFS content (`[lfs] PATH`). Must be under a directory writable by the container's git user; maps to host `~/homelab/forgejo/git/lfs` via the `/data` volume mount. |
@@ -142,7 +142,7 @@ To register a new containerized service on the Homepage dashboard:
    Label=homepage.group="Web Services"
    Label=homepage.name="SearXNG"
    Label=homepage.icon=searxng.png
-   Label=homepage.href=http://searxng.local
+   Label=homepage.href=https://searxng.local
    Label=homepage.description="Self-hosted search aggregator"
    ```
 
@@ -205,6 +205,8 @@ To migrate characters, chats, and settings from a standalone Docker Compose inst
 ### Caddy Reverse Proxy Defaults (`roles/caddy/defaults/main.yml`)
 
 Caddy upstream variables define where requests to `*.local` hostnames are routed. In single-machine setups, these default to container names on the `homelab.network` bridge network. For multi-host setups, these can be overridden in `inventory/group_vars/service_hosts.yml` with physical IP addresses or hostnames.
+
+All `.local` sites are served over **automatic HTTPS** using Caddy's internal Certificate Authority. The `roles/caddy/templates/Caddyfile.j2` template declares sites with **bare hostnames** (no scheme), which activates automatic HTTPS: Caddy serves TLS on port `443` with internal-CA-signed certificates for `*.local` names and redirects HTTP on port `80` to HTTPS. The generated CA root certificate is persisted under `~/homelab/caddy/data/caddy/pki/authorities/local/root.crt` and must be trusted on every LAN client (see the [README](README.md#trusting-caddys-local-ca)).
 
 | Variable | Default Upstream Target | Proxied Hostname |
 | :--- | :--- | :--- |
