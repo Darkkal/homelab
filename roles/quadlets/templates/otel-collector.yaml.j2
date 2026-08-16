@@ -47,6 +47,7 @@ receivers:
           Host: homepage.local
         tls:
           insecure_skip_verify: true
+          server_name_override: homepage.local
       - method: GET
         endpoint: http://sillytavern:8000/
 {% if glances_password %}
