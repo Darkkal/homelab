@@ -119,7 +119,7 @@ Every web-accessible container carries `homepage.*` labels in its quadlet templa
 | `homepage.group` | `Label=homepage.group="Web Services"` |
 | `homepage.name` | `Label=homepage.name="Open WebUI"` |
 | `homepage.icon` | `Label=homepage.icon=open-webui.png` |
-| `homepage.href` | `Label=homepage.href=http://openwebui.local` |
+| `homepage.href` | `Label=homepage.href=https://openwebui.local` |
 | `homepage.description` | `Label=homepage.description="Chat & RAG frontend"` |
 
 Optional widget labels use dot notation (`homepage.widget.type=...`, `homepage.widget.url=...`, `homepage.widget.fields=...`). Multiple widgets use an index, e.g. `homepage.widgets[0].type=...`.
