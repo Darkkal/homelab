@@ -119,7 +119,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
 | Service | Primary LAN URL | Direct Host / Port | Access Protocol | Description & Authentication | Ansible Group |
 | :--- | :--- | :--- | :--- | :--- | :--- |
 | **llama-swap** | `https://llamaswap.local` | `http://<host-ip>:8080` | Web UI & API | Model swap proxy & inference controller. Proxied via Caddy. | `inference_hosts` |
-| **SillyTavern** | `https://sillytavern.local` | `http://<host-ip>:8000` | Web UI (HTTPS) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. Basic auth enabled (`vault_sillytavern_user`). | `service_hosts` |
+| **SillyTavern** | `https://sillytavern.local` | `http://<host-ip>:8000` | Web UI (HTTPS) | LLM chat & roleplay UI. Connects to `llama-swap:8080`. LAN-only, no auth. | `service_hosts` |
 | **Open WebUI** | `https://openwebui.local` | `http://<host-ip>:8081` | Web UI (HTTPS) | Open WebUI chat & LLM interface. Proxied via Caddy. | `service_hosts` |
 | **SearXNG** | `https://searxng.local` | `http://<host-ip>:8082` | Web UI / API | Self-hosted search aggregator for Open WebUI. Proxied via Caddy. | `service_hosts` |
 | **Playwright** | — | `http://<host-ip>:3004` | WebSocket / HTTP | Headless browser scraping service for Open WebUI web loader (`ws://playwright:3000`). | `service_hosts` |

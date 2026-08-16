@@ -237,8 +237,6 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_forgejo_admin_password` | Initial admin password for Forgejo | `""` (no default password) |
 | `vault_forgejo_admin_email` | Initial admin email for Forgejo | `admin@homelab.local` |
 | `vault_forgejo_api_token_homepage` | API access token for Forgejo (used by the Homepage dashboard widget; fallback: `vault_forgejo_api_token`) | `""` (no widget) |
-| `vault_sillytavern_user` | HTTP basic auth username for SillyTavern | `admin` |
-| `vault_sillytavern_password` | HTTP basic auth password for SillyTavern | `""` (no basic auth password) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
 | `vault_forgejo_api_token_piclaw` | Forgejo API access token for PiClaw container | `""` |
 | `vault_github_api_token_piclaw` | GitHub Personal Access Token for PiClaw container (`GH_TOKEN` / `GITHUB_TOKEN`) | `""` |
@@ -266,9 +264,7 @@ vault_github_api_token_piclaw: "SuperSecretGitHubTokenForPiclaw"
 # PiClaw API State Token
 vault_piclaw_api_token: "SuperSecretPiclawApiToken"
 
-# SillyTavern Authentication
-vault_sillytavern_user: "admin"
-vault_sillytavern_password: "SuperSecretSillyTavernPassword"
+# SillyTavern API Key
 vault_sillytavern_api_key: ""
 
 # Glances Authentication

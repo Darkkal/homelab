@@ -11,7 +11,7 @@ protocol:
 port: 8000
 # -- SECURITY CONFIGURATION --
 whitelistMode: false
-basicAuthMode: true
-basicAuthUser:
-  username: "{{ sillytavern_user }}"
-  password: "{{ sillytavern_password }}"
+basicAuthMode: false
+# LAN-only deployment fronted by Caddy HTTPS; skip SillyTavern's
+# non-localhost security alert that would otherwise exit the server.
+securityOverride: true

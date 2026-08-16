@@ -148,7 +148,7 @@ Uptrace is the homelab's centralized OpenTelemetry observability platform (trace
 The OTel Collector (`uptrace-otelcol`) is the integration hub and gathers telemetry through four paths:
 
 1. **Host metrics** — the `hostmetrics` receiver with `root_path: /host`, `--pid=host`, and read-only `/sys` + `/:/host` mounts (same pattern as Glances) reports host CPU/memory/disk/network/load.
-2. **Synthetic checks** — the `httpcheck` receiver polls each web service's health endpoint (e.g. `open-webui:8081/health`, `searxng:8080/healthz`, `llama-swap:8080/health`, `homepage:3000/`, `forgejo:3003/`, `caddy:80/` with a `Host` header) for availability/latency, using vault basic-auth credentials for the auth-protected services (`sillytavern`, `glances`).
+2. **Synthetic checks** — the `httpcheck` receiver polls each web service's health endpoint (e.g. `open-webui:8081/health`, `searxng:8080/healthz`, `llama-swap:8080/health`, `homepage:3000/`, `forgejo:3003/`, `sillytavern:8000/`, `caddy:443/` with a `Host` header) for availability/latency, using vault basic-auth credentials for the auth-protected services (`glances`).
 3. **Prometheus scrape → remote write** — the `prometheus` receiver scrapes llama-swap's `/metrics` (GPU temp, VRAM, util %, power draw), Forgejo's `/metrics` (enabled via `FORGEJO__metrics__ENABLED=true`), ClickHouse's Prometheus endpoint (enabled via a `config.d/prometheus.xml` drop-in on port `9363`), and the collector's own telemetry, exported to Uptrace via `prometheusremotewrite`.
 4. **Database receivers** — the `postgresql` and `redis` receivers monitor Uptrace's own PostgreSQL and Redis.
 
