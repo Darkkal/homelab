@@ -163,7 +163,13 @@ The `.local` certificates are signed by Caddy's self-hosted internal CA ("Caddy 
    ```
    The file to distribute is `root.crt`.
 2. Install the root certificate as a trusted CA on each LAN client:
-   - **Linux (desktop)**: copy `root.crt` to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`.
+   - **Linux — Debian/Ubuntu**: copy `root.crt` to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`.
+   - **Linux — Fedora/RHEL/Nobara** (uses `p11-kit`): copy `root.crt` to `/etc/pki/ca-trust/source/anchors/` and run `sudo update-ca-trust`.
+     ```bash
+     sudo cp ~/homelab/caddy/data/pki/authorities/local/root.crt /etc/pki/ca-trust/source/anchors/
+     sudo update-ca-trust
+     trust list | grep -A 2 "Caddy Local Authority"   # verify
+     ```
    - **macOS**: open `root.crt` in Keychain Access, set *Always Trust*, then verify in *System*.
    - **Windows**: right-click `root.crt` → *Install Certificate* → *Local Machine* → *Trusted Root Certification Authorities*.
    - **Android**: Settings → Security → *Install a certificate* (CA certificate) with `root.crt`.
