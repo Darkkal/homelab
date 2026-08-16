@@ -13,8 +13,6 @@ forgejo_admin_password: "{{ vault_forgejo_admin_password | default('') }}"
 forgejo_admin_email: "{{ vault_forgejo_admin_email | default('admin@homelab.local') }}"
 forgejo_api_token: "{{ vault_forgejo_api_token_homepage | default(vault_forgejo_api_token | default('')) }}"
 
-sillytavern_user: "{{ vault_sillytavern_user | default('admin') }}"
-sillytavern_password: "{{ vault_sillytavern_password | default('') }}"
 sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
 
 piclaw_forgejo_api_token: "{{ vault_forgejo_api_token_piclaw | default('') }}"
