@@ -206,7 +206,7 @@ To migrate characters, chats, and settings from a standalone Docker Compose inst
 
 Caddy upstream variables define where requests to `*.local` hostnames are routed. In single-machine setups, these default to container names on the `homelab.network` bridge network. For multi-host setups, these can be overridden in `inventory/group_vars/service_hosts.yml` with physical IP addresses or hostnames.
 
-All `.local` sites are served over **automatic HTTPS** using Caddy's internal Certificate Authority. The `roles/caddy/templates/Caddyfile.j2` template declares sites with **bare hostnames** (no scheme), which activates automatic HTTPS: Caddy serves TLS on port `443` with internal-CA-signed certificates for `*.local` names and redirects HTTP on port `80` to HTTPS. The generated CA root certificate is persisted under `~/homelab/caddy/data/pki/authorities/local/root.crt` and must be trusted on every LAN client (see the [README](README.md#trusting-caddys-local-ca)).
+All `.local` sites are served over **automatic HTTPS** using Caddy's internal Certificate Authority. The `roles/caddy/templates/Caddyfile.j2` template declares sites with **bare hostnames** (no scheme), which activates automatic HTTPS: Caddy serves TLS on port `443` with internal-CA-signed certificates for `*.local` names and redirects HTTP on port `80` to HTTPS. The generated CA root certificate is persisted under `~/homelab/caddy/data/caddy/pki/authorities/local/root.crt` and must be trusted on every LAN client (see the [README](README.md#trusting-caddys-local-ca)).
 
 | Variable | Default Upstream Target | Proxied Hostname |
 | :--- | :--- | :--- |

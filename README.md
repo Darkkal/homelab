@@ -145,7 +145,7 @@ Once deployed, all services are accessible across your LAN using **mDNS Hostname
    - Requests to `*.local` domains forward to container backends based on `Host` headers.
 3. **Automatic Local HTTPS**:
    - All `.local` sites are served over **HTTPS** by default. Caddy uses its built-in internal Certificate Authority (["Local HTTPS"](https://caddyserver.com/docs/automatic-https#local-https)) to sign certificates for `.local` hostnames automatically, and redirects `http://` requests to `https://`.
-   - The internal CA root certificate is generated and stored at `~/homelab/caddy/data/pki/authorities/local/root.crt` on the host. LAN clients must trust this root certificate to avoid browser security warnings — see [Trusting Caddy's Local CA](#trusting-caddys-local-ca) below.
+   - The internal CA root certificate is generated and stored at `~/homelab/caddy/data/caddy/pki/authorities/local/root.crt` on the host. LAN clients must trust this root certificate to avoid browser security warnings — see [Trusting Caddy's Local CA](#trusting-caddys-local-ca) below.
 4. **Direct Port Exposure**:
    - Every service also publishes a direct host port (see the **Direct Host / Port** column above) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy. Direct ports remain plain HTTP.
    - Forgejo additionally binds SSH port `222` directly to the host.
@@ -159,14 +159,14 @@ The `.local` certificates are signed by Caddy's self-hosted internal CA ("Caddy 
 1. On the server, verify the CA has been generated:
    ```bash
    systemctl --user status caddy
-   ls ~/homelab/caddy/data/pki/authorities/local/
+   ls ~/homelab/caddy/data/caddy/pki/authorities/local/
    ```
    The file to distribute is `root.crt`.
 2. Install the root certificate as a trusted CA on each LAN client:
    - **Linux — Debian/Ubuntu**: copy `root.crt` to `/usr/local/share/ca-certificates/` and run `sudo update-ca-certificates`.
    - **Linux — Fedora/RHEL/Nobara** (uses `p11-kit`): copy `root.crt` to `/etc/pki/ca-trust/source/anchors/` and run `sudo update-ca-trust`.
      ```bash
-     sudo cp ~/homelab/caddy/data/pki/authorities/local/root.crt /etc/pki/ca-trust/source/anchors/
+     sudo cp ~/homelab/caddy/data/caddy/pki/authorities/local/root.crt /etc/pki/ca-trust/source/anchors/
      sudo update-ca-trust
      trust list | grep -A 2 "Caddy Local Authority"   # verify
      ```
