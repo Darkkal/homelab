@@ -47,12 +47,8 @@ receivers:
           Host: homepage.local
         tls:
           insecure_skip_verify: true
-{% if sillytavern_password %}
       - method: GET
         endpoint: http://sillytavern:8000/
-        headers:
-          Authorization: "Basic {{ (sillytavern_user ~ ':' ~ sillytavern_password) | b64encode }}"
-{% endif %}
 {% if glances_password %}
       - method: GET
         endpoint: http://glances:61208/api/4/uptime
