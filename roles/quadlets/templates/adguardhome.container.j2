@@ -1,0 +1,30 @@
+[Unit]
+Description=AdGuard Home DNS Server & Ad Blocker
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+Image=docker.io/adguard/adguardhome:latest
+AutoUpdate={{ adguardhome_autoupdate | default('registry') }}
+ContainerName=adguardhome
+Network={{ network_name }}
+# Bind DNS to the host's LAN IP only (not 0.0.0.0) so the podman bridge
+# gateway 10.89.9.1:53 stays free for aardvark-dns, which resolves container
+# names for the rest of the homelab network.
+PublishPort={{ ansible_default_ipv4.address if (ansible_default_ipv4 is defined and ansible_default_ipv4.address is defined) else '0.0.0.0' }}:53:53/tcp
+PublishPort={{ ansible_default_ipv4.address if (ansible_default_ipv4 is defined and ansible_default_ipv4.address is defined) else '0.0.0.0' }}:53:53/udp
+PublishPort={{ adguardhome_port | default(8090) }}:3000
+Volume={{ adguardhome_data_dir }}/conf:/opt/adguardhome/conf:Z
+Volume={{ adguardhome_data_dir }}/work:/opt/adguardhome/work:Z
+
+Label=homepage.group="Infrastructure"
+Label=homepage.name="AdGuard Home"
+Label=homepage.icon=adguard-home.png
+Label=homepage.href=https://adguard.home
+Label=homepage.description="Local DNS server & ad blocker"
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

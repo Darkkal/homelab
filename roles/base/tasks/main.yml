@@ -37,6 +37,9 @@
     - "{{ homelab_data_dir }}/uptrace/ch"
     - "{{ homelab_data_dir }}/uptrace/pg"
     - "{{ homelab_data_dir }}/uptrace/ch-config"
+    - "{{ homelab_data_dir }}/adguardhome"
+    - "{{ homelab_data_dir }}/adguardhome/conf"
+    - "{{ homelab_data_dir }}/adguardhome/work"
   when: "'service_hosts' in group_names"
 
 - name: Ensure inference host data directories exist
@@ -65,10 +68,10 @@
 
 
 
-- name: Allow rootless podman to bind low ports (port 80)
+- name: Allow rootless podman to bind low ports (port 53)
   ansible.posix.sysctl:
     name: net.ipv4.ip_unprivileged_port_start
-    value: '80'
+    value: '53'
     state: present
     reload: true
     sysctl_file: /etc/sysctl.d/99-rootless-ports.conf
@@ -82,6 +85,21 @@
     - "'firewalld.service' in ansible_facts.services"
     - "ansible_facts.services['firewalld.service'].state == 'running'"
   block:
+    - name: Determine firewalld zone of the default LAN interface
+      ansible.builtin.command: "firewall-cmd --get-zone-of-interface={{ ansible_default_ipv4.interface }}"
+      register: firewalld_zone_result
+      changed_when: false
+      failed_when: false
+
+    - name: Set firewalld target zone fact
+      ansible.builtin.set_fact:
+        firewalld_zone: "{{ firewalld_zone_result.stdout | default('') }}"
+
+    - name: Fall back to public zone if interface zone detection failed
+      ansible.builtin.set_fact:
+        firewalld_zone: public
+      when: firewalld_zone | length == 0
+
     - name: Allow Podman container subnet in firewalld
       ansible.posix.firewalld:
         zone: trusted
@@ -93,7 +111,7 @@
 
     - name: Allow LAN access to HTTP (port 80) in firewalld
       ansible.posix.firewalld:
-        zone: public
+        zone: "{{ firewalld_zone }}"
         rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="80" protocol="tcp" accept'
         permanent: true
         immediate: true
@@ -102,8 +120,26 @@
 
     - name: Allow LAN access to HTTPS (port 443) in firewalld
       ansible.posix.firewalld:
-        zone: public
+        zone: "{{ firewalld_zone }}"
         rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="443" protocol="tcp" accept'
+        permanent: true
+        immediate: true
+        state: enabled
+      become: true
+
+    - name: Allow LAN access to DNS (port 53) in firewalld
+      ansible.posix.firewalld:
+        zone: "{{ firewalld_zone }}"
+        rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="53" protocol="tcp" accept'
+        permanent: true
+        immediate: true
+        state: enabled
+      become: true
+
+    - name: Allow LAN access to DNS (port 53) over UDP in firewalld
+      ansible.posix.firewalld:
+        zone: "{{ firewalld_zone }}"
+        rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="53" protocol="udp" accept'
         permanent: true
         immediate: true
         state: enabled
@@ -111,7 +147,7 @@
 
     - name: Allow LAN access to mDNS (port 5353) in firewalld
       ansible.posix.firewalld:
-        zone: public
+        zone: "{{ firewalld_zone }}"
         rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="5353" protocol="udp" accept'
         permanent: true
         immediate: true
@@ -143,6 +179,22 @@
         from_ip: "{{ lan_subnet }}"
         port: '443'
         proto: tcp
+      become: true
+
+    - name: Allow LAN access to DNS (port 53) in ufw
+      community.general.ufw:
+        rule: allow
+        from_ip: "{{ lan_subnet }}"
+        port: '53'
+        proto: tcp
+      become: true
+
+    - name: Allow LAN access to DNS (port 53) over UDP in ufw
+      community.general.ufw:
+        rule: allow
+        from_ip: "{{ lan_subnet }}"
+        port: '53'
+        proto: udp
       become: true
 
     - name: Allow LAN access to mDNS (port 5353) in ufw

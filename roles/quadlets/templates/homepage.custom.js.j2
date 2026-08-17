@@ -1,20 +1,21 @@
 (function () {
   const hostname = window.location.hostname;
-  if (hostname.endsWith('.local')) {
+  if (hostname.endsWith('.home')) {
     return;
   }
 
   const servicePorts = {
-    'sillytavern.local': {{ sillytavern_port | default(8000) }},
-    'llamaswap.local': {{ llama_swap_port | default(8080) }},
-    'openwebui.local': {{ openwebui_port | default(8081) }},
-    'swarmui.local': {{ swarmui_port | default(7801) }},
-    'forgejo.local': {{ forgejo_port | default(3003) }},
-    'homepage.local': {{ homepage_port | default(3002) }},
-    'glances.local': {{ glances_port | default(61208) }},
-    'searxng.local': {{ searxng_port | default(8082) }},
-    'piclaw.local': {{ piclaw_port | default(8083) }},
-    'uptrace.local': {{ uptrace_port | default(14318) }},
+    'sillytavern.home': {{ sillytavern_port | default(8000) }},
+    'llamaswap.home': {{ llama_swap_port | default(8080) }},
+    'openwebui.home': {{ openwebui_port | default(8081) }},
+    'swarmui.home': {{ swarmui_port | default(7801) }},
+    'forgejo.home': {{ forgejo_port | default(3003) }},
+    'homepage.home': {{ homepage_port | default(3002) }},
+    'glances.home': {{ glances_port | default(61208) }},
+    'searxng.home': {{ searxng_port | default(8082) }},
+    'piclaw.home': {{ piclaw_port | default(8083) }},
+    'uptrace.home': {{ uptrace_port | default(14318) }},
+    'adguard.home': {{ adguardhome_port | default(8090) }},
   };
 
   const origin = window.location.protocol + '//' + hostname;
@@ -31,7 +32,7 @@
       } catch (e) {
         return;
       }
-      if (!url.hostname.endsWith('.local')) {
+      if (!url.hostname.endsWith('.home')) {
         return;
       }
       const port = servicePorts[url.hostname];

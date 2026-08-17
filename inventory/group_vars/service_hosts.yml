@@ -3,7 +3,7 @@ st_data_dir: "{{ homelab_data_dir }}/sillytavern"
 sillytavern_port: 8000
 sillytavern_openai_api_base_url: "http://llama-swap:8080/v1"
 forgejo_port: 3003
-forgejo_root_url: "https://forgejo.local/"
+forgejo_root_url: "https://forgejo.home/"
 forgejo_populate_squash_comment_with_commit_messages: true
 forgejo_lfs_start_server: true
 forgejo_lfs_path: "/data/git/lfs"
@@ -43,14 +43,20 @@ uptrace_otelcol_image: "docker.io/otel/opentelemetry-collector-contrib:0.123.0"
 enable_uptrace_dashboards: true
 uptrace_project_id: 1
 
+adguardhome_data_dir: "{{ homelab_data_dir }}/adguardhome"
+adguardhome_port: 8090
+adguardhome_upstream_dns:
+  - 9.9.9.9
+
 avahi_aliases:
-  - sillytavern.local
-  - forgejo.local
-  - llamaswap.local
-  - openwebui.local
-  - swarmui.local
-  - homepage.local
-  - glances.local
-  - searxng.local
-  - piclaw.local
-  - uptrace.local
+  - sillytavern.home
+  - forgejo.home
+  - llamaswap.home
+  - openwebui.home
+  - swarmui.home
+  - homepage.home
+  - glances.home
+  - searxng.home
+  - piclaw.home
+  - uptrace.home
+  - adguard.home

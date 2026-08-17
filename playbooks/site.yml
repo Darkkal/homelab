@@ -35,6 +35,7 @@
           - homepage
           - glances
           - piclaw
+          - adguardhome
           - uptrace-clickhouse
           - uptrace-postgres
           - uptrace-redis

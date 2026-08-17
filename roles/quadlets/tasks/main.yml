@@ -147,3 +147,9 @@
   when:
     - "'uptrace' in quadlet_services"
     - enable_uptrace_dashboards | default(true)
+
+- name: Provision AdGuard Home configuration
+  ansible.builtin.include_tasks: adguardhome-provision.yml
+  when:
+    - "'adguardhome' in quadlet_services"
+    - not ansible_check_mode

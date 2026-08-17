@@ -9,7 +9,7 @@ ContainerName=homepage
 Image=ghcr.io/gethomepage/homepage:latest
 AutoUpdate={{ homepage_autoupdate | default('registry') }}
 Network={{ network_name }}
-Environment=HOMEPAGE_ALLOWED_HOSTS={% set hosts = ['homepage.local'] %}{% if ansible_default_ipv4 is defined and ansible_default_ipv4.address is defined %}{% set hosts = hosts + [ansible_default_ipv4.address ~ ':' ~ homepage_port] %}{% endif %}{% set hosts = hosts + (homepage_allowed_hosts_extra | default([])) %}{% set hosts = hosts + ['localhost:' ~ homepage_port, '127.0.0.1:' ~ homepage_port, '[::1]:' ~ homepage_port] %}{{ hosts | join(',') }}
+Environment=HOMEPAGE_ALLOWED_HOSTS={% set hosts = ['homepage.home'] %}{% if ansible_default_ipv4 is defined and ansible_default_ipv4.address is defined %}{% set hosts = hosts + [ansible_default_ipv4.address ~ ':' ~ homepage_port] %}{% endif %}{% set hosts = hosts + (homepage_allowed_hosts_extra | default([])) %}{% set hosts = hosts + ['localhost:' ~ homepage_port, '127.0.0.1:' ~ homepage_port, '[::1]:' ~ homepage_port] %}{{ hosts | join(',') }}
 PublishPort={{ homepage_port | default(3002) }}:3000
 Volume={{ homepage_data_dir }}/config:/app/config:Z
 Volume={{ homepage_data_dir }}/images:/app/public/images:Z
@@ -18,7 +18,7 @@ Volume=/%t/podman/podman.sock:/var/run/docker.sock:ro
 Label=homepage.group="Web Services"
 Label=homepage.name=Homepage
 Label=homepage.icon=homepage.png
-Label=homepage.href=https://homepage.local
+Label=homepage.href=https://homepage.home
 Label=homepage.description="Self-hosted Service Dashboard"
 
 [Service]

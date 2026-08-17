@@ -1,0 +1,114 @@
+---
+# Provisions AdGuard Home via its HTTP API. Idempotent: the initial
+# install/configure is skipped once the admin user exists (detected from the
+# generated AdGuardHome.yaml), the upstream DNS is POSTed as declared, and the
+# *.home DNS rewrite is reconciled against the live rewrite list. Skipped
+# entirely in --check mode so dry runs make no API calls.
+- name: Read AdGuard Home config for install detection
+  ansible.builtin.set_fact:
+    adguard_config_contents: "{{ lookup('file', adguardhome_data_dir + '/conf/AdGuardHome.yaml', errors='ignore') }}"
+
+- name: Check if AdGuard Home is already installed
+  ansible.builtin.set_fact:
+    adguard_installed: "{{ (adguard_config_contents | regex_search('users:\\s*\\n\\s*-\\s*name:') | default('', true)) != '' }}"
+
+- name: Configure AdGuard Home initial installation
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguardhome_port | default(8090) }}/control/install/configure"
+    method: POST
+    body_format: json
+    body:
+      language: en
+      username: "{{ adguardhome_username }}"
+      password: "{{ adguardhome_password }}"
+      web:
+        ip: 0.0.0.0
+        port: 3000
+      dns:
+        ip: 0.0.0.0
+        port: 53
+    status_code: [200, 403]
+  register: adguard_install
+  until: adguard_install.status == 200 or adguard_install.status == 403
+  retries: 30
+  delay: 5
+  changed_when: adguard_install.status == 200
+  when: not adguard_installed
+  no_log: true
+
+- name: Set AdGuard Home upstream DNS servers
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguardhome_port | default(8090) }}/control/dns_config"
+    method: POST
+    body_format: json
+    body:
+      upstream_dns: "{{ adguardhome_upstream_dns | default(['9.9.9.9']) }}"
+      protection_enabled: true
+      filtering_enabled: true
+    url_username: "{{ adguardhome_username }}"
+    url_password: "{{ adguardhome_password }}"
+    force_basic_auth: true
+    status_code: 200
+  changed_when: false
+  no_log: true
+
+- name: Set AdGuard Home local rewrite answer
+  ansible.builtin.set_fact:
+    adguard_rewrite_answer: "{{ ansible_default_ipv4.address }}"
+  when:
+    - ansible_default_ipv4 is defined
+    - ansible_default_ipv4.address is defined
+
+- name: Fetch existing AdGuard Home DNS rewrites
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguardhome_port | default(8090) }}/control/rewrite/list"
+    method: GET
+    url_username: "{{ adguardhome_username }}"
+    url_password: "{{ adguardhome_password }}"
+    force_basic_auth: true
+    status_code: 200
+  register: adguard_rewrites
+  when: adguard_rewrite_answer is defined
+  no_log: true
+
+- name: Build existing wildcard rewrite entry
+  ansible.builtin.set_fact:
+    adguard_wildcard_entry: "{{ (adguard_rewrites.json | default([])) | selectattr('domain', 'equalto', '*.home') | list | first | default('') }}"
+  when:
+    - adguard_rewrite_answer is defined
+    - adguard_rewrites.json is defined
+
+- name: Remove outdated AdGuard Home wildcard rewrite
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguardhome_port | default(8090) }}/control/rewrite/delete"
+    method: POST
+    body_format: json
+    body:
+      domain: "*.home"
+      answer: "{{ adguard_wildcard_entry.answer }}"
+    url_username: "{{ adguardhome_username }}"
+    url_password: "{{ adguardhome_password }}"
+    force_basic_auth: true
+    status_code: 200
+  when:
+    - adguard_wildcard_entry is defined
+    - adguard_wildcard_entry != ''
+    - adguard_wildcard_entry.answer != adguard_rewrite_answer
+  no_log: true
+
+- name: Add AdGuard Home wildcard rewrite for .home hostnames
+  ansible.builtin.uri:
+    url: "http://localhost:{{ adguardhome_port | default(8090) }}/control/rewrite/add"
+    method: POST
+    body_format: json
+    body:
+      domain: "*.home"
+      answer: "{{ adguard_rewrite_answer }}"
+    url_username: "{{ adguardhome_username }}"
+    url_password: "{{ adguardhome_password }}"
+    force_basic_auth: true
+    status_code: 200
+  when:
+    - adguard_wildcard_entry is defined
+    - adguard_wildcard_entry == '' or adguard_wildcard_entry.answer != adguard_rewrite_answer
+  no_log: true
