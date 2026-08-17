@@ -23,9 +23,9 @@
       password: "{{ adguardhome_password }}"
       web:
         ip: 0.0.0.0
-        port: 3000
+        port: "{{ adguardhome_port | default(8090) }}"
       dns:
-        ip: 0.0.0.0
+        ip: "{{ ansible_default_ipv4.address if (ansible_default_ipv4 is defined and ansible_default_ipv4.address is defined) else '0.0.0.0' }}"
         port: 53
     status_code: [200, 403]
   register: adguard_install
