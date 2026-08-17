@@ -22,6 +22,10 @@ piclaw_api_token: "{{ vault_piclaw_api_token | default(lookup('password', homela
 glances_username: "{{ vault_glances_username | default('glances') }}"
 glances_password: "{{ vault_glances_password | default('') }}"
 
+# AdGuard Home DNS server & ad blocker (web UI credentials; auto-generated unless provided in vault)
+adguardhome_username: "{{ vault_adguard_username | default('admin') }}"
+adguardhome_password: "{{ vault_adguard_password | default(lookup('password', homelab_data_dir + '/.adguardhome_password length=16 chars=ascii_lowercase,digits')) }}"
+
 searxng_secret_key: "{{ vault_searxng_secret_key | default(lookup('password', homelab_data_dir + '/.searxng_secret_key length=64 chars=hexdigits')) }}"
 
 # Uptrace observability secrets (auto-generated unless provided in vault)
