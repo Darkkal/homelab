@@ -165,7 +165,7 @@ To register a new containerized service on the Homepage dashboard:
 
 #### AdGuard Home (LAN DNS & Ad Blocker)
 
-AdGuard Home runs as a rootless Quadlet service on `service_hosts`, publishing DNS on host port `53` (TCP+UDP) and its admin UI on `adguardhome_port` (default `8090`, container port `3000`), proxied by Caddy at `adguardhome.home`.
+AdGuard Home runs as a rootless Quadlet service on `service_hosts`, publishing DNS on host port `53` (TCP+UDP) and its admin UI on `adguardhome_port` (default `8090`, container port `3000`), proxied by Caddy at `adguard.home`.
 
 - **Provisioning**: The playbook performs the first-run setup via the AdGuard Home HTTP API (`roles/quadlets/tasks/adguardhome-provision.yml`), mirroring the Uptrace dashboard pattern and running only outside `--check` mode:
   1. `POST /control/install/configure` — creates the admin user (username/password from `adguardhome_username` / `adguardhome_password`) and binds web (`0.0.0.0:3000`) and DNS (`0.0.0.0:53`). Returns `403` once configured, so re-runs are a no-op.
@@ -238,7 +238,7 @@ All `.home` sites are served over **automatic HTTPS** using Caddy's internal Cer
 | `glances_upstream` | `glances:61208` | `glances.home` |
 | `piclaw_upstream` | `piclaw:8080` | `piclaw.home` |
 | `uptrace_upstream` | `uptrace:80` | `uptrace.home` |
-| `adguardhome_upstream` | `adguardhome:3000` | `adguardhome.home` |
+| `adguardhome_upstream` | `adguardhome:3000` | `adguard.home` |
 
 ---
 
