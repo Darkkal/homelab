@@ -131,7 +131,7 @@ Once deployed, all services are accessible across your LAN using **DNS hostnames
 | **Homepage** | `https://homepage.home` | `http://<host-ip>:3002` | Web UI (HTTPS) | Single-page dashboard for all local services with bookmarks, site monitoring, and widgets. Proxied via Caddy. | `service_hosts` |
 | **Glances** | `https://glances.home` | `http://<host-ip>:61208` | Web UI / REST API | Host resource monitoring (CPU, memory, temp, uptime, disk) exposing the REST API consumed by the Homepage Glances info widget. Basic auth enabled. Proxied via Caddy. | `service_hosts` |
 | **Uptrace** | `https://uptrace.home` | `http://<host-ip>:14318` | Web UI / API (OTLP) | OpenTelemetry-based observability (distributed traces, metrics, logs) with ClickHouse, PostgreSQL, Redis, and an OTel Collector handling host metrics, synthetic health checks, and Prometheus scraping of llama-swap / Forgejo / ClickHouse. Ships six auto-provisioned dashboards (`Homelab: Host / Service Health / GPU / Forgejo / ClickHouse / Uptrace Databases`) with bundled metric monitors. Proxied via Caddy. | `service_hosts` |
-| **AdGuard Home** | `https://adguard.home` | `http://<host-ip>:8090` | Web UI / DNS (53) | LAN DNS server & ad blocker. Serves a wildcard `*.home` rewrite so any device pointed at `<host-ip>` (port 53) resolves every `*.home` hostname, with public queries forwarded to Quad9. Admin UI proxied via Caddy. | `service_hosts` |
+| **AdGuard Home** | `http://<host-ip>:8090` | `http://<host-ip>:8090` | Web UI / DNS (53) | LAN DNS server & ad blocker. Serves a wildcard `*.home` rewrite so any device pointed at `<host-ip>` (port 53) resolves every `*.home` hostname, with public queries forwarded to Quad9. Runs on the host network; admin UI accessed directly at `http://<host-ip>:8090`. | `service_hosts` |
 | **Avahi Aliases**| Host native (`avahi-tools`) | mDNS | mDNS Publishing | Legacy Avahi mDNS publishing, retained for compatibility; hostname resolution now happens via AdGuard Home DNS (`*.home`). See [issue #65](https://github.com/Darkkal/homelab/issues/65). | `service_hosts` |
 
 ---
@@ -191,7 +191,7 @@ AdGuard Home runs as a rootless Quadlet service on `service_hosts`, listening on
 
 - **Provisioning**: The playbook automates the first-run setup via AdGuard Home's HTTP API — the admin user is created from `vault_adguard_username` / `vault_adguard_password` (or an auto-generated password stored in `~/homelab/.adguardhome_password`), upstream DNS is set to Quad9 (`adguardhome_upstream_dns`), and a wildcard rewrite `*.home → <host-ip>` is added. Re-runs are idempotent.
 - **Pointing a device at it**: set the device's DNS server to `<host-ip>`. Any `*.home` hostname then resolves to the homelab host — including on Android, which cannot use mDNS and instead resolves `.home` through this DNS server.
-- **Admin UI**: `https://adguard.home` (via Caddy) or `http://<host-ip>:8090` directly.
+- **Admin UI**: `http://<host-ip>:8090` directly (AdGuard runs on the host network, so its web UI is not routed through Caddy).
 - **Verification**: `dig @<host-ip> homepage.home` should return the host's LAN IP, and `dig @<host-ip> example.com` should return a public answer via Quad9.
 
 > [!NOTE]
