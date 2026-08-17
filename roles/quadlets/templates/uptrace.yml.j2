@@ -7,8 +7,8 @@ service:
   secret: {{ uptrace_secret | to_json }}
 
 site:
-  url: https://uptrace.local
-  ingest_url: http://uptrace.local?grpc=14317
+  url: https://uptrace.home
+  ingest_url: http://uptrace.home?grpc=14317
 
 listen:
   http:
@@ -110,7 +110,7 @@ alerting: {}
 service_graph: {}
 
 self_monitoring:
-  dsn: "http://{{ uptrace_project_token }}@uptrace.local?grpc=14317"
+  dsn: "http://{{ uptrace_project_token }}@uptrace.home?grpc=14317"
 
 logging:
   level: INFO

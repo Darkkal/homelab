@@ -44,10 +44,10 @@ receivers:
       - method: GET
         endpoint: https://caddy:443/
         headers:
-          Host: homepage.local
+          Host: homepage.home
         tls:
           insecure_skip_verify: true
-          server_name_override: homepage.local
+          server_name_override: homepage.home
       - method: GET
         endpoint: http://sillytavern:8000/
 {% if glances_password %}
@@ -113,13 +113,13 @@ exporters:
     tls:
       insecure: true
     headers:
-      uptrace-dsn: 'http://{{ uptrace_project_token }}@uptrace.local?grpc=14317'
+      uptrace-dsn: 'http://{{ uptrace_project_token }}@uptrace.home?grpc=14317'
   prometheusremotewrite/uptrace:
     endpoint: http://uptrace:80/api/v1/prometheus/write
     tls:
       insecure: true
     headers:
-      uptrace-dsn: 'http://{{ uptrace_project_token }}@uptrace.local?grpc=14317'
+      uptrace-dsn: 'http://{{ uptrace_project_token }}@uptrace.home?grpc=14317'
 
 service:
   telemetry:
