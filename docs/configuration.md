@@ -85,10 +85,10 @@ These settings apply to target hosts in the `service_hosts` group:
 
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
-| `avahi_aliases` | List of `.local` hostnames | Hostnames published via LAN mDNS (`sillytavern.local`, `forgejo.local`, `llamaswap.local`, `openwebui.local`, `swarmui.local`). |
+| `avahi_aliases` | List of `.home` hostnames | Service hostnames served by AdGuard Home DNS and retained for legacy Avahi mDNS publishing (`sillytavern.home`, `forgejo.home`, `llamaswap.home`, `openwebui.home`, `swarmui.home`). |
 | `forgejo_port` | `3003` | Host web port for direct Forgejo access. |
 | `forgejo_image` | `codeberg.org/forgejo/forgejo:16` | Forgejo container image. Tracks the latest major (auto-updated via the `registry` label). Bumped off the old `:10` pin for the LFS upload quota nil-pointer fix (v10/v12 crash on LFS batch uploads when `ctx.Doer` is nil). Forgejo publishes no `:latest` tag, so `:16` is the newest major. |
-| `forgejo_root_url` | `https://forgejo.local/` | Forgejo `ROOT_URL` (`[server] ROOT_URL`). Must match the primary site URL so generated links (web UI, mail, webhooks, OAuth2) are correct and the admin-page mismatch warning is not shown. |
+| `forgejo_root_url` | `https://forgejo.home/` | Forgejo `ROOT_URL` (`[server] ROOT_URL`). Must match the primary site URL so generated links (web UI, mail, webhooks, OAuth2) are correct and the admin-page mismatch warning is not shown. |
 | `forgejo_populate_squash_comment_with_commit_messages` | `true` | Include all PR commit messages in default squash-merge messages (`[repository] POPULATE_SQUASH_COMMENT_WITH_COMMIT_MESSAGES`). |
 | `forgejo_lfs_start_server` | `true` | Enable Git LFS support (`[server] LFS_START_SERVER`). |
 | `forgejo_lfs_path` | `/data/git/lfs` | Container path for Git LFS content (`[lfs] PATH`). Must be under a directory writable by the container's git user; maps to host `~/homelab/forgejo/git/lfs` via the `/data` volume mount. |
@@ -102,7 +102,7 @@ These settings apply to target hosts in the `service_hosts` group:
 | `sillytavern_openai_api_base_url` | `http://llama-swap:8080/v1` | OpenAI-compatible API endpoint for SillyTavern LLM backend calls. |
 | `homepage_data_dir` | `~/homelab/homepage` | Directory for Homepage dashboard persistent config. |
 | `homepage_port` | `3002` | Host web port for direct Homepage dashboard access (container internal port `3000`). |
-| `homepage_allowed_hosts_extra` | `[]` | Extra `host:port` entries appended to `HOMEPAGE_ALLOWED_HOSTS` (in addition to `homepage.local`, the host's default LAN IPv4 address, and loopback), e.g. `['desktop.local:3002']`. |
+| `homepage_allowed_hosts_extra` | `[]` | Extra `host:port` entries appended to `HOMEPAGE_ALLOWED_HOSTS` (in addition to `homepage.home`, the host's default LAN IPv4 address, and loopback), e.g. `['desktop.home:3002']`. |
 | `glances_data_dir` | `~/homelab/glances` | Directory for the Glances password file and runtime data. |
 | `glances_port` | `61208` | Host web port for direct Glances access (container internal port `61208`). |
 | `glances_username` | `glances` | Glances web server basic auth username (from `vault_glances_username`). |
@@ -131,6 +131,11 @@ These settings apply to target hosts in the `service_hosts` group:
 | `uptrace_retention_traces` | `7 DAY` | ClickHouse TTL for trace data. |
 | `uptrace_retention_metrics` | `30 DAY` | ClickHouse TTL for metric data. |
 | `uptrace_retention_logs` | `7 DAY` | ClickHouse TTL for log data. |
+| `adguardhome_data_dir` | `~/homelab/adguardhome` | Directory for AdGuard Home config (`conf`) and runtime state (`work`). |
+| `adguardhome_port` | `8090` | Host web port for the AdGuard Home admin UI (container internal port `3000`). |
+| `adguardhome_upstream_dns` | `["9.9.9.9"]` | Upstream DNS servers AdGuard Home forwards public queries to. |
+| `adguardhome_username` | `admin` | AdGuard Home admin UI username (from `vault_adguard_username`). |
+| `adguardhome_password` | auto-generated (`~/homelab/.adguardhome_password`) | AdGuard Home admin UI password (from `vault_adguard_password`). The playbook seeds it on first install via AdGuard's `install/configure` API. |
 
 #### Adding New Services to the Homepage Dashboard
 
@@ -142,7 +147,7 @@ To register a new containerized service on the Homepage dashboard:
    Label=homepage.group="Web Services"
    Label=homepage.name="SearXNG"
    Label=homepage.icon=searxng.png
-   Label=homepage.href=https://searxng.local
+   Label=homepage.href=https://searxng.home
    Label=homepage.description="Self-hosted search aggregator"
    ```
 
@@ -150,19 +155,33 @@ To register a new containerized service on the Homepage dashboard:
    - Assign `homepage.group` to an existing layout group: `Inference`, `Web Services`, or `Infrastructure`.
    - If creating a new group, add a matching entry under `layout:` in `roles/quadlets/templates/homepage.settings.yaml.j2`.
 
-3. **Configure mDNS & Reverse Proxy**:
-   - Add `.local` hostname to `avahi_aliases` in `inventory/group_vars/service_hosts.yml`.
+3. **Configure DNS Hostnames & Reverse Proxy**:
+   - Add the `.home` hostname to `avahi_aliases` in `inventory/group_vars/service_hosts.yml` (served by AdGuard Home DNS and routed by Caddy).
    - Add default upstream in `roles/caddy/defaults/main.yml` and routing block in `roles/caddy/templates/Caddyfile.j2`.
 
 4. **Adhere to Quadlet Quoting Rules**:
    - Double-quote multi-word label strings: `Label=homepage.group="Web Services"`
    - Single-quote JSON arrays: `Label=homepage.widget.fields='["upstreams","requests"]'`
 
+#### AdGuard Home (LAN DNS & Ad Blocker)
+
+AdGuard Home runs as a rootless Quadlet service on `service_hosts`, publishing DNS on host port `53` (TCP+UDP) and its admin UI on `adguardhome_port` (default `8090`, container port `3000`), proxied by Caddy at `adguardhome.home`.
+
+- **Provisioning**: The playbook performs the first-run setup via the AdGuard Home HTTP API (`roles/quadlets/tasks/adguardhome-provision.yml`), mirroring the Uptrace dashboard pattern and running only outside `--check` mode:
+  1. `POST /control/install/configure` — creates the admin user (username/password from `adguardhome_username` / `adguardhome_password`) and binds web (`0.0.0.0:3000`) and DNS (`0.0.0.0:53`). Returns `403` once configured, so re-runs are a no-op.
+  2. `POST /control/dns_config` — sets `adguardhome_upstream_dns` and enables protection/filtering.
+  3. `POST /control/rewrite/*` — reconciles a wildcard `*.home → ansible_default_ipv4.address` rewrite against the live list (added if missing, re-pointed if the host IP changed).
+- **`.home` resolution**: AdGuard Home answers every `*.home` hostname with the host's LAN IP to any device pointed at `<host-ip>` (port `53`) — Linux, macOS, Windows, and Android alike. We use `.home` because `.local` (RFC 6762) is reserved for mDNS and Android will not query a DNS server for `.local` names.
+- **Port 53 binding**: AdGuard's DNS is published only on the host's LAN IP (`ansible_default_ipv4.address:53`), not `0.0.0.0`. Binding all host interfaces would collide with the podman network's aardvark-dns on the bridge gateway (`10.89.9.1:53`), which resolves container names for the rest of the homelab network.
+- **Credentials**: `vault_adguard_username` / `vault_adguard_password` are optional; when omitted the password is auto-generated into `~/homelab/.adguardhome_password` (read it to log into the admin UI). If the admin password is changed in the AdGuard UI, subsequent provisioning runs will fail authentication on the rewrite/upstream calls — keep it in sync with the vault value.
+- **Data**: config lives in `adguardhome_data_dir/conf` (`AdGuardHome.yaml`) and runtime state in `adguardhome_data_dir/work`. AdGuard Home owns `AdGuardHome.yaml` after first boot (it migrates the schema and persists UI edits), so the repo does not template it after initial provisioning.
+- **Verification**: `dig @<host-ip> homepage.home` returns the host IP; `dig @<host-ip> example.com` returns a public answer via Quad9.
+
 #### Glances Runtime Configuration
 
 Glances runs as a rootless Podman Quadlet on `service_hosts` and exposes its REST API to the Homepage Glances info widget over the shared `homelab.network`.
 
-- **Web server mode**: `GLANCES_OPT=-w` enables the FastAPI web server/REST API on container port `61208` (published to `glances_port` on the host and proxied by Caddy at `glances.local`).
+- **Web server mode**: `GLANCES_OPT=-w` enables the FastAPI web server/REST API on container port `61208` (published to `glances_port` on the host and proxied by Caddy at `glances.home`).
 - **Host visibility**: `PodmanArgs=--pid=host` shares the host PID namespace so CPU/memory/process stats reflect the host. The host OS info and temperature sensors are visible via read-only `Volume=/etc/os-release:/etc/os-release:ro` and `Volume=/sys:/sys:ro` mounts.
 - **Host disk usage**: The host root filesystem is mounted read-only at `Volume=/:/host:ro`; the Homepage widget monitors it with `disk: /host`.
 - **Authentication**: When `vault_glances_password` is set, Glances runs with `--password -u <username>` and reads the hashed password from `glances_data_dir/<username>.pwd` (generated by the `glances_pwd` filter, matching Glances' pbkdf2-sha256 format). The Homepage widget is wired with the same credentials. Ansible only deploys the password file and enables auth when the vault password is non-empty.
@@ -204,21 +223,22 @@ To migrate characters, chats, and settings from a standalone Docker Compose inst
 
 ### Caddy Reverse Proxy Defaults (`roles/caddy/defaults/main.yml`)
 
-Caddy upstream variables define where requests to `*.local` hostnames are routed. In single-machine setups, these default to container names on the `homelab.network` bridge network. For multi-host setups, these can be overridden in `inventory/group_vars/service_hosts.yml` with physical IP addresses or hostnames.
+Caddy upstream variables define where requests to `*.home` hostnames are routed. In single-machine setups, these default to container names on the `homelab.network` bridge network. For multi-host setups, these can be overridden in `inventory/group_vars/service_hosts.yml` with physical IP addresses or hostnames.
 
-All `.local` sites are served over **automatic HTTPS** using Caddy's internal Certificate Authority. The `roles/caddy/templates/Caddyfile.j2` template declares sites with **bare hostnames** (no scheme), which activates automatic HTTPS: Caddy serves TLS on port `443` with internal-CA-signed certificates for `*.local` names and redirects HTTP on port `80` to HTTPS. The generated CA root certificate is persisted under `~/homelab/caddy/data/caddy/pki/authorities/local/root.crt` and must be trusted on every LAN client (see the [README](README.md#trusting-caddys-local-ca)).
+All `.home` sites are served over **automatic HTTPS** using Caddy's internal Certificate Authority. The `roles/caddy/templates/Caddyfile.j2` template declares sites with **bare hostnames** (no scheme), which activates automatic HTTPS: Caddy serves TLS on port `443` with internal-CA-signed certificates for `*.home` names and redirects HTTP on port `80` to HTTPS. The generated CA root certificate is persisted under `~/homelab/caddy/data/caddy/pki/authorities/local/root.crt` and must be trusted on every LAN client (see the [README](README.md#trusting-caddys-local-ca)).
 
 | Variable | Default Upstream Target | Proxied Hostname |
 | :--- | :--- | :--- |
-| `sillytavern_upstream` | `sillytavern:8000` | `sillytavern.local` |
-| `forgejo_upstream` | `forgejo:3003` | `forgejo.local` |
-| `llama_swap_upstream` | `llama-swap:8080` | `llamaswap.local` |
-| `openwebui_upstream` | `open-webui:8081` | `openwebui.local` |
-| `swarmui_upstream` | `swarmui:7801` | `swarmui.local` |
-| `homepage_upstream` | `homepage:3000` | `homepage.local` |
-| `glances_upstream` | `glances:61208` | `glances.local` |
-| `piclaw_upstream` | `piclaw:8080` | `piclaw.local` |
-| `uptrace_upstream` | `uptrace:80` | `uptrace.local` |
+| `sillytavern_upstream` | `sillytavern:8000` | `sillytavern.home` |
+| `forgejo_upstream` | `forgejo:3003` | `forgejo.home` |
+| `llama_swap_upstream` | `llama-swap:8080` | `llamaswap.home` |
+| `openwebui_upstream` | `open-webui:8081` | `openwebui.home` |
+| `swarmui_upstream` | `swarmui:7801` | `swarmui.home` |
+| `homepage_upstream` | `homepage:3000` | `homepage.home` |
+| `glances_upstream` | `glances:61208` | `glances.home` |
+| `piclaw_upstream` | `piclaw:8080` | `piclaw.home` |
+| `uptrace_upstream` | `uptrace:80` | `uptrace.home` |
+| `adguardhome_upstream` | `adguardhome:3000` | `adguardhome.home` |
 
 ---
 
@@ -246,6 +266,8 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_uptrace_admin_email` | Initial Uptrace admin login email (seeded via `seed_data`) | `admin@homelab.local` |
 | `vault_uptrace_admin_password` | Initial Uptrace admin login password (seeded via `seed_data`) | `""` |
 | `vault_uptrace_project_token` | Uptrace project token used in OTLP DSNs and collector ingestion | Auto-generated (`~/homelab/.uptrace_project_token`) |
+| `vault_adguard_username` | AdGuard Home admin UI username | `admin` |
+| `vault_adguard_password` | AdGuard Home admin UI password (seeded via the install API on first run) | Auto-generated (`~/homelab/.adguardhome_password`) |
 
 ### `vault.yml` File Template
 
@@ -275,6 +297,10 @@ vault_glances_password: "SuperSecretGlancesPassword"
 vault_uptrace_admin_email: "admin@homelab.local"
 vault_uptrace_admin_password: "SuperSecretUptraceAdminPassword"
 # vault_uptrace_project_token: "SuperSecretUptraceProjectToken" (optional; auto-generated if omitted)
+
+# AdGuard Home (optional; password auto-generated if omitted)
+vault_adguard_username: "admin"
+vault_adguard_password: "SuperSecretAdguardPassword"
 ```
 
 ### Ansible Vault Utility Commands

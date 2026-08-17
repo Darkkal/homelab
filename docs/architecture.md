@@ -11,8 +11,8 @@ The homelab infrastructure automates self-hosted services using **Ansible** for 
 Key principles:
 - **Rootless Containers**: All application containers run under rootless Podman environments with systemd user linger enabled.
 - **Declarative Unit Files**: Services are defined as `.container` Quadlet templates deployed into `~/.config/containers/systemd/`.
-- **mDNS Alias Resolution**: LAN clients access services using zero-configuration mDNS hostnames (`*.local`) published via Avahi.
-- **Centralized Reverse Proxy**: Caddy listens on unprivileged host port `80` to proxy incoming HTTP requests based on the `Host` header to upstream container ports.
+- **DNS Hostname Resolution**: LAN clients resolve services using `*.home` hostnames served by the AdGuard Home DNS server on port `53`. The legacy Avahi mDNS aliases are retained for compatibility but are no longer the resolution path (see [issue #65](https://github.com/Darkkal/homelab/issues/65)).
+- **Centralized Reverse Proxy**: Caddy listens on unprivileged host port `80` to proxy incoming HTTP requests based on the `Host` header to upstream container ports. A local DNS server (AdGuard Home) publishes `*.home` records so devices without mDNS support can resolve service hostnames.
 
 ---
 
@@ -22,7 +22,7 @@ The inventory organizes machines into functional host groups:
 
 ```mermaid
 graph TD
-    Client[LAN Client / Web Browser] -->|mDNS *.local| Avahi[Avahi Daemon]
+    Client[LAN Client / Web Browser] -->|DNS *.home :53| AdGuard[AdGuard Home DNS]
     Client -->|HTTP Port 80| Caddy[Caddy Reverse Proxy]
     
     subgraph service_hosts ["service_hosts (App & Proxy Node)"]
@@ -58,7 +58,7 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), `adguardhome` (LAN DNS server & ad blocker serving `*.home` rewrites so mDNS-less devices can resolve service hostnames), and `avahi`.
   - Frontend AI applications (`sillytavern`, `open-webui`) route model completion calls internally to `llama-swap:8080`.
   - `searxng` acts as the self-hosted search aggregator for Open WebUI web search operations over `homelab.network:8080`.
   - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
@@ -78,10 +78,10 @@ graph TD
 ## Network & Traffic Flow
 
 1. **Host Name Resolution**:
-   - `avahi-aliases` publishes mDNS records for hostnames specified in `avahi_aliases` (e.g. `sillytavern.local`, `forgejo.local`, `llamaswap.local`).
-   - Clients resolve `*.local` directly to the host IP.
+   - The AdGuard Home DNS server answers every `*.home` hostname (specified via `avahi_aliases`, e.g. `sillytavern.home`, `forgejo.home`, `llamaswap.home`) with the host's LAN IP, and forwards all other queries upstream to Quad9.
+   - Clients resolve `*.home` by pointing their DNS at the host's port `53` — on Linux, macOS, Windows, and Android alike. The legacy `avahi-aliases` mDNS records are retained for compatibility but are not used for resolution.
 2. **Port 80 Routing**:
-   - System parameter `net.ipv4.ip_unprivileged_port_start = 80` allows the unprivileged Caddy container to bind directly to host port `80`.
+   - System parameter `net.ipv4.ip_unprivileged_port_start = 53` allows the unprivileged Caddy container to bind directly to host port `80` (and AdGuard Home to bind DNS port `53`).
 3. **Upstream Forwarding**:
    - Caddy inspects the incoming HTTP `Host` header and forwards traffic to the corresponding container service port.
 4. **Unified LLM Inference Routing**:
@@ -89,9 +89,9 @@ graph TD
    - `Open WebUI` connects to `http://llama-swap:8080/v1` for raw model completions over `homelab.network`.
    - `llama-swap` handles model swapping, VRAM allocation, and TTL-based model auto-unloading dynamically.
 5. **Direct Port Exposure**:
-   - Every web-accessible service publishes a direct host port (see the README service table) so it can be reached at `http://<host-ip>:<port>` without mDNS or the reverse proxy.
+   - Every web-accessible service publishes a direct host port (see the README service table) so it can be reached at `http://<host-ip>:<port>` without DNS or the reverse proxy.
    - Forgejo binds web port `3003` and SSH port `222` directly to the host for non-proxied or SSH access.
-   - The Homepage dashboard rewrites service links to the direct `host:port` form when it is accessed via IP instead of mDNS (see `homepage.custom.js`). The rewrite map is templated from the same port variables as the Quadlet `PublishPort` directives, so every discovered service is covered.
+   - The Homepage dashboard rewrites service links to the direct `host:port` form when it is accessed via IP instead of a hostname (see `homepage.custom.js`). The rewrite map is templated from the same port variables as the Quadlet `PublishPort` directives, so every discovered service is covered.
 
 > [!NOTE]
 > Direct host-port access and the Homepage IP-aware link rewriting assume a **single-host deployment** (both `inference_hosts` and `service_hosts` on the same machine, the default topology). On a split-host topology, the direct port of each service belongs to its own host, so `<host-ip>:<port>` links must be resolved per-host. This is a known limitation to be addressed in a future release.
@@ -119,7 +119,7 @@ Every web-accessible container carries `homepage.*` labels in its quadlet templa
 | `homepage.group` | `Label=homepage.group="Web Services"` |
 | `homepage.name` | `Label=homepage.name="Open WebUI"` |
 | `homepage.icon` | `Label=homepage.icon=open-webui.png` |
-| `homepage.href` | `Label=homepage.href=https://openwebui.local` |
+| `homepage.href` | `Label=homepage.href=https://openwebui.home` |
 | `homepage.description` | `Label=homepage.description="Chat & RAG frontend"` |
 
 Optional widget labels use dot notation (`homepage.widget.type=...`, `homepage.widget.url=...`, `homepage.widget.fields=...`). Multiple widgets use an index, e.g. `homepage.widgets[0].type=...`.
@@ -152,7 +152,7 @@ The OTel Collector (`uptrace-otelcol`) is the integration hub and gathers teleme
 3. **Prometheus scrape → remote write** — the `prometheus` receiver scrapes llama-swap's `/metrics` (GPU temp, VRAM, util %, power draw), Forgejo's `/metrics` (enabled via `FORGEJO__metrics__ENABLED=true`), ClickHouse's Prometheus endpoint (enabled via a `config.d/prometheus.xml` drop-in on port `9363`), and the collector's own telemetry, exported to Uptrace via `prometheusremotewrite`.
 4. **Database receivers** — the `postgresql` and `redis` receivers monitor Uptrace's own PostgreSQL and Redis.
 
-An `otlp` receiver is also wired, so any homelab service can be instrumented later to stream traces/metrics/logs directly to Uptrace. A project DSN (`http://<project_token>@uptrace.local?grpc=14317`) authenticates ingestion; Uptrace self-monitors via the same DSN so the `uptrace` service appears in the UI automatically.
+An `otlp` receiver is also wired, so any homelab service can be instrumented later to stream traces/metrics/logs directly to Uptrace. A project DSN (`http://<project_token>@uptrace.home?grpc=14317`) authenticates ingestion; Uptrace self-monitors via the same DSN so the `uptrace` service appears in the UI automatically.
 
 #### Uptrace dashboards & monitors
 
@@ -246,7 +246,7 @@ homelab/
 │       │   ├── vars.yml         # Shared paths and baseline system configuration
 │       │   └── vault.yml        # Encrypted secrets (gitignored)
 │       ├── inference_hosts.yml  # GPU layers, context sizes, and model paths
-│       └── service_hosts.yml    # Service ports, upstream addresses, and mDNS aliases
+│       └── service_hosts.yml    # Service ports, upstream addresses, and DNS hostnames
 ├── playbooks/
 │   └── site.yml                 # Main site orchestration playbook
 ├── roles/
