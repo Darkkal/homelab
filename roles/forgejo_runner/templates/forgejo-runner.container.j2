@@ -1,0 +1,24 @@
+[Unit]
+Description=Forgejo Actions runner
+After=network-online.target podman.socket
+Wants=network-online.target
+
+[Container]
+ContainerName=forgejo-runner
+Image={{ forgejo_runner_image }}
+AutoUpdate=disabled
+Network=host
+UserNS=keep-id
+User={{ forgejo_runner_uid }}
+Environment=HOME=/data
+Environment=DOCKER_HOST=unix:///run/user/{{ forgejo_runner_uid }}/podman/podman.sock
+Volume={{ forgejo_runner_data_dir }}:/data:Z
+Volume={{ forgejo_runner_workdir }}:{{ forgejo_runner_workdir }}:Z
+Volume=/run/user/{{ forgejo_runner_uid }}/podman/podman.sock:/run/user/{{ forgejo_runner_uid }}/podman/podman.sock
+Exec=forgejo-runner daemon --config /data/config.yaml
+
+[Service]
+Restart=always
+
+[Install]
+WantedBy=default.target

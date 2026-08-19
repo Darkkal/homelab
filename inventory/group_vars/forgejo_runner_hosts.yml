@@ -1,0 +1,26 @@
+---
+# Forgejo Actions runner is deliberately deployed under its own rootless
+# account. The host may also be a service_host, but this keeps the runner's
+# Podman socket and container storage separate from the homelab services.
+forgejo_runner_user: forgejo-runner
+forgejo_runner_data_dir: "/home/{{ forgejo_runner_user }}/homelab/forgejo-runner"
+forgejo_runner_workdir: "{{ forgejo_runner_data_dir }}/work"
+forgejo_runner_quadlet_dir: "/home/{{ forgejo_runner_user }}/.config/containers/systemd"
+forgejo_runner_name: "{{ inventory_hostname }}-forgejo-runner"
+forgejo_runner_instance_url: "http://127.0.0.1:{{ forgejo_port }}/"
+# Forgejo v15+ creates runners with a UUID and connection token.
+forgejo_runner_uuid: "{{ vault_forgejo_runner_uuid | default('') }}"
+forgejo_runner_token: "{{ vault_forgejo_runner_token | default('') }}"
+
+# Pin both the daemon and job image to immutable OCI index digests. The Node
+# image includes the common Actions toolchain needed by monster-raiders and
+# web-gallery while keeping SDK-specific images out of the daemon container.
+forgejo_runner_image: "data.forgejo.org/forgejo/runner:13@sha256:7fb853bfe73c229be6349398359c0a7bd01fadfd17c106607b2221150b799ed2"
+forgejo_runner_job_image: "data.forgejo.org/oci/node:lts-bookworm@sha256:934240a162082fd8b8a2f90cd5114446443f1eba1c5378f6687167ca405e6584"
+forgejo_runner_labels:
+  - "ubuntu-latest:docker://{{ forgejo_runner_job_image }}"
+forgejo_runner_capacity: 1
+forgejo_runner_timeout: 3h
+forgejo_runner_shutdown_timeout: 3h
+forgejo_runner_fetch_timeout: 5s
+forgejo_runner_report_interval: 1s

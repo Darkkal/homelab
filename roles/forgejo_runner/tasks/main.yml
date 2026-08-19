@@ -1,0 +1,131 @@
+---
+- name: Validate Forgejo runner connection configuration
+  ansible.builtin.assert:
+    that:
+      - forgejo_runner_uuid | default('') | length > 0
+      - forgejo_runner_token | default('') | length > 0
+      - forgejo_runner_instance_url | default('') | length > 0
+      - forgejo_runner_labels | default([]) | length > 0
+    fail_msg: >-
+      Configure vault_forgejo_runner_uuid, vault_forgejo_runner_token, and the
+      runner connection settings before deploying the Forgejo Actions runner.
+  when: not ansible_check_mode
+
+- name: Ensure Forgejo runner user exists
+  ansible.builtin.user:
+    name: "{{ forgejo_runner_user }}"
+    comment: Forgejo Actions runner
+    create_home: true
+    shell: /bin/bash
+    state: present
+  become: true
+
+- name: Gather Forgejo runner user identity
+  ansible.builtin.command:
+    argv:
+      - id
+      - -u
+      - "{{ forgejo_runner_user }}"
+  register: forgejo_runner_uid_result
+  changed_when: false
+  become: true
+
+- name: Gather Forgejo runner group identity
+  ansible.builtin.command:
+    argv:
+      - id
+      - -g
+      - "{{ forgejo_runner_user }}"
+  register: forgejo_runner_gid_result
+  changed_when: false
+  become: true
+
+- name: Set Forgejo runner identity facts
+  ansible.builtin.set_fact:
+    forgejo_runner_uid: "{{ forgejo_runner_uid_result.stdout | trim }}"
+    forgejo_runner_gid: "{{ forgejo_runner_gid_result.stdout | trim }}"
+    forgejo_runner_home: "/home/{{ forgejo_runner_user }}"
+
+- name: Enable lingering for the Forgejo runner user
+  ansible.builtin.command:
+    argv:
+      - loginctl
+      - enable-linger
+      - "{{ forgejo_runner_user }}"
+  become: true
+  changed_when: false
+
+- name: Ensure Forgejo runner directories exist
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    owner: "{{ forgejo_runner_user }}"
+    group: "{{ forgejo_runner_user }}"
+    mode: "{{ item.item_mode }}"
+  loop:
+    - path: "{{ forgejo_runner_home }}/.config/containers/systemd"
+      item_mode: "0755"
+    - path: "{{ forgejo_runner_home }}/homelab/forgejo-runner"
+      item_mode: "0700"
+    - path: "{{ forgejo_runner_home }}/homelab/forgejo-runner/cache"
+      item_mode: "0700"
+    - path: "{{ forgejo_runner_home }}/homelab/forgejo-runner/work"
+      item_mode: "0700"
+  loop_control:
+    loop_var: item
+    label: "{{ item.path }}"
+  become: true
+
+- name: Deploy Forgejo runner configuration
+  ansible.builtin.template:
+    src: config.yaml.j2
+    dest: "{{ forgejo_runner_data_dir }}/config.yaml"
+    owner: "{{ forgejo_runner_user }}"
+    group: "{{ forgejo_runner_user }}"
+    mode: "0600"
+  become: true
+  notify: Restart Forgejo runner
+
+- name: Enable and start the Forgejo runner Podman socket
+  ansible.builtin.systemd:
+    name: podman.socket
+    scope: user
+    enabled: true
+    state: started
+  become: true
+  become_user: "{{ forgejo_runner_user }}"
+  environment:
+    HOME: "{{ forgejo_runner_home }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ forgejo_runner_uid }}"
+
+- name: Deploy Forgejo runner Quadlet
+  ansible.builtin.template:
+    src: forgejo-runner.container.j2
+    dest: "{{ forgejo_runner_quadlet_dir }}/forgejo-runner.container"
+    owner: "{{ forgejo_runner_user }}"
+    group: "{{ forgejo_runner_user }}"
+    mode: "0644"
+  become: true
+  notify: Restart Forgejo runner
+
+- name: Reload Forgejo runner user systemd
+  ansible.builtin.systemd:
+    daemon_reload: true
+    scope: user
+  become: true
+  become_user: "{{ forgejo_runner_user }}"
+  environment:
+    HOME: "{{ forgejo_runner_home }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ forgejo_runner_uid }}"
+
+- name: Enable and start Forgejo runner service
+  ansible.builtin.systemd:
+    name: forgejo-runner.service
+    scope: user
+    enabled: true
+    state: started
+  become: true
+  become_user: "{{ forgejo_runner_user }}"
+  environment:
+    HOME: "{{ forgejo_runner_home }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ forgejo_runner_uid }}"

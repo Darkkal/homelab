@@ -219,6 +219,34 @@ To migrate characters, chats, and settings from a standalone Docker Compose inst
 
 ---
 
+## Forgejo Actions Runner Configuration
+
+The runner is deployed by the `forgejo_runner_hosts` inventory group. In the
+single-machine inventory this group contains `desktop`, but the runner uses a
+separate `forgejo-runner` Unix account and rootless Podman socket so it cannot
+manage the existing service user's containers.
+
+The runner daemon uses the pinned `data.forgejo.org/forgejo/runner` image. Jobs
+are launched as ephemeral containers through that account's rootless Podman
+socket. The default `ubuntu-latest` label uses the pinned Node/bookworm image,
+which provides the common Actions toolchain needed by the Godot and Next.js
+repositories. Add a separate label and job image when a workflow needs a
+specialized SDK; do not add SDKs to the daemon image.
+
+Before the first deployment, create a runner in Forgejo's Actions runner UI
+and add its UUID and token to the encrypted vault:
+
+```yaml
+vault_forgejo_runner_uuid: "<runner-uuid>"
+vault_forgejo_runner_token: "<runner-token>"
+```
+
+The role uses the UUID and token directly in the runner configuration's
+`server.connections` section, so re-running the playbook does not create
+duplicate runners.
+
+---
+
 ## Role Defaults & Upstreams
 
 ### Caddy Reverse Proxy Defaults (`roles/caddy/defaults/main.yml`)
@@ -258,6 +286,8 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_forgejo_api_token_homepage` | API access token for Forgejo (used by the Homepage dashboard widget; fallback: `vault_forgejo_api_token`) | `""` (no widget) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
 | `vault_forgejo_api_token_piclaw` | Forgejo API access token for PiClaw container | `""` |
+| `vault_forgejo_runner_uuid` | Forgejo Actions runner UUID created in the runner UI | required for runner deployment |
+| `vault_forgejo_runner_token` | Forgejo Actions runner connection token created in the runner UI | required for runner deployment |
 | `vault_github_api_token_piclaw` | GitHub Personal Access Token for PiClaw container (`GH_TOKEN` / `GITHUB_TOKEN`) | `""` |
 | `vault_piclaw_api_token` | Bearer token API key for PiClaw state APIs (`/api/state`, `/api/state/events`) | Auto-generated unique 64-char hex secret (`~/homelab/.piclaw_api_token`) |
 | `vault_glances_username` | Basic auth username for the Glances web server | `glances` |
@@ -280,6 +310,8 @@ vault_forgejo_admin_password: "SuperSecretForgejoPassword"
 vault_forgejo_admin_email: "admin@homelab.local"
 vault_forgejo_api_token_homepage: "SuperSecretForgejoApiTokenForHomepage"
 vault_forgejo_api_token_piclaw: "SuperSecretForgejoApiTokenForPiclaw"
+vault_forgejo_runner_uuid: "ForgejoRunnerUUID"
+vault_forgejo_runner_token: "ForgejoRunnerConnectionToken"
 vault_github_api_token_piclaw: "SuperSecretGitHubTokenForPiclaw"
 
 # PiClaw API State Token

@@ -49,3 +49,8 @@
       vars:
         quadlet_services:
           - caddy
+
+- name: Deploy Forgejo Actions runners
+  hosts: forgejo_runner_hosts
+  roles:
+    - forgejo_runner

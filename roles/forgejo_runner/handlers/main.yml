@@ -1,0 +1,12 @@
+---
+- name: Restart Forgejo runner
+  ansible.builtin.systemd:
+    name: forgejo-runner.service
+    scope: user
+    daemon_reload: true
+    state: restarted
+  become: true
+  become_user: "{{ forgejo_runner_user }}"
+  environment:
+    HOME: "{{ forgejo_runner_home }}"
+    XDG_RUNTIME_DIR: "/run/user/{{ forgejo_runner_uid }}"
