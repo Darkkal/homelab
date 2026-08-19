@@ -24,7 +24,7 @@ cache:
   proxy_port: 0
 
 container:
-  network: ""
+  network: "{{ forgejo_runner_job_network }}"
   enable_ipv6: false
   privileged: false
   valid_volumes: []

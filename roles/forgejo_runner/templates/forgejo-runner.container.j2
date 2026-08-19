@@ -7,7 +7,6 @@ Wants=network-online.target
 ContainerName=forgejo-runner
 Image={{ forgejo_runner_image }}
 AutoUpdate=disabled
-Network=host
 UserNS=keep-id
 User={{ forgejo_runner_uid }}
 Environment=HOME=/data
