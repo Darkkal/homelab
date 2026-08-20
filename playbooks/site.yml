@@ -22,7 +22,6 @@
 - name: Deploy service Quadlets and supporting infrastructure
   hosts: service_hosts
   roles:
-    - avahi
     - caddy
     - role: quadlets
       vars:

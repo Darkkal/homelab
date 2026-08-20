@@ -11,7 +11,7 @@ The homelab infrastructure automates self-hosted services using **Ansible** for 
 Key principles:
 - **Rootless Containers**: All application containers run under rootless Podman environments with systemd user linger enabled.
 - **Declarative Unit Files**: Services are defined as `.container` Quadlet templates deployed into `~/.config/containers/systemd/`.
-- **DNS Hostname Resolution**: LAN clients resolve services using `*.home` hostnames served by the AdGuard Home DNS server on port `53`. The legacy Avahi mDNS aliases are retained for compatibility but are no longer the resolution path (see [issue #65](https://github.com/Darkkal/homelab/issues/65)).
+- **DNS Hostname Resolution**: LAN clients resolve services using `*.home` hostnames served by the AdGuard Home DNS server on port `53`. (The legacy Avahi mDNS aliases were removed once DNS-based resolution was confirmed working — see [issue #65](https://github.com/Darkkal/homelab/issues/65).)
 - **Centralized Reverse Proxy**: Caddy listens on unprivileged host port `80` to proxy incoming HTTP requests based on the `Host` header to upstream container ports. A local DNS server (AdGuard Home) publishes `*.home` records so devices without mDNS support can resolve service hostnames.
 
 ---
@@ -58,7 +58,7 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), `adguardhome` (LAN DNS server & ad blocker serving `*.home` rewrites so mDNS-less devices can resolve service hostnames), and `avahi`.
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), and `adguardhome` (LAN DNS server & ad blocker serving `*.home` rewrites so mDNS-less devices can resolve service hostnames).
   - Frontend AI applications (`sillytavern`, `open-webui`) route model completion calls internally to `llama-swap:8080`.
   - `searxng` acts as the self-hosted search aggregator for Open WebUI web search operations over `homelab.network:8080`.
   - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
@@ -78,8 +78,8 @@ graph TD
 ## Network & Traffic Flow
 
 1. **Host Name Resolution**:
-   - The AdGuard Home DNS server answers every `*.home` hostname (specified via `avahi_aliases`, e.g. `sillytavern.home`, `forgejo.home`, `llamaswap.home`) with the host's LAN IP, and forwards all other queries upstream to Quad9.
-   - Clients resolve `*.home` by pointing their DNS at the host's port `53` — on Linux, macOS, Windows, and Android alike. The legacy `avahi-aliases` mDNS records are retained for compatibility but are not used for resolution.
+   - The AdGuard Home DNS server answers every `*.home` hostname (via a wildcard `*.home` rewrite, e.g. `sillytavern.home`, `forgejo.home`, `llamaswap.home`) with the host's LAN IP, and forwards all other queries upstream to Quad9.
+   - Clients resolve `*.home` by pointing their DNS at the host's port `53` — on Linux, macOS, Windows, and Android alike.
 2. **Port 80 Routing**:
    - System parameter `net.ipv4.ip_unprivileged_port_start = 53` allows the unprivileged Caddy container to bind directly to host port `80` (and AdGuard Home to bind DNS port `53`).
 3. **Upstream Forwarding**:
@@ -253,7 +253,6 @@ homelab/
 │   ├── base/                    # Core setup: directories, sysctl port 80, user lingering, Quadlet network/volume
 │   ├── nvidia/                  # NVIDIA container toolkit repo setup & CDI spec generation
 │   ├── quadlets/                # Jinja2 container templates & systemd user service lifecycle management
-│   ├── avahi/                   # Avahi package, systemd template unit, & mDNS alias publishing
 │   └── caddy/                   # Caddyfile deployment & container reload
 ├── docs/
 │   ├── architecture.md          # Architecture and repository structure guide (this file)

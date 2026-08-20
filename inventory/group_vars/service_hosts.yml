@@ -48,15 +48,3 @@ adguardhome_port: 8090
 adguardhome_upstream_dns:
   - 9.9.9.9
 
-avahi_aliases:
-  - sillytavern.home
-  - forgejo.home
-  - llamaswap.home
-  - openwebui.home
-  - swarmui.home
-  - homepage.home
-  - glances.home
-  - searxng.home
-  - piclaw.home
-  - uptrace.home
-  - adguard.home
