@@ -18,6 +18,10 @@
       - (item.ufw_rules | selectattr('from_ip', 'defined') | list | length) == (item.ufw_rules | length)
       - (item.ufw_rules | selectattr('port', 'defined') | list | length) == (item.ufw_rules | length)
       - (item.ufw_rules | selectattr('proto', 'defined') | list | length) == (item.ufw_rules | length)
+      - (item.ufw_rules | selectattr('from_ip', 'string') | list | length) == (item.ufw_rules | length)
+      - (item.ufw_rules | selectattr('port', 'string') | list | length) == (item.ufw_rules | length)
+      - (item.ufw_rules | selectattr('proto', 'string') | list | length) == (item.ufw_rules | length)
+      - (item.firewalld_rules | selectattr('rich_rule', 'string') | list | length) == (item.firewalld_rules | length)
     fail_msg: "Invalid homelab_decommissioned_services tombstone: {{ item }}"
   loop: "{{ homelab_decommissioned_services }}"
 
@@ -27,7 +31,9 @@
     fail_msg: "A service cannot be both active and decommissioned"
 
 - name: Discover installed legacy service units
-  ansible.builtin.command: "systemctl list-unit-files --no-legend --plain {{ item.unit_globs | map('quote') | join(' ') }}"
+  ansible.builtin.shell: >-
+    systemctl list-unit-files --no-legend --plain {{ item.unit_globs | map('quote') | join(' ') }}
+    | awk '{print $1}'
   register: discovered_units
   loop: "{{ homelab_decommissioned_services }}"
   changed_when: false
