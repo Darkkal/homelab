@@ -18,12 +18,6 @@
 - name: Flush systemd reload after removing legacy unit
   ansible.builtin.meta: flush_handlers
 
-- name: Remove legacy Avahi tools package
-  ansible.builtin.dnf:
-    name: avahi-tools
-    state: absent
-  become: true
-
 - name: Remove legacy mDNS firewalld rule
   ansible.posix.firewalld:
     zone: "{{ firewalld_zone }}"

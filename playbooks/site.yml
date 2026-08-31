@@ -4,6 +4,11 @@
   roles:
     - base
 
+- name: Decommission legacy Avahi state
+  hosts: all
+  roles:
+    - avahi_decommission
+
 - name: Configure NVIDIA runtime on inference hosts
   hosts: inference_hosts
   roles:
@@ -22,7 +27,6 @@
 - name: Deploy service Quadlets and supporting infrastructure
   hosts: service_hosts
   roles:
-    - avahi_decommission
     - caddy
     - role: quadlets
       vars:
