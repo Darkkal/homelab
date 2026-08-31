@@ -140,7 +140,6 @@ Once deployed, all services are accessible across your LAN using **DNS hostnames
 1. **DNS Hostname Resolution (`*.home`)**:
    - The AdGuard Home DNS server (host port `53`) answers every `*.home` name with the host's LAN IP and forwards all other queries upstream to Quad9.
    - Point a device's DNS at the homelab host (`<host-ip>`, port `53`), or have your router hand it out via DHCP, and it resolves any `*.home` service hostname — on Linux, macOS, Windows, iOS, and Android alike. See [Using AdGuard Home as your LAN DNS](#using-adguard-home-as-your-lan-dns).
-   -
 2. **Reverse Proxy Routing (Caddy)**:
    - Caddy binds to host ports `80` and `443` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 53`).
    - Requests to `*.home` domains forward to container backends based on `Host` headers.

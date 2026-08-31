@@ -1,0 +1,88 @@
+---
+- name: Validate decommissioned service tombstones
+  ansible.builtin.assert:
+    that:
+      - homelab_decommissioned_services is sequence
+      - item is mapping
+      - item.name is string and item.name is match('^[a-z][a-z0-9_-]*$')
+      - (item.keys() | list) | difference(['name', 'unit_globs', 'unit_files', 'firewalld_rules', 'ufw_rules']) | length == 0
+      - item.unit_globs is sequence
+      - item.unit_files is sequence
+      - item.firewalld_rules is sequence
+      - item.ufw_rules is sequence
+      - (item.unit_files | select('match', '^/etc/systemd/system/[A-Za-z0-9_.@%:-]+$') | list | length) == (item.unit_files | length)
+      - (item.unit_globs | select('match', '^[a-zA-Z0-9_.@*:-]+$') | list | length) == (item.unit_globs | length)
+      - (item.firewalld_rules | select('mapping') | list | length) == (item.firewalld_rules | length)
+      - (item.ufw_rules | select('mapping') | list | length) == (item.ufw_rules | length)
+    fail_msg: "Invalid homelab_decommissioned_services tombstone: {{ item }}"
+  loop: "{{ homelab_decommissioned_services }}"
+
+- name: Discover installed legacy service units
+  ansible.builtin.shell: >-
+    systemctl list-unit-files --no-legend --plain | awk '{print $1}' |
+    grep -E '{{ item.unit_globs | join("|") }}'
+  args:
+    changed_when: false
+  register: discovered_units
+  loop: "{{ homelab_decommissioned_services }}"
+  become: true
+  failed_when: discovered_units.rc not in [0, 1]
+
+- name: Flatten discovered legacy units
+  ansible.builtin.set_fact:
+    decommissioned_units: "{{ (decommissioned_units | default([])) + item.1 }}"
+  loop: "{{ discovered_units.results | subelements('stdout_lines', skip_missing=True) }}"
+
+- name: Stop and disable discovered legacy units
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: false
+  loop: "{{ decommissioned_units | default([]) }}"
+  become: true
+
+- name: Remove legacy systemd unit files
+  ansible.builtin.file:
+    path: "{{ unit_file }}"
+    state: absent
+  loop: "{{ homelab_decommissioned_services | map(attribute='unit_files') | flatten }}"
+  loop_control:
+    loop_var: unit_file
+  become: true
+  notify: Reload system systemd
+
+- name: Discover firewalld zones
+  ansible.builtin.command: firewall-cmd --get-zones
+  register: firewalld_zones
+  changed_when: false
+  become: true
+  when: "ansible_facts.services['firewalld.service'] is defined and ansible_facts.services['firewalld.service'].state == 'running'"
+
+- name: Remove legacy firewalld rules from every zone
+  ansible.posix.firewalld:
+    zone: "{{ zone }}"
+    rich_rule: "{{ rule.rich_rule }}"
+    permanent: true
+    immediate: true
+    state: disabled
+  loop: "{{ (homelab_decommissioned_services | map(attribute='firewalld_rules') | flatten) | product((firewalld_zones.stdout | default('')).split()) | list }}"
+  loop_control:
+    loop_var: firewall_rule
+  vars:
+    rule: "{{ firewall_rule.0 }}"
+    zone: "{{ firewall_rule.1 }}"
+  become: true
+  when: firewalld_zones is not skipped
+
+- name: Remove legacy UFW rules
+  community.general.ufw:
+    rule: allow
+    delete: true
+    from_ip: "{{ rule.from_ip }}"
+    port: "{{ rule.port }}"
+    proto: "{{ rule.proto }}"
+  loop: "{{ homelab_decommissioned_services | map(attribute='ufw_rules') | flatten }}"
+  loop_control:
+    loop_var: rule
+  become: true
+  when: "ansible_facts.services['ufw.service'] is defined and ansible_facts.services['ufw.service'].state == 'running'"

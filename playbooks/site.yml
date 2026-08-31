@@ -7,7 +7,20 @@
 - name: Decommission legacy Avahi state
   hosts: all
   roles:
-    - avahi_decommission
+    - role: decommissioned_services
+      vars:
+        homelab_decommissioned_services:
+          - name: avahi
+            unit_globs:
+              - 'avahi-alias@*.service'
+            unit_files:
+              - /etc/systemd/system/avahi-alias@.service
+            firewalld_rules:
+              - rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="5353" protocol="udp" accept'
+            ufw_rules:
+              - from_ip: "{{ lan_subnet }}"
+                port: '5353'
+                proto: udp
 
 - name: Configure NVIDIA runtime on inference hosts
   hosts: inference_hosts
