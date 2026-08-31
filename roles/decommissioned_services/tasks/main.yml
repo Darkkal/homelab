@@ -2,43 +2,46 @@
 - name: Validate decommissioned service tombstones
   ansible.builtin.assert:
     that:
-      - homelab_decommissioned_services is sequence
+      - homelab_decommissioned_services is sequence and homelab_decommissioned_services is not string
       - item is mapping
       - item.name is string and item.name is match('^[a-z][a-z0-9_-]*$')
       - (item.keys() | list) | difference(['name', 'unit_globs', 'unit_files', 'firewalld_rules', 'ufw_rules']) | length == 0
-      - item.unit_globs is sequence
-      - item.unit_files is sequence
-      - item.firewalld_rules is sequence
-      - item.ufw_rules is sequence
+      - item.unit_globs is sequence and item.unit_globs is not string and item.unit_globs | length > 0
+      - item.unit_files is sequence and item.unit_files is not string
+      - item.firewalld_rules is sequence and item.firewalld_rules is not string
+      - item.ufw_rules is sequence and item.ufw_rules is not string
       - (item.unit_files | select('match', '^/etc/systemd/system/[A-Za-z0-9_.@%:-]+$') | list | length) == (item.unit_files | length)
       - (item.unit_globs | select('match', '^[a-zA-Z0-9_.@*:-]+$') | list | length) == (item.unit_globs | length)
-      - (item.firewalld_rules | select('mapping') | list | length) == (item.firewalld_rules | length)
-      - (item.ufw_rules | select('mapping') | list | length) == (item.ufw_rules | length)
+      - (item.firewalld_rules | selectattr('keys', 'defined') | list | length) == (item.firewalld_rules | length)
+      - (item.ufw_rules | selectattr('keys', 'defined') | list | length) == (item.ufw_rules | length)
+      - (item.firewalld_rules | selectattr('rich_rule', 'defined') | list | length) == (item.firewalld_rules | length)
+      - (item.ufw_rules | selectattr('from_ip', 'defined') | list | length) == (item.ufw_rules | length)
+      - (item.ufw_rules | selectattr('port', 'defined') | list | length) == (item.ufw_rules | length)
+      - (item.ufw_rules | selectattr('proto', 'defined') | list | length) == (item.ufw_rules | length)
     fail_msg: "Invalid homelab_decommissioned_services tombstone: {{ item }}"
   loop: "{{ homelab_decommissioned_services }}"
 
+- name: Reject active and decommissioned service conflicts
+  ansible.builtin.assert:
+    that: "(homelab_active_services | default([])) | intersect(homelab_decommissioned_services | map(attribute='name') | list) | length == 0"
+    fail_msg: "A service cannot be both active and decommissioned"
+
 - name: Discover installed legacy service units
-  ansible.builtin.shell: >-
-    systemctl list-unit-files --no-legend --plain | awk '{print $1}' |
-    grep -E '{{ item.unit_globs | join("|") }}'
-  args:
-    changed_when: false
+  ansible.builtin.command: "systemctl list-unit-files --no-legend --plain {{ item.unit_globs | map('quote') | join(' ') }}"
   register: discovered_units
   loop: "{{ homelab_decommissioned_services }}"
+  changed_when: false
   become: true
-  failed_when: discovered_units.rc not in [0, 1]
-
-- name: Flatten discovered legacy units
-  ansible.builtin.set_fact:
-    decommissioned_units: "{{ (decommissioned_units | default([])) + item.1 }}"
-  loop: "{{ discovered_units.results | subelements('stdout_lines', skip_missing=True) }}"
+  failed_when: discovered_units.rc != 0
 
 - name: Stop and disable discovered legacy units
   ansible.builtin.systemd:
-    name: "{{ item }}"
+    name: "{{ unit }}"
     state: stopped
     enabled: false
-  loop: "{{ decommissioned_units | default([]) }}"
+  loop: "{{ discovered_units.results | map(attribute='stdout_lines') | flatten }}"
+  loop_control:
+    loop_var: unit
   become: true
 
 - name: Remove legacy systemd unit files
