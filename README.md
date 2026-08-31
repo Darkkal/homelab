@@ -132,7 +132,6 @@ Once deployed, all services are accessible across your LAN using **DNS hostnames
 | **Glances** | `https://glances.home` | `http://<host-ip>:61208` | Web UI / REST API | Host resource monitoring (CPU, memory, temp, uptime, disk) exposing the REST API consumed by the Homepage Glances info widget. Basic auth enabled. Proxied via Caddy. | `service_hosts` |
 | **Uptrace** | `https://uptrace.home` | `http://<host-ip>:14318` | Web UI / API (OTLP) | OpenTelemetry-based observability (distributed traces, metrics, logs) with ClickHouse, PostgreSQL, Redis, and an OTel Collector handling host metrics, synthetic health checks, and Prometheus scraping of llama-swap / Forgejo / ClickHouse. Ships six auto-provisioned dashboards (`Homelab: Host / Service Health / GPU / Forgejo / ClickHouse / Uptrace Databases`) with bundled metric monitors. Proxied via Caddy. | `service_hosts` |
 | **AdGuard Home** | `http://<host-ip>:8090` | `http://<host-ip>:8090` | Web UI / DNS (53) | LAN DNS server & ad blocker. Serves a wildcard `*.home` rewrite so any device pointed at `<host-ip>` (port 53) resolves every `*.home` hostname, with public queries forwarded to Quad9. Runs on the host network; admin UI accessed directly at `http://<host-ip>:8090`. | `service_hosts` |
-| **Avahi Aliases**| Host native (`avahi-tools`) | mDNS | mDNS Publishing | Legacy Avahi mDNS publishing, retained for compatibility; hostname resolution now happens via AdGuard Home DNS (`*.home`). See [issue #65](https://github.com/Darkkal/homelab/issues/65). | `service_hosts` |
 
 ---
 
@@ -141,7 +140,7 @@ Once deployed, all services are accessible across your LAN using **DNS hostnames
 1. **DNS Hostname Resolution (`*.home`)**:
    - The AdGuard Home DNS server (host port `53`) answers every `*.home` name with the host's LAN IP and forwards all other queries upstream to Quad9.
    - Point a device's DNS at the homelab host (`<host-ip>`, port `53`), or have your router hand it out via DHCP, and it resolves any `*.home` service hostname — on Linux, macOS, Windows, iOS, and Android alike. See [Using AdGuard Home as your LAN DNS](#using-adguard-home-as-your-lan-dns).
-   - The legacy Avahi mDNS aliases are retained for compatibility but are no longer the resolution path (see [issue #65](https://github.com/Darkkal/homelab/issues/65)).
+   -
 2. **Reverse Proxy Routing (Caddy)**:
    - Caddy binds to host ports `80` and `443` (configured via sysctl `net.ipv4.ip_unprivileged_port_start = 53`).
    - Requests to `*.home` domains forward to container backends based on `Host` headers.

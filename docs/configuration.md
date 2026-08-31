@@ -85,7 +85,6 @@ These settings apply to target hosts in the `service_hosts` group:
 
 | Variable | Default Value | Description |
 | :--- | :--- | :--- |
-| `avahi_aliases` | List of `.home` hostnames | Service hostnames served by AdGuard Home DNS and retained for legacy Avahi mDNS publishing (`sillytavern.home`, `forgejo.home`, `llamaswap.home`, `openwebui.home`, `swarmui.home`). |
 | `forgejo_port` | `3003` | Host web port for direct Forgejo access. |
 | `forgejo_image` | `codeberg.org/forgejo/forgejo:16` | Forgejo container image. Tracks the latest major (auto-updated via the `registry` label). Bumped off the old `:10` pin for the LFS upload quota nil-pointer fix (v10/v12 crash on LFS batch uploads when `ctx.Doer` is nil). Forgejo publishes no `:latest` tag, so `:16` is the newest major. |
 | `forgejo_root_url` | `https://forgejo.home/` | Forgejo `ROOT_URL` (`[server] ROOT_URL`). Must match the primary site URL so generated links (web UI, mail, webhooks, OAuth2) are correct and the admin-page mismatch warning is not shown. |
@@ -156,7 +155,6 @@ To register a new containerized service on the Homepage dashboard:
    - If creating a new group, add a matching entry under `layout:` in `roles/quadlets/templates/homepage.settings.yaml.j2`.
 
 3. **Configure DNS Hostnames & Reverse Proxy**:
-   - Add the `.home` hostname to `avahi_aliases` in `inventory/group_vars/service_hosts.yml` (served by AdGuard Home DNS and routed by Caddy).
    - Add default upstream in `roles/caddy/defaults/main.yml` and routing block in `roles/caddy/templates/Caddyfile.j2`.
 
 4. **Adhere to Quadlet Quoting Rules**:

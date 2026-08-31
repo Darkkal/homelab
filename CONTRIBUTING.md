@@ -57,10 +57,10 @@ When persisting data for containerized services, follow this strategy to disting
 
 
 ### Network & Routing
-- Services publish LAN hostnames (`*.home`) resolved via the AdGuard Home DNS server (legacy Avahi mDNS publishing is retained for compatibility).
+- Services publish LAN hostnames (`*.home`) resolved via the AdGuard Home DNS server.
 - Web services are reverse-proxied through **Caddy** bound to unprivileged host port `80`.
 - **New Service `.home` Routing Requirement**: Every new web-accessible service must be configured for `.home` routing:
-  1. Add the `.home` hostname (e.g. `swarmui.home`) to `avahi_aliases` in `inventory/group_vars/service_hosts.yml`.
+  1. Configure the `.home` hostname in AdGuard Home DNS and the Caddy route.
   2. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
   3. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
 - Multi-host overrides should be configured cleanly in `inventory/group_vars/service_hosts.yml`.
