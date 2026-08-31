@@ -284,7 +284,9 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_forgejo_admin_email` | Initial admin email for Forgejo | `admin@homelab.local` |
 | `vault_forgejo_api_token_homepage` | API access token for Forgejo (used by the Homepage dashboard widget; fallback: `vault_forgejo_api_token`) | `""` (no widget) |
 | `vault_sillytavern_api_key` | SillyTavern API access key | `""` |
-| `vault_forgejo_api_token_piclaw` | Forgejo API access token for PiClaw container | `""` |
+| `vault_forgejo_api_token_planner` | Forgejo API token for the PiClaw planner account (`piclaw`); injected as `FORGEJO_TOKEN` / `FORGEJO_PLANNER_TOKEN` | `""` |
+| `vault_forgejo_api_token_piclaw_worker` | Forgejo API token for the `piclaw-worker` dispatcher account (`FORGEJO_WORKER_TOKEN`) | `""` |
+| `vault_forgejo_api_token_piclaw_reviewer` | Forgejo API token for the `piclaw-reviewer` dispatcher account (`FORGEJO_REVIEWER_TOKEN`) | `""` |
 | `vault_forgejo_runner_uuid` | Forgejo Actions runner UUID created in the runner UI | required for runner deployment |
 | `vault_forgejo_runner_token` | Forgejo Actions runner connection token created in the runner UI | required for runner deployment |
 | `vault_github_api_token_piclaw` | GitHub Personal Access Token for PiClaw container (`GH_TOKEN` / `GITHUB_TOKEN`) | `""` |
@@ -308,7 +310,9 @@ vault_forgejo_admin_user: "admin"
 vault_forgejo_admin_password: "SuperSecretForgejoPassword"
 vault_forgejo_admin_email: "admin@homelab.local"
 vault_forgejo_api_token_homepage: "SuperSecretForgejoApiTokenForHomepage"
-vault_forgejo_api_token_piclaw: "SuperSecretForgejoApiTokenForPiclaw"
+vault_forgejo_api_token_planner: "SuperSecretForgejoApiTokenForPiclaw"
+vault_forgejo_api_token_piclaw_worker: "SuperSecretForgejoApiTokenForPiclawWorker"
+vault_forgejo_api_token_piclaw_reviewer: "SuperSecretForgejoApiTokenForPiclawReviewer"
 vault_forgejo_runner_uuid: "ForgejoRunnerUUID"
 vault_forgejo_runner_token: "ForgejoRunnerConnectionToken"
 vault_github_api_token_piclaw: "SuperSecretGitHubTokenForPiclaw"

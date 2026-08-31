@@ -24,7 +24,7 @@ cache:
   proxy_port: 0
 
 container:
-  network: ""
+  network: "{{ forgejo_runner_job_network }}"
   enable_ipv6: false
   privileged: false
   valid_volumes: []
@@ -42,3 +42,7 @@ server:
       url: "{{ forgejo_runner_instance_url }}"
       uuid: "{{ forgejo_runner_uuid }}"
       token: "{{ forgejo_runner_token }}"
+      labels:
+{% for label in forgejo_runner_labels %}
+        - {{ label | to_json }}
+{% endfor %}

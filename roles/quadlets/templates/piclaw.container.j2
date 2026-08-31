@@ -17,6 +17,13 @@ Environment=PICLAW_STATE_TOKEN={{ piclaw_api_token }}
 {% endif %}
 {% if piclaw_forgejo_api_token is defined and piclaw_forgejo_api_token %}
 Environment=FORGEJO_TOKEN={{ piclaw_forgejo_api_token }}
+Environment=FORGEJO_PLANNER_TOKEN={{ piclaw_forgejo_api_token }}
+{% endif %}
+{% if forgejo_worker_api_token is defined and forgejo_worker_api_token %}
+Environment=FORGEJO_WORKER_TOKEN={{ forgejo_worker_api_token }}
+{% endif %}
+{% if forgejo_reviewer_api_token is defined and forgejo_reviewer_api_token %}
+Environment=FORGEJO_REVIEWER_TOKEN={{ forgejo_reviewer_api_token }}
 {% endif %}
 {% if piclaw_github_api_token is defined and piclaw_github_api_token %}
 Environment=GH_TOKEN={{ piclaw_github_api_token }}

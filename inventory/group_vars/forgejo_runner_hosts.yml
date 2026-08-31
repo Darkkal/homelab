@@ -7,7 +7,11 @@ forgejo_runner_data_dir: "/home/{{ forgejo_runner_user }}/homelab/forgejo-runner
 forgejo_runner_workdir: "{{ forgejo_runner_data_dir }}/work"
 forgejo_runner_quadlet_dir: "/home/{{ forgejo_runner_user }}/.config/containers/systemd"
 forgejo_runner_name: "{{ inventory_hostname }}-forgejo-runner"
-forgejo_runner_instance_url: "http://127.0.0.1:{{ forgejo_port }}/"
+# Podman provides host.containers.internal to bridge-networked containers.
+# Keep workflow jobs off the host network while still reaching Forgejo's
+# published port on the desktop.
+forgejo_runner_instance_url: "http://host.containers.internal:{{ forgejo_port }}/"
+forgejo_runner_job_network: ""
 # Forgejo v15+ creates runners with a UUID and connection token.
 forgejo_runner_uuid: "{{ vault_forgejo_runner_uuid | default('') }}"
 forgejo_runner_token: "{{ vault_forgejo_runner_token | default('') }}"

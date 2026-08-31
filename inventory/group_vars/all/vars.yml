@@ -15,7 +15,14 @@ forgejo_api_token: "{{ vault_forgejo_api_token_homepage | default(vault_forgejo_
 
 sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
 
-piclaw_forgejo_api_token: "{{ vault_forgejo_api_token_piclaw | default('') }}"
+# Forgejo dispatcher API tokens (issue piclaw-horde/piclaw-scripts#1).
+# Each PiClaw role gets its own Forgejo account/token; repo-level access is
+# controlled by piclaw-horde organization teams, not token scoping.
+# FORGEJO_TOKEN (below) keeps working as the planner key for backward
+# compatibility with existing scripts.
+piclaw_forgejo_api_token: "{{ vault_forgejo_api_token_planner | default('') }}"
+forgejo_worker_api_token: "{{ vault_forgejo_api_token_piclaw_worker | default('') }}"
+forgejo_reviewer_api_token: "{{ vault_forgejo_api_token_piclaw_reviewer | default('') }}"
 piclaw_github_api_token: "{{ vault_github_api_token_piclaw | default('') }}"
 piclaw_api_token: "{{ vault_piclaw_api_token | default(lookup('password', homelab_data_dir + '/.piclaw_api_token length=64 chars=hexdigits')) }}"
 
