@@ -1,0 +1,9 @@
+---
+- name: Resolve protected Forgejo runner job policy
+  ansible.builtin.set_fact:
+    forgejo_runner_effective_job_policy: >-
+      {{ vault_forgejo_runner_job_policy | default({}) |
+         forgejo_runner_job_policy(forgejo_runner_job_image,
+                                  forgejo_runner_data_dir,
+                                  forgejo_runner_labels) }}
+  no_log: true

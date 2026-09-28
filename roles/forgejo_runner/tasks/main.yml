@@ -1,4 +1,8 @@
 ---
+# Validate even in check mode, before any account, file or service operation.
+- name: Validate protected Forgejo runner job policy
+  ansible.builtin.import_tasks: job_policy.yml
+
 - name: Validate Forgejo runner connection configuration
   ansible.builtin.assert:
     that:
@@ -76,6 +80,19 @@
     label: "{{ item.path }}"
   become: true
 
+- name: Stage validated combined job trust bundle
+  ansible.builtin.copy:
+    content: "{{ forgejo_runner_effective_job_policy.bundle }}"
+    dest: "{{ forgejo_runner_data_dir }}/job-ca-bundle.pem"
+    owner: "{{ forgejo_runner_user }}"
+    group: "{{ forgejo_runner_user }}"
+    mode: "0644"
+  when: forgejo_runner_effective_job_policy.enabled
+  become: true
+  no_log: true
+  diff: false
+  notify: Restart Forgejo runner
+
 - name: Deploy Forgejo runner configuration
   ansible.builtin.template:
     src: config.yaml.j2
@@ -84,6 +101,8 @@
     group: "{{ forgejo_runner_user }}"
     mode: "0600"
   become: true
+  no_log: true
+  diff: false
   notify: Restart Forgejo runner
 
 - name: Enable and start the Forgejo runner Podman socket
