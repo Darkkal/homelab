@@ -43,11 +43,22 @@ class AnsibleTests(unittest.TestCase):
                 result=run(args)
                 self.assertIn('changed=0',result.stdout)
             fixture=fixtures.PolicyTests();fixture.setUp()
-            play[0]['vars']['vault_forgejo_runner_job_policy']=fixture.value
+            play[0]['vars']['forgejo_runner_job_policy']=fixture.value
             play[0]['tasks']=tasks[:1]+[{'ansible.builtin.assert':{'that':['forgejo_runner_effective_job_policy.enabled']}}]
             playfile.write_text(json.dumps(play));run(['--check'])
+            # Ordinary inventory wins; old Vault-only installations still work.
+            play[0]['vars']['vault_forgejo_runner_job_policy']=fixture.value
+            play[0]['vars']['forgejo_runner_job_policy']={'enabled':False}
+            play[0]['tasks']=tasks[:1]+[{'ansible.builtin.assert':{'that':['not forgejo_runner_effective_job_policy.enabled']}}]
+            playfile.write_text(json.dumps(play));run(['--check'])
+            del play[0]['vars']['forgejo_runner_job_policy']
+            play[0]['tasks']=tasks[:1]+[{'ansible.builtin.assert':{'that':['forgejo_runner_effective_job_policy.enabled']}}]
+            playfile.write_text(json.dumps(play));run(['--check'])
+            play[0]['vars']['forgejo_runner_job_policy']=fixture.value
+            play[0]['vars']['vault_forgejo_runner_job_policy']={'enabled':False}
+            playfile.write_text(json.dumps(play));run(['--check'])
             for bad in [{'enabled':True},{'enabled':'true'},{**fixture.value,'ca_sha256':'0'*64}]:
-                play[0]['vars']['vault_forgejo_runner_job_policy']=bad;playfile.write_text(json.dumps(play))
+                play[0]['vars']['forgejo_runner_job_policy']=bad;playfile.write_text(json.dumps(play))
                 result=subprocess.run(['ansible-playbook','-i','localhost,','-c','local',str(playfile),'--check'],cwd=tmp,env=env,capture_output=True,text=True,timeout=60)
                 self.assertNotEqual(result.returncode,0)
                 self.assertNotIn(fixture.value['ca_certificate'],result.stdout+result.stderr)

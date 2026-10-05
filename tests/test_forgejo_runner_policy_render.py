@@ -30,12 +30,24 @@ class RenderTests(unittest.TestCase):
             self.values['forgejo_runner_effective_job_policy']={'enabled':False}
             self.assertEqual(hashlib.sha256(self.render((ROOT/path).read_text()).encode()).hexdigest(),BASELINE[name])
 
-    def test_enabled_emits_protected_options_and_env_without_widening_volume_allowlist(self):
+    def test_enabled_allows_only_public_bundle_and_emits_options_and_env(self):
         self.values['forgejo_runner_effective_job_policy']={'enabled':True,'options':'--add-host synthetic.invalid:host-gateway','env':{'GIT_SSL_CAINFO':'/opt/homelab/job-ca-bundle.pem'}}
         config=yaml.safe_load(self.render((ROOT/'roles/forgejo_runner/templates/config.yaml.j2').read_text()))
         self.assertEqual(config['runner']['envs'],self.values['forgejo_runner_effective_job_policy']['env'])
         self.assertEqual(config['container']['options'],self.values['forgejo_runner_effective_job_policy']['options'])
-        self.assertEqual(config['container']['valid_volumes'],[])
+        self.assertEqual(config['container']['valid_volumes'],['/tmp/data/job-ca-bundle.pem'])
         self.assertFalse(config['runner']['insecure'])
+
+    def test_plain_and_spaced_allowlist_excludes_other_sources(self):
+        for directory in ['/tmp/data', '/tmp/runner data']:
+            with self.subTest(directory=directory):
+                self.values['forgejo_runner_data_dir']=directory
+                self.values['forgejo_runner_effective_job_policy']={'enabled':True,'options':'synthetic','env':{}}
+                config=yaml.safe_load(self.render((ROOT/'roles/forgejo_runner/templates/config.yaml.j2').read_text()))
+                allowed=config['container']['valid_volumes']
+                self.assertEqual(allowed,[directory+'/job-ca-bundle.pem'])
+                for source in [directory+'/job-ca-bundle.pem.bak', directory+'/config.yaml',
+                               directory+'-sibling/job-ca-bundle.pem', '/etc/passwd']:
+                    self.assertNotIn(source,allowed)
 
 if __name__=='__main__':unittest.main()

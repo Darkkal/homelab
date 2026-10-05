@@ -1,4 +1,4 @@
-"""Validate the single protected opt-in; never include input values in errors."""
+"""Validate the configured opt-in; never include input values in errors."""
 import datetime
 import hashlib
 import ipaddress
@@ -48,7 +48,7 @@ def job_policy(value, job_image, data_dir, labels):
             raise ValueError()
         if labels != ['ubuntu-latest:docker://' + job_image]:
             raise ValueError()
-        if not isinstance(data_dir, str) or not data_dir.startswith('/') or any(c in data_dir for c in ':\n\r\x00') or '..' in data_dir.split('/'):
+        if not isinstance(data_dir, str) or not data_dir.startswith('/') or any(c in data_dir for c in ':\n\r\x00*?[]{}\\') or '..' in data_dir.split('/'):
             raise ValueError()
         for key in ['ca_sha256', 'base_bundle_sha256']:
             if not re.fullmatch(r'[0-9a-f]{64}', value[key]):

@@ -1,6 +1,6 @@
 ---
 # Validate even in check mode, before any account, file or service operation.
-- name: Validate protected Forgejo runner job policy
+- name: Validate Forgejo runner job policy
   ansible.builtin.import_tasks: job_policy.yml
 
 - name: Validate Forgejo runner connection configuration

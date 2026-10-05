@@ -4,18 +4,34 @@ This is the source prerequisite for homelab #81. It does not activate the repair
 for #80. Operator activation, authenticated LFS, other-consumer checks, rollback
 and exact-head game CI belong to #82.
 
-With no `vault_forgejo_runner_job_policy`, or with exactly `{enabled: false}`,
+With no `forgejo_runner_job_policy`, or with exactly `{enabled: false}`,
 the role renders the pre-change runner config and Quadlet bytes. It does not
 stage a trust bundle or notify a restart because of this feature. Other existing
 role operations keep their existing semantics; a separate inventory change can
 still notify a restart. Never use the shared host to test this branch.
 
-## Protected input
+## Inventory configuration
 
-Supply the entire policy through the operator's protected inventory/Vault, not a
-tracked host/address/CA list, shell environment or an unprotected parallel policy
-variable. The controller requires `cryptography >= 42` in the Python environment
-used by Ansible. No additional dependency is installed by this role.
+Set `forgejo_runner_job_policy` in ordinary Ansible inventory, for example
+`inventory/group_vars/forgejo_runner_hosts.yml`. The hostname, public CA,
+certificate fingerprints, image pin and enable flag are not secrets and may be
+versioned with the configuration. Runner UUID/token credentials remain in Vault.
+The controller requires `cryptography >= 42` in the Python environment used by
+Ansible. No additional dependency is installed by this role.
+
+With no policy defined, the role defaults to disabled. To enable it, supply all
+fields below in the ordinary inventory. Public PEM files can be kept alongside
+inventory and loaded using a controller-side `lookup('ansible.builtin.file',
+path, rstrip=false)` to preserve their exact bytes. Use an explicit controller
+path, such as one derived from `inventory_dir`.
+
+If an installation previously set `vault_forgejo_runner_job_policy`, move its
+public policy fields to `forgejo_runner_job_policy` and remove the old Vault
+entry. The legacy Vault variable is still accepted when the ordinary variable is absent,
+with a migration notice. If both exist, the ordinary variable takes precedence,
+including an explicit `{enabled: false}`. No ordinary default is added to group
+variables, so it cannot accidentally mask an existing legacy policy.
+Do not move runner tokens or private keys into ordinary inventory.
 
 | Field | Required value when enabled |
 | --- | --- |
@@ -33,14 +49,16 @@ Only the existing single `ubuntu-latest` label tied to that exact image is
 supported for activation. A different image or label arrangement needs new
 runtime evidence. Private keys, non-certificate text, fingerprint mismatches,
 expired/non-CA additions and unsafe mount paths are rejected with a fixed error.
+The runner treats volume allowances as glob patterns. Enabled data-directory
+paths containing `*`, `?`, `[`, `]`, `{`, `}` or backslash are rejected so the
+public bundle allowance remains literal. Plain paths and spaces are supported.
 
 The bundle digest verifies the supplied bytes, **not their provenance**. #82 must
 independently extract/verify the base bundle from the pinned image and compare the
 added root with the approved service identity. Do not substitute the controller's
 trust store, only the added root, a reconstructed bundle, or an arbitrary bundle
-with a matching self-supplied checksum. Preserve exact newlines when putting it
-in Vault. No production fingerprint, CA, address or recipient inventory belongs
-in this repository. Existing roots are copied without removing/reordering them;
+with a matching self-supplied checksum. Preserve exact newlines in the inventory
+value or public PEM file. Existing roots are copied without removing/reordering them;
 the approved public CA is appended. Existing expired roots are preserved too.
 
 ## Generated behavior and precedence
@@ -53,7 +71,8 @@ It generates runner-controlled container options:
   creation, without a tracked private IP or a global DNS/Forgejo URL change.
 - A read-only `:ro,z` bind at `/opt/homelab/job-ca-bundle.pem`. Shared SELinux
   labeling is deliberate for a public file used by multiple job containers.
-  The daemon's own trust and the workflow volume allow-list remain unchanged.
+  The daemon's own trust remains unchanged. The volume allow-list admits only
+  this exact public bundle path when enabled; other host paths remain excluded.
 - Runner environment `GIT_SSL_CAINFO`, `SSL_CERT_FILE` and `CURL_CA_BUNDLE` point to
   the combined bundle; `GIT_SSL_CAPATH` is empty. The explicit LFS CAINFO source
   takes precedence over Git's URL/generic CA settings in the tested package.
@@ -127,7 +146,7 @@ launcher invocation; arbitrary malformed policy never reaches a job.
    the nine-repository exposure inventory and chosen canaries. Obtain the exact
    image's original bundle and validate all consumer trust/proxy/image settings.
 3. Privately snapshot protected config, trust files, image and prior service
-   states. Drain the shared runner before applying the new protected opt-in.
+   states. Drain the shared runner before applying the new opt-in policy.
 4. Apply the exact merged source/policy only under activation authority. The new
    bundle/config changes deliberately notify the existing restart handler then.
    Keep direct checkout, ROOT_URL, Caddy, host DNS and TLS verification unchanged.

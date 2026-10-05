@@ -77,6 +77,14 @@ class PolicyTests(unittest.TestCase):
                 with self.assertRaises(Exception):
                     self.render({**self.value, field: text})
 
+    def test_rejects_glob_metacharacters_in_bundle_source(self):
+        for directory in ['/tmp/*', '/tmp/**', '/tmp/?', '/tmp/[ab]',
+                          '/tmp/[!ab]', '/tmp/{one,two}', '/tmp/\\literal',
+                          '/tmp/unclosed[', '/tmp/unclosed{']:
+            with self.subTest(directory=directory):
+                with self.assertRaisesRegex(Exception, '^Invalid runner job policy$'):
+                    policy.job_policy(self.value, IMAGE, directory, ['ubuntu-latest:docker://' + IMAGE])
+
     def test_rejects_image_label_conflict_and_unsafe_mount_path(self):
         for image, directory, labels in [(IMAGE, '/tmp/x:bad', ['ubuntu-latest:docker://' + IMAGE]),
                                          (IMAGE, '/tmp/x', ['other:docker://mutable']),
