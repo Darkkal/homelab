@@ -1,0 +1,424 @@
+diff --git a/act/container/docker/extensions.go b/act/container/docker/extensions.go
+index f51c335..f2729ab 100644
+--- a/act/container/docker/extensions.go
++++ b/act/container/docker/extensions.go
+@@ -66,11 +66,11 @@ func (*LinuxContainerEnvironmentExtensions) ManagesOwnNetworking() bool {
+ }
+ 
+ func (*LinuxContainerEnvironmentExtensions) GetRoot() string {
+-	return "/var/run"
++	return "/run"
+ }
+ 
+ func (*LinuxContainerEnvironmentExtensions) GetActPath() string {
+-	return "/var/run/act"
++	return "/run/act"
+ }
+ 
+ func (*LinuxContainerEnvironmentExtensions) GetPathVariableName() string {
+diff --git a/act/container/docker/run_test.go b/act/container/docker/run_test.go
+index 66e9db6..775d95a 100644
+--- a/act/container/docker/run_test.go
++++ b/act/container/docker/run_test.go
+@@ -201,7 +201,7 @@ func TestDockerCopyTarStream(t *testing.T) {
+ 		Return(client.CopyToContainerResult{}, nil)
+ 	mockClient.
+ 		On("CopyToContainer", ctx, "123", mock.MatchedBy(func(opts client.CopyToContainerOptions) bool {
+-			return opts.DestinationPath == "/var/run/act" && opts.Content != nil
++			return opts.DestinationPath == "/run/act" && opts.Content != nil
+ 		})).
+ 		Return(client.CopyToContainerResult{}, nil)
+ 
+@@ -213,7 +213,7 @@ func TestDockerCopyTarStream(t *testing.T) {
+ 		},
+ 	}
+ 
+-	_ = cr.CopyTarStream(ctx, "/var/run/act", &bytes.Buffer{})
++	_ = cr.CopyTarStream(ctx, "/run/act", &bytes.Buffer{})
+ 
+ 	conn.AssertExpectations(t)
+ 	mockClient.AssertExpectations(t)
+@@ -241,7 +241,7 @@ func TestDockerCopyTarStreamErrorInCopyFiles(t *testing.T) {
+ 		},
+ 	}
+ 
+-	err := cr.CopyTarStream(ctx, "/var/run/act", &bytes.Buffer{})
++	err := cr.CopyTarStream(ctx, "/run/act", &bytes.Buffer{})
+ 	assert.ErrorIs(t, err, merr)
+ 
+ 	conn.AssertExpectations(t)
+@@ -263,7 +263,7 @@ func TestDockerCopyTarStreamErrorInMkdir(t *testing.T) {
+ 		Return(client.CopyToContainerResult{}, nil)
+ 	mockClient.
+ 		On("CopyToContainer", ctx, "123", mock.MatchedBy(func(opts client.CopyToContainerOptions) bool {
+-			return opts.DestinationPath == "/var/run/act" && opts.Content != nil
++			return opts.DestinationPath == "/run/act" && opts.Content != nil
+ 		})).
+ 		Return(client.CopyToContainerResult{}, merr)
+ 
+@@ -275,7 +275,7 @@ func TestDockerCopyTarStreamErrorInMkdir(t *testing.T) {
+ 		},
+ 	}
+ 
+-	err := cr.CopyTarStream(ctx, "/var/run/act", &bytes.Buffer{})
++	err := cr.CopyTarStream(ctx, "/run/act", &bytes.Buffer{})
+ 	assert.ErrorIs(t, err, merr)
+ 
+ 	conn.AssertExpectations(t)
+diff --git a/act/container/docker/staging_path_test.go b/act/container/docker/staging_path_test.go
+new file mode 100644
+index 0000000..e7ef401
+--- /dev/null
++++ b/act/container/docker/staging_path_test.go
+@@ -0,0 +1,68 @@
++package docker
++
++import (
++	"archive/tar"
++	"io"
++	"os"
++	"path/filepath"
++	"strings"
++	"testing"
++
++	actcontainer "code.forgejo.org/forgejo/runner/v13/act/container"
++	"github.com/moby/moby/client"
++	"github.com/stretchr/testify/mock"
++	"github.com/stretchr/testify/require"
++)
++
++func TestStagingCopyDirUsesConfinedRunPaths(t *testing.T) {
++	ext := &LinuxContainerEnvironmentExtensions{endpoint: &endpoint{arch: "amd64"}}
++	require.Equal(t, "/run", ext.GetRoot())
++	require.Equal(t, "/run/act", ext.GetActPath())
++	require.Equal(t, filepath.Join(ext.GetRoot(), "act"), ext.GetActPath())
++	require.Equal(t, "/tmp", ext.GetRunnerContext(t.Context())["temp"])
++	require.True(t, ext.SupportsDockerContainerActions())
++	for _, action := range []string{"checkout", "cache"} {
++		t.Run(action, func(t *testing.T) {
++			src, fs := t.TempDir(), t.TempDir()
++			require.NoError(t, os.WriteFile(filepath.Join(src, ".eslintignore"), []byte("fixture"), 0o644))
++			require.NoError(t, os.Mkdir(filepath.Join(src, "dist"), 0o755))
++			require.NoError(t, os.WriteFile(filepath.Join(src, "dist/index.js"), []byte("fixture"), 0o644))
++			dest := ext.GetActPath() + "/actions/" + action + "/"
++			require.NoError(t, os.MkdirAll(filepath.Join(fs, dest, "dist"), 0o755))
++			require.NoError(t, os.Mkdir(filepath.Join(fs, "var"), 0o755))
++			require.NoError(t, os.Symlink("/run", filepath.Join(fs, "var/run")))
++			root, err := os.OpenRoot(fs)
++			require.NoError(t, err)
++			defer root.Close()
++			// Preserve confinement: the old absolute symlink and escapes must fail.
++			for _, name := range []string{"var/run/act", "../outside", "/run/act"} {
++				_, err := root.Lstat(name)
++				require.Error(t, err)
++			}
++			cli := &mockDockerClient{}
++			cli.On("CopyToContainer", t.Context(), "fixture", mock.Anything).
++				Run(func(args mock.Arguments) {
++					opts := args.Get(2).(client.CopyToContainerOptions)
++					require.Equal(t, "/", opts.DestinationPath)
++					seen := map[string]bool{}
++					tr := tar.NewReader(opts.Content)
++					for {
++						h, err := tr.Next()
++						if err == io.EOF {
++							break
++						}
++						require.NoError(t, err)
++						require.True(t, strings.HasPrefix(h.Name, "run/act/actions/"+action+"/"), h.Name)
++						_, err = root.Lstat(filepath.Dir(h.Name))
++						require.NoError(t, err)
++						seen[h.Name] = true
++					}
++					require.True(t, seen["run/act/actions/"+action+"/.eslintignore"])
++					require.True(t, seen["run/act/actions/"+action+"/dist/index.js"])
++				}).Return(client.CopyToContainerResult{}, nil).Once()
++			cr := &containerReference{id: "fixture", cli: cli, input: &actcontainer.NewContainerInput{}}
++			require.NoError(t, cr.CopyDir(dest, src+"/", false)(t.Context()))
++			cli.AssertExpectations(t)
++		})
++	}
++}
+diff --git a/act/runner/action_test.go b/act/runner/action_test.go
+index 5379314..53e2ee4 100644
+--- a/act/runner/action_test.go
++++ b/act/runner/action_test.go
+@@ -226,7 +226,7 @@ func TestActionRunner(t *testing.T) {
+ 			ctx := t.Context()
+ 
+ 			cm := &containerMock{}
+-			cm.On("CopyDir", "/var/run/act/actions/dir/", "dir/", false).Return(func(ctx context.Context) error { return nil })
++			cm.On("CopyDir", "/run/act/actions/dir/", "dir/", false).Return(func(ctx context.Context) error { return nil })
+ 
+ 			envMatcher := mock.MatchedBy(func(env map[string]string) bool {
+ 				for k, v := range tt.expectedEnv {
+@@ -237,7 +237,7 @@ func TestActionRunner(t *testing.T) {
+ 				return true
+ 			})
+ 
+-			cm.On("Exec", []string{"node", "/var/run/act/actions/dir/path"}, envMatcher, "", "").Return(func(ctx context.Context) error { return nil })
++			cm.On("Exec", []string{"node", "/run/act/actions/dir/path"}, envMatcher, "", "").Return(func(ctx context.Context) error { return nil })
+ 
+ 			tt.step.getRunContext().JobContainer = cm
+ 
+diff --git a/act/runner/run_context_test.go b/act/runner/run_context_test.go
+index 63a1442..f1b5311 100644
+--- a/act/runner/run_context_test.go
++++ b/act/runner/run_context_test.go
+@@ -868,6 +868,7 @@ jobs:
+ 
+ 			ctx := t.Context()
+ 			rc := testCase.step.getRunContext()
++			rc.dockerEndpoint = fakeEndpoint{} // Input construction requires no live daemon.
+ 
+ 			rc.ExprEval, err = rc.NewExpressionEvaluator(ctx)
+ 			require.NoError(t, err)
+diff --git a/act/runner/staging_path_test.go b/act/runner/staging_path_test.go
+new file mode 100644
+index 0000000..a0adfe6
+--- /dev/null
++++ b/act/runner/staging_path_test.go
+@@ -0,0 +1,30 @@
++package runner
++
++import (
++	"path/filepath"
++	"testing"
++
++	"code.forgejo.org/forgejo/runner/v13/act/model"
++	"github.com/stretchr/testify/require"
++)
++
++func TestStagingMountAndRemoteActionPaths(t *testing.T) {
++	ctx := t.Context()
++	rc := &RunContext{Config: &Config{
++		Workdir: "/work/project", ActionCacheDir: "/cache/actions",
++		ContainerDaemonSocket: "/fixture/podman.sock", ValidVolumes: []string{"/fixture/job-ca.pem"},
++	}, Run: &model.Run{Workflow: &model.Workflow{Name: "fixture"}}, JobContainer: &containerMock{}}
++	binds, mounts, valid, err := rc.GetBindsAndMounts(ctx)
++	require.NoError(t, err)
++	require.Equal(t, "/run/act", mounts[rc.getInternalVolumeEnv(ctx)])
++	require.Equal(t, "/work/project", mounts[rc.getInternalVolumeWorkdir(ctx)])
++	require.Contains(t, binds, "/fixture/podman.sock:/var/run/docker.sock")
++	require.Contains(t, valid, "/fixture/job-ca.pem")
++	require.Equal(t, "/cache/actions", rc.ActionCacheDir())
++	for _, action := range []string{"checkout", "cache"} {
++		step := &model.Step{Uses: "https://data.forgejo.org/actions/" + action + "@v4"}
++		name, dest := getContainerActionPaths(step, filepath.Join(rc.ActionCacheDir(), action), rc)
++		require.Equal(t, action, name)
++		require.Equal(t, "/run/act/actions/"+action, dest)
++	}
++}
+diff --git a/act/runner/step_action_local_test.go b/act/runner/step_action_local_test.go
+index d290e8f..2404502 100644
+--- a/act/runner/step_action_local_test.go
++++ b/act/runner/step_action_local_test.go
+@@ -70,24 +70,24 @@ func TestStepActionLocalTest(t *testing.T) {
+ 	salm.On("readAction", sal.Step, filepath.Clean("/tmp/path/to/action"), "", mock.Anything, mock.Anything).
+ 		Return(&model.Action{}, nil)
+ 
+-	cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
++	cm.On("Copy", "/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
+-	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
++	cm.On("GetContainerArchive", ctx, "/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
++	cm.On("GetContainerArchive", ctx, "/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
+ 
+ 	salm.On("runAction", sal, filepath.Clean("/tmp/path/to/action"), (*remoteAction)(nil)).Return(func(ctx context.Context) error {
+ 		return nil
+@@ -268,24 +268,24 @@ func TestStepActionLocalPost(t *testing.T) {
+ 				}
+ 				cm.On("Exec", suffixMatcher("act/runner/local/action/post.js"), sal.env, "", "").Return(func(ctx context.Context) error { return tt.err })
+ 
+-				cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
++				cm.On("Copy", "/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
+-				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
++				cm.On("GetContainerArchive", ctx, "/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
++				cm.On("GetContainerArchive", ctx, "/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
+ 			}
+ 
+ 			err = sal.post()(ctx)
+diff --git a/act/runner/step_action_remote_test.go b/act/runner/step_action_remote_test.go
+index 8093521..7f18e9d 100644
+--- a/act/runner/step_action_remote_test.go
++++ b/act/runner/step_action_remote_test.go
+@@ -179,24 +179,24 @@ func TestStepActionRemoteOK(t *testing.T) {
+ 			if tt.mocks.run {
+ 				sarm.On("runAction", sar, mock.Anything, newRemoteAction(sar.Step.Uses)).Return(func(ctx context.Context) error { return tt.runError })
+ 
+-				cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
++				cm.On("Copy", "/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
+-				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
++				cm.On("GetContainerArchive", ctx, "/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
++				cm.On("GetContainerArchive", ctx, "/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
+ 			}
+ 
+ 			err = sar.pre()(ctx)
+@@ -512,24 +512,24 @@ func TestStepActionRemotePost(t *testing.T) {
+ 			if tt.mocks.exec {
+ 				cm.On("Exec", mock.Anything, sar.env, "", "").Return(func(ctx context.Context) error { return tt.err })
+ 
+-				cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
++				cm.On("Copy", "/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("UpdateFromEnv", "/var/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++				cm.On("UpdateFromEnv", "/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 					return nil
+ 				})
+ 
+-				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
+-				cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
++				cm.On("GetContainerArchive", ctx, "/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
++				cm.On("GetContainerArchive", ctx, "/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
+ 			}
+ 
+ 			err = sar.post()(ctx)
+diff --git a/act/runner/step_docker_test.go b/act/runner/step_docker_test.go
+index 000d700..4ab4b75 100644
+--- a/act/runner/step_docker_test.go
++++ b/act/runner/step_docker_test.go
+@@ -82,24 +82,24 @@ func TestStepDockerMain(t *testing.T) {
+ 		return nil
+ 	})
+ 
+-	cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
++	cm.On("Copy", "/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
+-	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
++	cm.On("GetContainerArchive", ctx, "/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
++	cm.On("GetContainerArchive", ctx, "/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
+ 
+ 	err = sd.main()(ctx)
+ 	require.NoError(t, err)
+diff --git a/act/runner/step_run_test.go b/act/runner/step_run_test.go
+index f73631e..5a021de 100644
+--- a/act/runner/step_run_test.go
++++ b/act/runner/step_run_test.go
+@@ -49,33 +49,33 @@ func TestStepRun(t *testing.T) {
+ 		},
+ 	}
+ 
+-	cm.On("Copy", "/var/run/act", []*container.FileEntry{fileEntry}).Return(func(ctx context.Context) error {
++	cm.On("Copy", "/run/act", []*container.FileEntry{fileEntry}).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+-	cm.On("Exec", []string{"bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "/var/run/act/workflow/1.sh"}, mock.AnythingOfType("map[string]string"), "", "workdir").Return(func(ctx context.Context) error {
++	cm.On("Exec", []string{"bash", "--noprofile", "--norc", "-e", "-o", "pipefail", "/run/act/workflow/1.sh"}, mock.AnythingOfType("map[string]string"), "", "workdir").Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("Copy", "/var/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
++	cm.On("Copy", "/run/act", mock.AnythingOfType("[]*container.FileEntry")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/envs.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/statecmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+-	cm.On("UpdateFromEnv", "/var/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
++	cm.On("UpdateFromEnv", "/run/act/workflow/outputcmd.txt", mock.AnythingOfType("*map[string]string")).Return(func(ctx context.Context) error {
+ 		return nil
+ 	})
+ 
+ 	ctx := t.Context()
+ 
+-	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
+-	cm.On("GetContainerArchive", ctx, "/var/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
++	cm.On("GetContainerArchive", ctx, "/run/act/workflow/SUMMARY.md").Return(io.NopCloser(&bytes.Buffer{}), nil)
++	cm.On("GetContainerArchive", ctx, "/run/act/workflow/pathcmd.txt").Return(io.NopCloser(&bytes.Buffer{}), nil)
+ 
+ 	err := sr.main()(ctx)
+ 	assert.Nil(t, err)

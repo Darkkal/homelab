@@ -1,0 +1,13 @@
+FROM data.forgejo.org/oci/xx@sha256:50f4a46e93c5f7e8679f5a14222395a3ee5c65e406e16c96d987f6c911f55f90 AS xx
+FROM data.forgejo.org/oci/golang@sha256:29d3b072bfcf46854b14468056fd0f6c2ee0b669dca28b688fd5c7768428464f
+COPY --from=xx / /
+ARG TARGETPLATFORM
+COPY packages/ /pkgs/
+COPY packages.sha256 /pkgs/checksums
+RUN cd /pkgs && sha256sum -c checksums && apk --network=no verify /pkgs/*.apk && apk --network=no --cache=no add /pkgs/*.apk && xx-go --wrap
+ENV GOTOOLCHAIN=local GOOS=linux GOARCH=amd64 GOAMD64=v1 CGO_ENABLED=1 GOFLAGS=-mod=readonly
+WORKDIR /modules
+COPY go.mod go.sum ./
+RUN timeout 600 go mod download && go mod verify
+ENV GOPROXY=off GOSUMDB=off
+WORKDIR /srv
