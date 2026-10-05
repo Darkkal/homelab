@@ -28,3 +28,15 @@ forgejo_runner_timeout: 3h
 forgejo_runner_shutdown_timeout: 3h
 forgejo_runner_fetch_timeout: 5s
 forgejo_runner_report_interval: 1s
+
+# Job routing and public certificate trust are ordinary configuration.
+# Credentials above remain in Vault. See docs/forgejo-runner-job-policy.md
+# for the complete enabled policy and verified public bundle inputs.
+forgejo_runner_job_policy:
+  enabled: true
+  hostname: forgejo.home
+  job_image: "{{ forgejo_runner_job_image }}"
+  ca_certificate: "{{ lookup('ansible.builtin.file', inventory_dir ~ '/files/forgejo-runner/caddy-root.pem', rstrip=false) }}"
+  ca_sha256: 01f3e4d7e2d7ed7e878a41e814c3023efd8dbe109fa78132398fe3a9f3cda94f
+  base_bundle: "{{ lookup('ansible.builtin.file', inventory_dir ~ '/files/forgejo-runner/base.pem', rstrip=false) }}"
+  base_bundle_sha256: a3413a37a8e09cc21b2c11c9ffb23d92d2fc9d1933c9e7617f5c4fba4f72d37d
