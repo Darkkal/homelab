@@ -1,0 +1,17 @@
+---
+- name: Resolve configured Forgejo runner job policy
+  ansible.builtin.set_fact:
+    forgejo_runner_effective_job_policy: >-
+      {{ forgejo_runner_job_policy | default(vault_forgejo_runner_job_policy | default({})) |
+         forgejo_runner_job_policy(forgejo_runner_job_image,
+                                  forgejo_runner_data_dir,
+                                  forgejo_runner_labels) }}
+  no_log: true
+
+- name: Report legacy Forgejo runner policy configuration
+  ansible.builtin.debug:
+    msg: >-
+      vault_forgejo_runner_job_policy is deprecated. Move public policy inputs
+      to forgejo_runner_job_policy in ordinary inventory. When both are set,
+      forgejo_runner_job_policy takes precedence, including enabled=false.
+  when: vault_forgejo_runner_job_policy is defined

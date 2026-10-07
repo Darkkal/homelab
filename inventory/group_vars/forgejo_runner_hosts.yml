@@ -16,10 +16,10 @@ forgejo_runner_job_network: ""
 forgejo_runner_uuid: "{{ vault_forgejo_runner_uuid | default('') }}"
 forgejo_runner_token: "{{ vault_forgejo_runner_token | default('') }}"
 
-# Pin both the daemon and job image to immutable OCI index digests. The Node
-# image includes the common Actions toolchain needed by monster-raiders and
-# web-gallery while keeping SDK-specific images out of the daemon container.
-forgejo_runner_image: "data.forgejo.org/forgejo/runner:13@sha256:7fb853bfe73c229be6349398359c0a7bd01fadfd17c106607b2221150b799ed2"
+# The patched daemon uses its full immutable local config/image ID. Import the
+# bound OCI archive into this account before deployment (tools/runner-staging/OPERATIONS.md).
+# Keep the Node job image at its existing immutable OCI index digest.
+forgejo_runner_image: "sha256:7e048ab852dac206966554c2d347addb9d31001ea35481c8c498db5b4abaa734"
 forgejo_runner_job_image: "data.forgejo.org/oci/node:lts-bookworm@sha256:934240a162082fd8b8a2f90cd5114446443f1eba1c5378f6687167ca405e6584"
 forgejo_runner_labels:
   - "ubuntu-latest:docker://{{ forgejo_runner_job_image }}"
@@ -28,3 +28,15 @@ forgejo_runner_timeout: 3h
 forgejo_runner_shutdown_timeout: 3h
 forgejo_runner_fetch_timeout: 5s
 forgejo_runner_report_interval: 1s
+
+# Job routing and public certificate trust are ordinary configuration.
+# Credentials above remain in Vault. See docs/forgejo-runner-job-policy.md
+# for the complete enabled policy and verified public bundle inputs.
+forgejo_runner_job_policy:
+  enabled: true
+  hostname: forgejo.home
+  job_image: "{{ forgejo_runner_job_image }}"
+  ca_certificate: "{{ lookup('ansible.builtin.file', inventory_dir ~ '/files/forgejo-runner/caddy-root.pem', rstrip=false) }}"
+  ca_sha256: 01f3e4d7e2d7ed7e878a41e814c3023efd8dbe109fa78132398fe3a9f3cda94f
+  base_bundle: "{{ lookup('ansible.builtin.file', inventory_dir ~ '/files/forgejo-runner/base.pem', rstrip=false) }}"
+  base_bundle_sha256: a3413a37a8e09cc21b2c11c9ffb23d92d2fc9d1933c9e7617f5c4fba4f72d37d

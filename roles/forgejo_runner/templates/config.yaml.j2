@@ -11,6 +11,9 @@ runner:
   insecure: false
   fetch_timeout: {{ forgejo_runner_fetch_timeout }}
   report_interval: {{ forgejo_runner_report_interval }}
+{% if forgejo_runner_effective_job_policy.enabled | default(false) %}
+  envs: {{ forgejo_runner_effective_job_policy.env | to_json }}
+{% endif %}
   default_labels:
 {% for label in forgejo_runner_labels %}
     - {{ label | to_json }}
@@ -25,9 +28,17 @@ cache:
 
 container:
   network: "{{ forgejo_runner_job_network }}"
+{% if forgejo_runner_effective_job_policy.enabled | default(false) %}
+  options: {{ forgejo_runner_effective_job_policy.options | to_json }}
+{% endif %}
   enable_ipv6: false
   privileged: false
+{% if forgejo_runner_effective_job_policy.enabled | default(false) %}
+  valid_volumes:
+    - {{ (forgejo_runner_data_dir.rstrip('/') ~ '/job-ca-bundle.pem') | to_json }}
+{% else %}
   valid_volumes: []
+{% endif %}
   docker_host: "unix:///run/user/{{ forgejo_runner_uid }}/podman/podman.sock"
   workdir_parent: "{{ forgejo_runner_workdir }}"
   force_pull: false

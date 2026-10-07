@@ -1,0 +1,2 @@
+FROM data.forgejo.org/forgejo/runner@sha256:543844e69cc3eb56f19167d6389b637d93d25c6bc4c1af890f4af0b5b15cf528
+COPY --chown=0:0 --chmod=0755 forgejo-runner /bin/forgejo-runner
