@@ -145,15 +145,6 @@
         state: enabled
       become: true
 
-    - name: Allow LAN access to mDNS (port 5353) in firewalld
-      ansible.posix.firewalld:
-        zone: "{{ firewalld_zone }}"
-        rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="5353" protocol="udp" accept'
-        permanent: true
-        immediate: true
-        state: enabled
-      become: true
-
 - name: Configure UFW rules
   when:
     - "'ufw.service' in ansible_facts.services"
@@ -194,14 +185,6 @@
         rule: allow
         from_ip: "{{ lan_subnet }}"
         port: '53'
-        proto: udp
-      become: true
-
-    - name: Allow LAN access to mDNS (port 5353) in ufw
-      community.general.ufw:
-        rule: allow
-        from_ip: "{{ lan_subnet }}"
-        port: '5353'
         proto: udp
       become: true
 

@@ -1,0 +1,144 @@
+---
+
+- name: Discover owned unit files with native systemd matching
+  ansible.builtin.command:
+    argv: "{{ ['systemctl', 'list-unit-files', '--no-legend', '--plain', '--no-pager'] + item.unit_globs }}"
+  loop: "{{ homelab_decommissioned_services }}"
+  register: _homelab_lifecycle_files
+  failed_when: not (_homelab_lifecycle_files | homelab_unit_file_discovery_ok)
+  # Keep genuine systemctl diagnostics visible to the predicate even if the
+  # invoking environment suppresses systemd logging.
+  environment:
+    SYSTEMD_LOG_LEVEL: err
+    SYSTEMD_LOG_TARGET: console
+  changed_when: false
+  check_mode: false
+  become: true
+  no_log: true
+
+- name: Discover loaded owned instances including inactive units
+  ansible.builtin.command:
+    argv: "{{ ['systemctl', 'list-units', '--all', '--type=service', '--no-legend', '--plain', '--no-pager'] + item.unit_globs }}"
+  loop: "{{ homelab_decommissioned_services }}"
+  register: _homelab_lifecycle_loaded
+  changed_when: false
+  check_mode: false
+  become: true
+  no_log: true
+
+- name: Discover owned enablement links
+  ansible.builtin.find:
+    paths:
+      - /etc/systemd/system
+      - /run/systemd/system
+    patterns: "{{ homelab_decommissioned_services | map(attribute='unit_globs') | flatten }}"
+    file_type: link
+    recurse: true
+    follow: false
+    hidden: false
+  register: _homelab_lifecycle_links
+  become: true
+  no_log: true
+
+- name: Admit concrete instance discovery before any cleanup
+  ansible.builtin.assert:
+    that:
+      - (_homelab_lifecycle_files.results | homelab_retired_instances(_homelab_lifecycle_loaded.results, _homelab_lifecycle_links, homelab_decommissioned_services)) is sequence
+    quiet: true
+  no_log: true
+
+- name: Read backend service state after admission
+  ansible.builtin.service_facts:
+  register: _homelab_lifecycle_backends
+  no_log: true
+
+- name: Discover every configured firewalld zone
+  ansible.builtin.command:
+    argv: [firewall-cmd, --get-zones]
+  register: _homelab_lifecycle_zones
+  changed_when: false
+  check_mode: false
+  become: true
+  when: _homelab_lifecycle_backends.ansible_facts.services.get('firewalld.service', {}).get('state') == 'running'
+  no_log: true
+
+- name: Validate firewalld zone output
+  ansible.builtin.assert:
+    that:
+      - _homelab_lifecycle_zones.stdout | homelab_firewall_zones
+    quiet: true
+  when: _homelab_lifecycle_zones is not skipped
+  no_log: true
+
+- name: Stop and disable defined concrete owned instances
+  ansible.builtin.systemd:
+    name: "{{ unit }}"
+    state: stopped
+    enabled: false
+    scope: system
+  loop: '{{ _homelab_lifecycle_files.results | homelab_retired_instances(_homelab_lifecycle_loaded.results, _homelab_lifecycle_links, homelab_decommissioned_services, "defined") }}'
+  loop_control:
+    loop_var: unit
+  become: true
+  no_log: true
+
+- name: Stop still-running owned residents whose definition is missing
+  ansible.builtin.command:
+    argv: [systemctl, --system, stop, "{{ unit }}"]
+  loop: '{{ _homelab_lifecycle_files.results | homelab_retired_instances(_homelab_lifecycle_loaded.results, _homelab_lifecycle_links, homelab_decommissioned_services, "missing-running") }}'
+  loop_control:
+    loop_var: unit
+  when: not ansible_check_mode
+  changed_when: true
+  become: true
+  no_log: true
+
+- name: Remove only validated owned enablement links
+  ansible.builtin.file:
+    path: "{{ unit_link }}"
+    state: absent
+  loop: '{{ _homelab_lifecycle_files.results | homelab_retired_instances(_homelab_lifecycle_loaded.results, _homelab_lifecycle_links, homelab_decommissioned_services, "links") }}'
+  loop_control:
+    loop_var: unit_link
+  become: true
+  no_log: true
+  notify: Reload system systemd
+
+- name: Remove declared owned system unit files
+  ansible.builtin.file:
+    path: "{{ unit_file }}"
+    state: absent
+  loop: "{{ homelab_decommissioned_services | map(attribute='unit_files') | flatten }}"
+  loop_control:
+    loop_var: unit_file
+  become: true
+  notify: Reload system systemd
+  no_log: true
+
+- name: Remove only exact admitted firewalld rules from every zone
+  ansible.posix.firewalld:
+    zone: "{{ firewall_rule.1 }}"
+    rich_rule: "{{ firewall_rule.0.rich_rule }}"
+    permanent: true
+    immediate: true
+    state: disabled
+  loop: "{{ (homelab_decommissioned_services | map(attribute='firewalld_rules') | flatten) | product((_homelab_lifecycle_zones.stdout | default('')).split()) | list }}"
+  loop_control:
+    loop_var: firewall_rule
+  become: true
+  when: _homelab_lifecycle_zones is not skipped
+  no_log: true
+
+- name: Remove only exact admitted UFW rules
+  community.general.ufw:
+    rule: allow
+    delete: true
+    from_ip: "{{ rule.from_ip }}"
+    port: "{{ rule.port }}"
+    proto: "{{ rule.proto }}"
+  loop: "{{ homelab_decommissioned_services | map(attribute='ufw_rules') | flatten }}"
+  loop_control:
+    loop_var: rule
+  become: true
+  when: _homelab_lifecycle_backends.ansible_facts.services.get('ufw.service', {}).get('state') == 'running'
+  no_log: true

@@ -48,8 +48,8 @@ uptrace_retention_traces: "7 DAY"
 uptrace_retention_metrics: "30 DAY"
 uptrace_retention_logs: "7 DAY"
 
-# LAN subnet for firewall rich rules (HTTP port 80, HTTPS port 443 & mDNS port 5353)
-lan_subnet: "{{ host_lan_subnet | default(ansible_facts['default_ipv4']['network'] + '/24') }}"
+# LAN subnet for firewall rich rules (HTTP port 80 and HTTPS port 443)
+lan_subnet: "{{ host_lan_subnet | default((_homelab_lifecycle_network.ansible_facts.ansible_default_ipv4.network if _homelab_lifecycle_network is defined else ansible_facts['default_ipv4']['network']) + '/24') }}"
 
 # Podman container auto-update configuration
 enable_podman_auto_update: true

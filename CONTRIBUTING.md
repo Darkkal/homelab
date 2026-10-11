@@ -57,12 +57,11 @@ When persisting data for containerized services, follow this strategy to disting
 
 
 ### Network & Routing
-- Services publish LAN hostnames (`*.home`) resolved via the AdGuard Home DNS server (legacy Avahi mDNS publishing is retained for compatibility).
+- Services publish LAN hostnames (`*.home`) resolved via the AdGuard Home DNS server (the legacy Avahi mDNS publishing role was removed).
 - Web services are reverse-proxied through **Caddy** bound to unprivileged host port `80`.
-- **New Service `.home` Routing Requirement**: Every new web-accessible service must be configured for `.home` routing:
-  1. Add the `.home` hostname (e.g. `swarmui.home`) to `avahi_aliases` in `inventory/group_vars/service_hosts.yml`.
-  2. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
-  3. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
+- **New Service `.home` Routing Requirement**: Every new web-accessible service must be configured for `.home` routing (the `.home` hostname is served automatically by AdGuard Home's wildcard rewrite — no per-service DNS entry is needed):
+  1. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
+  2. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
 - Multi-host overrides should be configured cleanly in `inventory/group_vars/service_hosts.yml`.
 - **Homepage Service Discovery & Labeling Requirements**: Homepage populates the dashboard dynamically from container labels read over the Podman socket (see `docs/architecture.md` and `docs/configuration.md` for full details). Every new web-accessible service must be configured for Homepage discovery:
   1. **Add Homepage Labels**: Add `homepage.group`, `homepage.name`, `homepage.icon`, `homepage.href`, and `homepage.description` labels to the container's `.container.j2` Quadlet template.
@@ -76,7 +75,7 @@ When persisting data for containerized services, follow this strategy to disting
 ## 3. Ansible Conventions & Role Patterns
 
 - **Idempotency**: All playbooks and role tasks must be strictly idempotent. Re-running `site.yml` multiple times should produce zero unexpected state mutations (`changed=0`).
-- **Role Structure**: Keep roles modular (`base`, `nvidia`, `quadlets`, `avahi`, `caddy`).
+- **Role Structure**: Keep roles modular (`base`, `nvidia`, `quadlets`, `caddy`).
 - **Secrets**: Never commit unencrypted sensitive credentials. Use `ansible-vault` for `inventory/group_vars/all/vault.yml`.
 
 ---

@@ -1,0 +1,33 @@
+---
+- name: Reject overridden discovery registrations before networking reads
+  ansible.builtin.assert:
+    that:
+      - _homelab_lifecycle_network is not defined
+      - _homelab_lifecycle_files is not defined
+      - _homelab_lifecycle_loaded is not defined
+      - _homelab_lifecycle_links is not defined
+      - _homelab_lifecycle_zones is not defined
+      - _homelab_lifecycle_backends is not defined
+    fail_msg: Invalid system lifecycle discovery context
+    quiet: true
+  no_log: true
+
+- name: Read only networking facts needed for the ordinary LAN fallback
+  ansible.builtin.setup:
+    gather_subset: ['!all', '!min', default_ipv4]
+    filter: [ansible_default_ipv4]
+  register: _homelab_lifecycle_network
+  # Core's failure annotation can print module messages despite no_log. Admit
+  # only a success-shaped setup result in the following redacted assertion.
+  failed_when: false
+  check_mode: false
+  become: false
+  no_log: true
+
+- name: Require a fresh valid IPv4 fallback on every selected host
+  ansible.builtin.assert:
+    that:
+      - _homelab_lifecycle_network | homelab_validate_network_fallback
+    fail_msg: Invalid system lifecycle networking result
+    quiet: true
+  no_log: true

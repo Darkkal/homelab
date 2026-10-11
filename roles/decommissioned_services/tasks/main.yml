@@ -1,0 +1,7 @@
+---
+- name: Admit system lifecycle policy before discovery
+  ansible.builtin.import_tasks: validate.yml
+
+- name: Converge admitted system tombstones
+  ansible.builtin.include_tasks: converge.yml
+  when: homelab_decommissioned_services | length > 0

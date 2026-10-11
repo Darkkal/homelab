@@ -1,0 +1,35 @@
+---
+- name: Require explicit system lifecycle context
+  ansible.builtin.assert:
+    that:
+      - _homelab_lifecycle_backends is not defined
+      - _homelab_lifecycle_files is not defined
+      - _homelab_lifecycle_loaded is not defined
+      - _homelab_lifecycle_links is not defined
+      - _homelab_lifecycle_zones is not defined
+      - homelab_active_system_services is defined
+      - homelab_decommissioned_services is defined
+      - homelab_preserved_system_units is defined
+    fail_msg: Invalid system lifecycle policy
+    quiet: true
+  no_log: true
+
+- name: Validate system lifecycle admission
+  ansible.builtin.assert:
+    that:
+      - homelab_decommissioned_services | homelab_validate_system_lifecycle(homelab_active_system_services, homelab_preserved_system_units)
+    fail_msg: Invalid system lifecycle policy
+    quiet: true
+  no_log: true
+
+- name: Reject drift from the release-coupled caller data
+  ansible.builtin.assert:
+    that:
+      - >-
+        {'active_system_services': homelab_active_system_services,
+         'retired_system_services': homelab_decommissioned_services,
+         'preserved_system_units': homelab_preserved_system_units}
+        == (lookup('ansible.builtin.template', role_path ~ '/../../playbooks/vars/system_lifecycle.yml') | from_yaml).homelab_lifecycle_source
+    fail_msg: System lifecycle context differs from the reviewed source
+    quiet: true
+  no_log: true

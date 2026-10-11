@@ -1,8 +1,41 @@
 ---
+- name: Validate release-coupled system lifecycle policy on every host
+  hosts: all
+  gather_facts: false
+  strategy: linear
+  any_errors_fatal: true
+  vars_files:
+    - ./vars/system_lifecycle.yml
+  pre_tasks:
+    - name: Resolve the LAN fallback from bounded fresh networking facts
+      ansible.builtin.import_role:
+        name: decommissioned_services
+        tasks_from: network
+    - name: Admit lifecycle context without discovery or convergence
+      ansible.builtin.import_role:
+        name: decommissioned_services
+        tasks_from: validate
+      vars:
+        homelab_active_system_services: "{{ homelab_lifecycle_source.active_system_services }}"
+        homelab_decommissioned_services: "{{ homelab_lifecycle_source.retired_system_services }}"
+        homelab_preserved_system_units: "{{ homelab_lifecycle_source.preserved_system_units }}"
+
 - name: Configure base system for all homelab hosts
   hosts: all
   roles:
     - base
+
+- name: Decommission legacy Avahi state
+  hosts: all
+  any_errors_fatal: true
+  vars_files:
+    - ./vars/system_lifecycle.yml
+  roles:
+    - role: decommissioned_services
+      vars:
+        homelab_active_system_services: "{{ homelab_lifecycle_source.active_system_services }}"
+        homelab_decommissioned_services: "{{ homelab_lifecycle_source.retired_system_services }}"
+        homelab_preserved_system_units: "{{ homelab_lifecycle_source.preserved_system_units }}"
 
 - name: Configure NVIDIA runtime on inference hosts
   hosts: inference_hosts
@@ -22,7 +55,6 @@
 - name: Deploy service Quadlets and supporting infrastructure
   hosts: service_hosts
   roles:
-    - avahi
     - caddy
     - role: quadlets
       vars:

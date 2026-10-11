@@ -1,0 +1,19 @@
+---
+# Release-coupled provisioning/retirement declarations, audited against site.yml.
+# Empty means no repository-provisioned SYSTEM units, not no installed services.
+homelab_lifecycle_source:
+  active_system_services: []
+  preserved_system_units:
+    - avahi-daemon.service
+  retired_system_services:
+    - name: avahi
+      unit_globs:
+        - 'avahi-alias@*.service'
+      unit_files:
+        - /etc/systemd/system/avahi-alias@.service
+      firewalld_rules:
+        - rich_rule: 'rule family="ipv4" source address="{{ lan_subnet }}" port port="5353" protocol="udp" accept'
+      ufw_rules:
+        - from_ip: "{{ lan_subnet }}"
+          port: '5353'
+          proto: udp
