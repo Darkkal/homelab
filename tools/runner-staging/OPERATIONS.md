@@ -1,6 +1,6 @@
 # PR86 staging and delivery packets
 
-Preparation only, under [planner7346](https://forgejo.home/piclaw-horde/homelab/pulls/86#issuecomment-7346).
+Preparation only, under [planner7346](https://forgejo.home/Onmyodo/homelab/pulls/86#issuecomment-7346).
 Approve packet 1 and packet 2 separately or together before executing either.
 The owner performs runner-account import and all admin-required deployment.
 These packets do not restart a service or invoke a Forgejo job. PR86 remains

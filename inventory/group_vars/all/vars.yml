@@ -15,9 +15,9 @@ forgejo_api_token: "{{ vault_forgejo_api_token_homepage | default(vault_forgejo_
 
 sillytavern_api_key: "{{ vault_sillytavern_api_key | default('') }}"
 
-# Forgejo dispatcher API tokens (issue piclaw-horde/piclaw-scripts#1).
+# Forgejo dispatcher API tokens (issue Onmyodo/piclaw-scripts#1).
 # Each PiClaw role gets its own Forgejo account/token; repo-level access is
-# controlled by piclaw-horde organization teams, not token scoping.
+# controlled by Onmyodo organization teams, not token scoping.
 # FORGEJO_TOKEN (below) keeps working as the planner key for backward
 # compatibility with existing scripts.
 piclaw_forgejo_api_token: "{{ vault_forgejo_api_token_planner | default('') }}"

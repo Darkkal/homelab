@@ -58,12 +58,12 @@ installed for this correction.
 ## Completed owner-executed smallest reproduction
 
 The owner executed the prepared stopped-container synthetic probe published in
-[#82 comment7188](https://forgejo.home/piclaw-horde/homelab/issues/82#issuecomment-7188).
+[#82 comment7188](https://forgejo.home/Onmyodo/homelab/issues/82#issuecomment-7188).
 The cached pinned image received tar members through the compatible archive API
 with path=/. The var/run/act/actions/33/synthetic/.eslintignore member returned
 HTTP500/path_escape; the otherwise identical run/act/actions prefix returned
 HTTP200/accepted. Captured-container cleanup passed. Results are owner-reported
-in [7190](https://forgejo.home/piclaw-horde/homelab/issues/82#issuecomment-7190);
+in [7190](https://forgejo.home/Onmyodo/homelab/issues/82#issuecomment-7190);
 this PR does not independently rerun that host operation.
 
 This establishes a path-specific failure for the synthetic case. It does not
