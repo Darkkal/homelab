@@ -1,3 +1,15 @@
+- name: Manage opted-in Web Gallery configuration
+  ansible.builtin.include_tasks: webgallery.yml
+  when:
+    - webgallery_enabled | default(false) | bool
+    - "'webgallery' in quadlet_services"
+
+- name: Reject Web Gallery selection without explicit opt-in
+  ansible.builtin.assert:
+    that: webgallery_enabled | default(false) | bool
+    fail_msg: Web Gallery requires explicit operator opt-in.
+  when: "'webgallery' in quadlet_services"
+
 - name: Deploy SillyTavern configuration file
   ansible.builtin.template:
     src: sillytavern_config.yaml.j2

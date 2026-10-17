@@ -42,6 +42,20 @@
     - "{{ homelab_data_dir }}/adguardhome/work"
   when: "'service_hosts' in group_names"
 
+# Adopt these exact operator-supplied paths; never recurse over existing state.
+- name: Ensure opted-in Web Gallery data directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+  loop:
+    - "{{ webgallery_data_dir }}"
+    - "{{ webgallery_data_dir }}/scrapers"
+    - "{{ webgallery_data_dir }}/scrapers/gallery-dl"
+    - "{{ webgallery_media_dir }}"
+  when:
+    - "'service_hosts' in group_names"
+    - webgallery_enabled | default(false) | bool
+
 - name: Ensure inference host data directories exist
   ansible.builtin.file:
     path: "{{ item }}"

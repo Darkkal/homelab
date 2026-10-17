@@ -1,0 +1,1 @@
+{{ webgallery_gallery_dl_config | combine({'extractor': webgallery_gallery_dl_config.extractor | combine(webgallery_extractor_credentials, recursive=true)}, recursive=true) | to_nice_json }}

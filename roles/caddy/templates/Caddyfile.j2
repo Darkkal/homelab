@@ -47,3 +47,8 @@ uptrace.home {
     reverse_proxy {{ uptrace_upstream }}
 }
 
+{% if webgallery_enabled | default(false) | bool %}
+webgallery.home {
+    reverse_proxy {{ webgallery_upstream }}
+}
+{% endif %}

@@ -13,3 +13,5 @@ glances_upstream: "glances:61208"
 searxng_upstream: "searxng:8080"
 piclaw_upstream: "piclaw:8080"
 uptrace_upstream: "uptrace:80"
+
+webgallery_upstream: "webgallery:3000"

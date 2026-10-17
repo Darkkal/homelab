@@ -31,11 +31,12 @@ ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # Canonical YAML hashes cover module arguments, loops, block context, destinations,
 # notifications, includes and opaque non-unit actions (CDI, HTTP APIs, firewall).
 TASK_PINS = {
+    "roles/quadlets/tasks/webgallery.yml": "c743cc6eebe43b238d8796bc9a2ffbf753baf11f89b3079eee2a07f7c024bfdf",
     "roles/decommissioned_services/tasks/network.yml": "4a4777dcf41e50a71208ebcb57724f454592a8602fb3845825e6dffdc24b5cfd",
     "roles/decommissioned_services/tasks/converge.yml": "d08a3d1f6ad5951630a27ad5ac32338860b27310e9963ec828b5b0a918fbad0c",
     "roles/decommissioned_services/tasks/validate.yml": "f6bad3bc257c5d6371bda6e1967627fdf6c376b2b808523a341dad8a380d29f1",
     "roles/base/handlers/main.yml": "faa1d0329f442797c8fb25f93c8736604e9f75f8a69b7a3707254a82beea4db2",
-    "roles/base/tasks/main.yml": "5efa6ae81771c7251575fa9af0ddf2258adbfd3c74073dd4bf2e196317098e96",
+    "roles/base/tasks/main.yml": "4cff6fa57be56488f198e1255be95a60a416a75628216003c82c99ce409f8f1a",
     "roles/caddy/handlers/main.yml": "837289bc4d0a75dd1626b6e4cdd76f27c8ecf12465e54663ec2f249080148f54",
     "roles/caddy/tasks/main.yml": "5c937923825f517ef7c33cf10d85f222daf84a52d4e775f6575f1d28cbf618ce",
     "roles/decommissioned_services/handlers/main.yml": "0314a5e7443e9185914f96a521594f441174e7ed4c8c11803013b3f3ac2b5ffc",
@@ -44,15 +45,16 @@ TASK_PINS = {
     "roles/forgejo_runner/tasks/job_policy.yml": "84ebab5f7ca0c4b907d33ccf34f7fa7720dc878d83d138ccf09836fce57fe366",
     "roles/forgejo_runner/tasks/main.yml": "a11982da4ee4568959c48269d66fb34e88cd74ac27f3b7fd8dd6bee227599410",
     "roles/nvidia/tasks/main.yml": "a0ed3021381db3336eadeb85c84ec6cf27314e2871eee35ad26a1ccac6095934",
-    "roles/quadlets/handlers/main.yml": "7039b8b25f13fbe050343f2dbf9ae4de3fd42ae85d6883cb73c4f88f47fd4248",
-    "roles/quadlets/tasks/adguardhome-provision.yml": "c4197712e414168a6b69e45c1a8ff9511849ca98fd474bd5475267c082d41ef8",
-    "roles/quadlets/tasks/main.yml": "b3395008d7f66b39e7d48e92d7943e53d84b32588f0ae709d21ad091007a55d2",
+    "roles/quadlets/handlers/main.yml": "6736dafbd91bda161858422a5880547a01b7549ce029017df8758021cd4cc9f9",
+    "roles/quadlets/tasks/adguardhome-provision.yml": "8bd383d320e13ed8f6993ae5148f7b1c203ae50baed2df894d6954aabe28b28b",
+    "roles/quadlets/tasks/main.yml": "e3147b944ae5d95a72fceaf7c4727202570a1b4fbafab1460430533395448dab",
     "roles/quadlets/tasks/uptrace-dashboards.yml": "7099f6693d1f83af164bba7b76750af6f3e209302e2729689fad3a1c5d131361",
 }
 
 # Generated units plus the two executed source scripts: commands and references
 # are pinned too; task pins alone cannot detect a changed ExecStartPre payload.
 ARTIFACT_PINS = {
+    "roles/quadlets/templates/webgallery.container.j2": "276c0f00162491a70fbc0c60373e827b5098f6d59b379b727ef72bc0adb888e9",
     "roles/base/files/homelab.network": "3dd7bab39fe946ce1e1abf7ef4d92c6d769895504698dbecc04bae7e6637a243",
     "roles/base/templates/homelab-auto-rebuild-check.sh.j2": "c63835f4616af90634f51d9a8108f94a7c68129397959f8ae71db55761c3c617",
     "roles/base/templates/podman-auto-update.service.override.conf.j2": "1c607259b53854a6784edcb8cdf6d7c364fb20a52323d234a1a60e05687f90d6",
@@ -89,12 +91,14 @@ PLAY_CONTEXT_PINS = (
     "14b60b6622801dba90e46164758b8807ada1b74c96b5109d277feff4f6979090",
     "ff5d3bc1ad87c57c8c4af624a3b5447b6740266495fcf4c741b865a4db3e1a98",
     "db1d267f6fc9c0d619d592887c53074abfb44641b7f2a5821998e3e0ae5b3614",
+    "3183d6b81cc58d95a46a0011cd0381dd1aaaf5c9ff19fb979fad89eba0fcbb0f",
     "9eb370969a4c52a057ca944f60ff2a7b12409c29f7d484d26813fc27b2976af0",
     "84e7c18c26a7f16a77870aa6e6ae62cb503f8e0ff0beeef8a02fd99495ae0ec8",
 )
 SOURCE_CONTEXT_PINS = {
+    "roles/quadlets/defaults/main.yml": "7d54a3ec40b590209d4781649858bdd99f2eee64abf62b7a14c54e49db22ad9f",
     "roles/caddy/defaults/main.yml":
-        "9e55d1745b60000d0839537df88f408b90740cc55e79b6505fc7bc6957b86e4a",
+        "0f3ce6a831ffebcea54089b746186e54ac24d155e323367a7eb73e337e04a27b",
     "roles/decommissioned_services/defaults/main.yml":
         "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
 }
@@ -143,7 +147,7 @@ def source_context(source, plays):
             if root.is_dir():
                 paths.update(str(p.relative_to(ROOT)) for p in root.rglob("*"))
         paths.update(p for p in source.overrides if p == prefix or p.startswith(prefix + "/"))
-    # Only the two explicitly reviewed defaults files and their directories exist.
+    # Only the explicitly reviewed defaults files and their directories exist.
     allowed = set(SOURCE_CONTEXT_PINS) | {str(Path(p).parent) for p in SOURCE_CONTEXT_PINS}
     require(paths <= allowed, "unclassified implicit variable source or role metadata")
     for path, digest in SOURCE_CONTEXT_PINS.items():
@@ -511,7 +515,7 @@ class SourceAuditTests(unittest.TestCase):
         self.assertEqual(result["roles"], ROLES)
         self.assertEqual(result["tasks"], set(TASK_PINS))
         self.assertEqual(result["artifacts"], set(ARTIFACT_PINS))
-        self.assertEqual(len(result["quadlets"]), 17)
+        self.assertEqual(len(result["quadlets"]), 18)
 
     def test_each_task_and_handler_requires_explicit_user_scope(self):
         for path in TASK_PINS:

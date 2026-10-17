@@ -74,6 +74,15 @@
           - uptrace
           - uptrace-otelcol
 
+- name: Deploy opted-in Web Gallery
+  hosts: service_hosts
+  roles:
+    - role: quadlets
+      vars:
+        quadlet_services:
+          - webgallery
+      when: webgallery_enabled | default(false) | bool
+
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts
   roles:

@@ -1,0 +1,10 @@
+---
+webgallery_enabled: false
+webgallery_uid: 1000
+webgallery_gid: 1000
+webgallery_timezone: UTC
+webgallery_port: 3000
+# Full preserved dictionaries and existing host paths/image are required inputs.
+webgallery_extractor_credentials:
+  pixiv:
+    refresh-token: "{{ vault_webgallery_pixiv_refresh_token }}"
