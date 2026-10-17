@@ -46,4 +46,5 @@ uptrace_project_id: 1
 adguardhome_data_dir: "{{ homelab_data_dir }}/adguardhome"
 adguardhome_port: 8090
 adguardhome_upstream_dns:
-  - 9.9.9.9
+  - 1.1.1.1
+  - 8.8.8.8

@@ -42,7 +42,7 @@
     method: POST
     body_format: json
     body:
-      upstream_dns: "{{ adguardhome_upstream_dns | default(['9.9.9.9']) }}"
+      upstream_dns: "{{ adguardhome_upstream_dns | default(['1.1.1.1', '8.8.8.8']) }}"
       protection_enabled: true
       filtering_enabled: true
     url_username: "{{ adguardhome_username }}"

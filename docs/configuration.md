@@ -132,7 +132,7 @@ These settings apply to target hosts in the `service_hosts` group:
 | `uptrace_retention_logs` | `7 DAY` | ClickHouse TTL for log data. |
 | `adguardhome_data_dir` | `~/homelab/adguardhome` | Directory for AdGuard Home config (`conf`) and runtime state (`work`). |
 | `adguardhome_port` | `8090` | Host web port for the AdGuard Home admin UI (container internal port `3000`). |
-| `adguardhome_upstream_dns` | `["9.9.9.9"]` | Upstream DNS servers AdGuard Home forwards public queries to. |
+| `adguardhome_upstream_dns` | `["1.1.1.1", "8.8.8.8"]` | Upstream DNS servers AdGuard Home forwards public queries to. |
 | `adguardhome_username` | `admin` | AdGuard Home admin UI username (from `vault_adguard_username`). |
 | `adguardhome_password` | auto-generated (`~/homelab/.adguardhome_password`) | AdGuard Home admin UI password (from `vault_adguard_password`). The playbook seeds it on first install via AdGuard's `install/configure` API. |
 
