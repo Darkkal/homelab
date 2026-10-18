@@ -36,6 +36,9 @@ ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # #70: native stat/slurp/merge/copy tasks update the same user config path.
 # The added include preserves the service handler and system lifecycle boundary;
 # private tempfile/copy backups are confined to that service's config directory.
+# #71: Uptrace API/state work is live-only; cookie parsing uses the uri cookie jar.
+# Runner previews read real identity and avoid user buses, including handlers;
+# absent accounts defer dependent work. Live destinations and user scope persist.
 TASK_PINS = {
     "roles/quadlets/tasks/sillytavern.yml": "a4ca5bd483dc20958a6dcc2229dd91286aafcaa297329ac731f6a2aaad2507b7",
     "roles/quadlets/tasks/webgallery.yml": "c743cc6eebe43b238d8796bc9a2ffbf753baf11f89b3079eee2a07f7c024bfdf",
@@ -48,14 +51,14 @@ TASK_PINS = {
     "roles/caddy/tasks/main.yml": "5c937923825f517ef7c33cf10d85f222daf84a52d4e775f6575f1d28cbf618ce",
     "roles/decommissioned_services/handlers/main.yml": "0314a5e7443e9185914f96a521594f441174e7ed4c8c11803013b3f3ac2b5ffc",
     "roles/decommissioned_services/tasks/main.yml": "e4ef37eee4aa4d96ef8d825c6679ab14730f1d1129c6df22361d7f0e2ffd9630",
-    "roles/forgejo_runner/handlers/main.yml": "c8ba77e8ea58060280ee149f5ed0b9516ca78d62dc0eb93cdfc9a330f95363c7",
+    "roles/forgejo_runner/handlers/main.yml": "6a96ffbec2b6030e96aa3dbd5522f884da60fb8345adba1ca5d49d237ed368e1",
     "roles/forgejo_runner/tasks/job_policy.yml": "84ebab5f7ca0c4b907d33ccf34f7fa7720dc878d83d138ccf09836fce57fe366",
-    "roles/forgejo_runner/tasks/main.yml": "a11982da4ee4568959c48269d66fb34e88cd74ac27f3b7fd8dd6bee227599410",
+    "roles/forgejo_runner/tasks/main.yml": "23c3f761c5a7a232773ee09c2f869a30369f6c3e065416367ef8a61a470ab69e",
     "roles/nvidia/tasks/main.yml": "a0ed3021381db3336eadeb85c84ec6cf27314e2871eee35ad26a1ccac6095934",
     "roles/quadlets/handlers/main.yml": "6736dafbd91bda161858422a5880547a01b7549ce029017df8758021cd4cc9f9",
     "roles/quadlets/tasks/adguardhome-provision.yml": "d3aa363abcc18fe1028d9ace8da51ef29d7744d01b18e376a021a10596175f1a",
     "roles/quadlets/tasks/main.yml": "5e47bf5859dd74d57733a375146264ad11435646c9daf5d621c975eec29b742f",
-    "roles/quadlets/tasks/uptrace-dashboards.yml": "7099f6693d1f83af164bba7b76750af6f3e209302e2729689fad3a1c5d131361",
+    "roles/quadlets/tasks/uptrace-dashboards.yml": "676f2e0e6df0c2bb1fdb3642a32e3d516b73e992b5334f98b2c74072322f323b",
 }
 
 # Generated units plus the two executed source scripts: commands and references
