@@ -1,0 +1,34 @@
+[Unit]
+Description=Web Gallery personal archive
+After=network-online.target
+Wants=network-online.target
+
+[Container]
+ContainerName=webgallery
+Image={{ webgallery_image }}
+AutoUpdate={{ webgallery_autoupdate | default('registry') }}
+UserNS=keep-id
+User={{ webgallery_uid }}:{{ webgallery_gid }}
+Network={{ network_name }}
+PublishPort={{ webgallery_port }}:3000
+Environment=NODE_ENV=production
+Environment=DATA_DIR=/data
+Environment=MEDIA_DIR=/media
+Environment=TZ={{ webgallery_timezone }}
+Volume={{ webgallery_data_dir }}:/data:Z
+Volume={{ webgallery_media_dir }}:/media:Z
+# Do not relabel or copy the existing browser profile.
+Volume={{ webgallery_browser_dir }}:/home/node/.mozilla/firefox:ro
+Volume=/etc/localtime:/etc/localtime:ro
+Label=homepage.group="Web Services"
+Label=homepage.name="Web Gallery"
+Label=homepage.icon=mdi-image-multiple
+Label=homepage.href=https://webgallery.home
+Label=homepage.description="Personal media archive"
+
+[Service]
+Restart=on-failure
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

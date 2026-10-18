@@ -31,6 +31,8 @@ playwright_port: 3004
 piclaw_data_dir: "{{ homelab_data_dir }}/piclaw"
 piclaw_port: 8083
 
+webgallery_port: 8084
+
 uptrace_data_dir: "{{ homelab_data_dir }}/uptrace"
 uptrace_port: 14318
 uptrace_image: "docker.io/uptrace/uptrace:2.0.3"

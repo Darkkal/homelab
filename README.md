@@ -49,6 +49,7 @@ Ensure the following software is installed before deploying:
    ```
 
 2. Review `inventory/hosts.yml` to ensure target machine IP addresses or connection parameters match your setup. By default, single-machine setups target `desktop` via Ansible's `local` connection.
+3. Supply Web Gallery's existing data/media paths and complete configuration in the protected host variables described in the [Web Gallery configuration reference](docs/configuration.md#web-gallery). These host-specific variables are gitignored and must be supplied separately on a fresh clone.
 
 ---
 
@@ -102,7 +103,7 @@ ansible-playbook playbooks/site.yml --ask-become-pass --vault-password-file .vau
 Check status of user-level Podman Quadlet services:
 
 ```bash
-systemctl --user status caddy sillytavern open-webui llama-swap forgejo glances searxng playwright piclaw uptrace uptrace-clickhouse uptrace-postgres uptrace-redis uptrace-otelcol adguardhome
+systemctl --user status caddy sillytavern open-webui llama-swap forgejo glances searxng playwright piclaw webgallery uptrace uptrace-clickhouse uptrace-postgres uptrace-redis uptrace-otelcol adguardhome
 ```
 
 Verify DNS address resolution from your local workstation:
@@ -125,6 +126,7 @@ Once deployed, all services are accessible across your LAN using **DNS hostnames
 | **SearXNG** | `https://searxng.home` | `http://<host-ip>:8082` | Web UI / API | Self-hosted search aggregator for Open WebUI. Proxied via Caddy. | `service_hosts` |
 | **Playwright** | — | `http://<host-ip>:3004` | WebSocket / HTTP | Headless browser scraping service for Open WebUI web loader (`ws://playwright:3000`). | `service_hosts` |
 | **PiClaw** | `https://piclaw.home` | `http://<host-ip>:8083` | Web UI (HTTPS) | Stateful AI coding agent & workspace interface. Proxied via Caddy. Data in `~/homelab/piclaw`. | `service_hosts` |
+| **Web Gallery** | `https://webgallery.home` | `http://<host-ip>:8084` | Web UI (HTTPS through Caddy; HTTP direct) | Personal social-media and gallery archive. Scraper credentials use Vault and an existing read-only browser-profile mount. | `service_hosts` |
 | **SwarmUI** | `https://swarmui.home` | `http://<host-ip>:7801` | Web UI (HTTPS) | Generative image creation interface. Proxied via Caddy. | `inference_hosts` |
 | **Forgejo (Web)** | `https://forgejo.home` | `http://<host-ip>:3003` | Web UI / Git | Self-hosted Git repository hosting & CI/CD platform. Data in `~/homelab/forgejo`. | `service_hosts` |
 | **Forgejo (SSH)**| — | `ssh://git@<host-ip>:222` | Git over SSH | Git clone and push operations over SSH using port `222`. | `service_hosts` |

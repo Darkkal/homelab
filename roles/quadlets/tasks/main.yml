@@ -1,3 +1,7 @@
+- name: Manage Web Gallery configuration
+  ansible.builtin.include_tasks: webgallery.yml
+  when: "'webgallery' in quadlet_services"
+
 - name: Deploy SillyTavern configuration file
   ansible.builtin.template:
     src: sillytavern_config.yaml.j2

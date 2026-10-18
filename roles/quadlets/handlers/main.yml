@@ -57,3 +57,9 @@
     name: uptrace-clickhouse.service
     state: restarted
     scope: user
+
+- name: Restart webgallery service
+  ansible.builtin.systemd:
+    name: webgallery.service
+    state: restarted
+    scope: user

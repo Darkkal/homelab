@@ -73,6 +73,7 @@
           - uptrace-redis
           - uptrace
           - uptrace-otelcol
+          - webgallery
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts

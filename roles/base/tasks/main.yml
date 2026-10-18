@@ -40,6 +40,10 @@
     - "{{ homelab_data_dir }}/adguardhome"
     - "{{ homelab_data_dir }}/adguardhome/conf"
     - "{{ homelab_data_dir }}/adguardhome/work"
+    - "{{ webgallery_data_dir }}"
+    - "{{ webgallery_data_dir }}/scrapers"
+    - "{{ webgallery_data_dir }}/scrapers/gallery-dl"
+    - "{{ webgallery_media_dir }}"
   when: "'service_hosts' in group_names"
 
 - name: Ensure inference host data directories exist

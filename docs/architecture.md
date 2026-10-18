@@ -32,6 +32,7 @@ graph TD
         Caddy -->|Port 3003 / 222| Forgejo[Forgejo Git]
         Caddy -->|homelab.network| Homepage[Homepage]
         Caddy -->|homelab.network| Glances[Glances]
+        Caddy -->|webgallery:3000| WebGallery[Web Gallery]
         OpenWebUI -->|WebSocket ws://playwright:3000| Playwright[Playwright]
         UptraceCol[Uptrace OTel Collector] -->|OTLP / remote write| Uptrace[Uptrace]
         UptraceCol -->|hostmetrics / synthetic checks| Services[All web services]
@@ -58,11 +59,28 @@ graph TD
   - `llama-swap` serves as the single, unified multi-model proxy and VRAM lifecycle manager for all LLM inference traffic.
 - **`service_hosts`**:
   - Hosts running application containers, proxy services, and local network utilities.
-  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), `adguardhome` (LAN DNS server & ad blocker serving `*.home` rewrites so mDNS-less devices can resolve service hostnames).
+  - Deploys `caddy`, `sillytavern`, `open-webui`, `searxng`, `playwright`, `piclaw`, `webgallery`, `forgejo`, `homepage`, `glances`, `uptrace` (with ClickHouse, PostgreSQL, Redis, and an OpenTelemetry Collector), `adguardhome` (LAN DNS server & ad blocker serving `*.home` rewrites so mDNS-less devices can resolve service hostnames).
   - Frontend AI applications (`sillytavern`, `open-webui`) route model completion calls internally to `llama-swap:8080`.
   - `searxng` acts as the self-hosted search aggregator for Open WebUI web search operations over `homelab.network:8080`.
   - `playwright` handles browser rendering and content extraction for Open WebUI over `ws://playwright:3000`.
   - `glances` monitors the host (CPU, memory, temp, uptime, disk) and exposes a REST API that Homepage's Glances info widget consumes over `homelab.network`.
+
+### Web Gallery
+
+`webgallery` is a rootless user service on `service_hosts`, connected to
+`homelab.network`. Caddy routes `https://webgallery.home` to `webgallery:3000`;
+port `8084` on the host provides direct HTTP access. Its container labels place
+it in Homepage's **Web Services** group.
+
+Storage is split between an existing data directory mounted at `/data` (SQLite
+database, configuration and scraper state) and a media directory at `/media`
+(downloads and avatars). The existing Firefox profile is mounted read-only at
+`/home/node/.mozilla/firefox` for authenticated scraping. Ansible manages both
+complete configuration files; application state and media remain in their
+persistent directories. Host-specific paths and desired configuration are stored
+in a protected, gitignored host-variable file; extractor secrets come from Vault.
+See the [configuration reference](configuration.md#web-gallery) for variables,
+file locations and credential setup.
 
 ### Deployment Topologies
 
@@ -204,6 +222,12 @@ All rootless Podman bridge networks live in a single shared network namespace, a
 
 Service containers pulled from remote registries include Quadlet `AutoUpdate={{ <service>_autoupdate | default('registry') }}` directives.
 
+Web Gallery defaults to `ghcr.io/darkkal/web-gallery:latest`, published by the
+GitHub mirror for versioned releases. Its `AutoUpdate=registry` policy uses the
+same timer to check the selected tag, pull a changed image and restart the user
+service. Override `webgallery_image` to select a different release or registry;
+`webgallery_autoupdate: disabled` holds automatic updates for this service.
+
 ### How Automated Updates Work
 
 1. **Systemd User Timer (`podman-auto-update.timer`)**:
@@ -241,6 +265,9 @@ homelab/
 ├── ansible.cfg                  # Ansible configuration (inventory path, roles, callbacks)
 ├── inventory/
 │   ├── hosts.yml                # Host inventory and group mappings
+│   ├── host_vars/
+│   │   └── <host>/
+│   │       └── webgallery.yml   # Local paths and desired config (gitignored)
 │   └── group_vars/
 │       ├── all/
 │       │   ├── vars.yml         # Shared paths and baseline system configuration

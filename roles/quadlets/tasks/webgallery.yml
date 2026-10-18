@@ -1,0 +1,37 @@
+---
+- name: Validate adopted Web Gallery inputs
+  ansible.builtin.assert:
+    that:
+      - webgallery_image is string and webgallery_image | length > 0
+      - webgallery_data_dir is string and webgallery_data_dir.startswith('/')
+      - webgallery_media_dir is string and webgallery_media_dir.startswith('/')
+      - webgallery_browser_dir is string and webgallery_browser_dir.startswith('/')
+      - webgallery_data_dir != webgallery_media_dir
+      - webgallery_settings is mapping
+      - webgallery_settings.app is mapping
+      - webgallery_settings.scraper is mapping
+      - webgallery_gallery_dl_config is mapping
+      - webgallery_gallery_dl_config.extractor is mapping
+      - webgallery_extractor_credentials is mapping
+      - webgallery_extractor_credentials.pixiv['refresh-token'] is string
+      - webgallery_extractor_credentials.pixiv['refresh-token'] | trim | length > 0
+      - webgallery_port | int > 0 and webgallery_port | int < 65536
+    fail_msg: Adopted Web Gallery configuration and required credentials must be supplied.
+  no_log: true
+  diff: false
+
+- name: Deploy complete adopted Web Gallery configuration
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ webgallery_data_dir }}/{{ item.dest }}"
+    owner: "{{ ansible_facts['user_uid'] }}"
+    group: "{{ ansible_facts['user_gid'] }}"
+    mode: '0600'
+  loop:
+    - src: webgallery.settings.json.j2
+      dest: settings.json
+    - src: webgallery.gallery-dl.conf.j2
+      dest: scrapers/gallery-dl/gallery-dl.conf
+  no_log: true
+  diff: false
+  notify: Restart webgallery service
