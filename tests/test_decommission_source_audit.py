@@ -33,7 +33,11 @@ ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # #64: base adds a controller-only suffix assertion; AdGuard only derives its
 # exact wildcard. Unit templates only derive LAN names/labels (no scope,
 # destination, command, volume or service-manager changes).
+# #70: native stat/slurp/merge/copy tasks update the same user config path.
+# The added include preserves the service handler and system lifecycle boundary;
+# private tempfile/copy backups are confined to that service's config directory.
 TASK_PINS = {
+    "roles/quadlets/tasks/sillytavern.yml": "a4ca5bd483dc20958a6dcc2229dd91286aafcaa297329ac731f6a2aaad2507b7",
     "roles/quadlets/tasks/webgallery.yml": "c743cc6eebe43b238d8796bc9a2ffbf753baf11f89b3079eee2a07f7c024bfdf",
     "roles/decommissioned_services/tasks/network.yml": "4a4777dcf41e50a71208ebcb57724f454592a8602fb3845825e6dffdc24b5cfd",
     "roles/decommissioned_services/tasks/converge.yml": "d08a3d1f6ad5951630a27ad5ac32338860b27310e9963ec828b5b0a918fbad0c",
@@ -50,7 +54,7 @@ TASK_PINS = {
     "roles/nvidia/tasks/main.yml": "a0ed3021381db3336eadeb85c84ec6cf27314e2871eee35ad26a1ccac6095934",
     "roles/quadlets/handlers/main.yml": "6736dafbd91bda161858422a5880547a01b7549ce029017df8758021cd4cc9f9",
     "roles/quadlets/tasks/adguardhome-provision.yml": "d3aa363abcc18fe1028d9ace8da51ef29d7744d01b18e376a021a10596175f1a",
-    "roles/quadlets/tasks/main.yml": "9710958699f281313f19d5c11b01577e2aa2150d138b8b8351a10f0627cb9c10",
+    "roles/quadlets/tasks/main.yml": "5e47bf5859dd74d57733a375146264ad11435646c9daf5d621c975eec29b742f",
     "roles/quadlets/tasks/uptrace-dashboards.yml": "7099f6693d1f83af164bba7b76750af6f3e209302e2729689fad3a1c5d131361",
 }
 

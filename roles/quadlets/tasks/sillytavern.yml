@@ -1,0 +1,81 @@
+---
+- name: Read SillyTavern configuration metadata
+  ansible.builtin.stat:
+    path: "{{ st_data_dir }}/config/config.yaml"
+    follow: false
+    get_checksum: false
+    get_mime: false
+  register: st_config_stat
+
+- name: Require a regular SillyTavern configuration file
+  ansible.builtin.assert:
+    that:
+      - not st_config_stat.stat.exists or (st_config_stat.stat.isreg | default(false) and st_config_stat.stat.nlink == 1)
+    fail_msg: SillyTavern config must be a regular file with one link; no replacement performed.
+
+- name: Read existing SillyTavern configuration
+  ansible.builtin.slurp:
+    src: "{{ st_data_dir }}/config/config.yaml"
+  register: st_config_read
+  when: st_config_stat.stat.exists
+  no_log: true
+  diff: false
+
+# Missing files are initialized; existing empty/null/non-mapping files are not.
+- name: Parse existing SillyTavern configuration and managed policy
+  ansible.builtin.set_fact:
+    st_config_existing: "{{ (st_config_read.content | b64decode | from_yaml) if st_config_stat.stat.exists else {} }}"
+    st_config_managed: "{{ lookup('ansible.builtin.template', 'sillytavern_config.yaml.j2') | from_yaml }}"
+  no_log: true
+  diff: false
+
+- name: Validate SillyTavern configuration mappings before merging
+  ansible.builtin.assert:
+    that:
+      - st_config_existing is mapping
+      - st_config_existing.listenAddress is not defined or st_config_existing.listenAddress is mapping
+      - st_config_existing.protocol is not defined or st_config_existing.protocol is mapping
+    fail_msg: SillyTavern config and managed parents must be mappings; no replacement performed.
+  no_log: true
+  diff: false
+
+- name: Merge only managed SillyTavern settings
+  ansible.builtin.set_fact:
+    st_config_merged: "{{ st_config_existing | combine(st_config_managed, recursive=true) }}"
+  no_log: true
+  diff: false
+
+# JSON comparison distinguishes managed booleans from integers (true vs 1).
+# The semantic guard leaves comments, quoting and added defaults untouched on a no-op.
+- name: Apply effective SillyTavern configuration changes
+  when: >-
+    not st_config_stat.stat.exists or
+    (st_config_existing | to_json(sort_keys=true)) != (st_config_merged | to_json(sort_keys=true))
+  no_log: true
+  diff: false
+  block:
+    - name: Reserve a private backup before changing existing SillyTavern configuration
+      ansible.builtin.tempfile:
+        state: file
+        path: "{{ st_data_dir }}/config"
+        prefix: config.yaml.backup-
+      register: st_config_backup
+      when: st_config_stat.stat.exists and not ansible_check_mode
+
+    - name: Back up original SillyTavern configuration bytes
+      ansible.builtin.copy:
+        content: "{{ st_config_read.content | b64decode }}"
+        dest: "{{ st_config_backup.path }}"
+        owner: "{{ st_config_stat.stat.uid }}"
+        group: "{{ st_config_stat.stat.gid }}"
+        mode: '0600'
+      when: st_config_stat.stat.exists and not ansible_check_mode
+
+    - name: Write merged SillyTavern configuration
+      ansible.builtin.copy:
+        content: "{{ st_config_merged | to_nice_yaml(sort_keys=false) }}"
+        dest: "{{ st_data_dir }}/config/config.yaml"
+        owner: "{{ st_config_stat.stat.uid | default(omit) }}"
+        group: "{{ st_config_stat.stat.gid | default(omit) }}"
+        mode: "{{ st_config_stat.stat.mode | default('0644') }}"
+      notify: Restart sillytavern service

@@ -330,6 +330,47 @@ SillyTavern's persistent data is mapped to `st_data_dir` (`~/homelab/sillytavern
 | `~/homelab/sillytavern/plugins` | `/home/node/app/plugins` | Server-side plugins |
 | `~/homelab/sillytavern/extensions` | `/home/node/app/public/scripts/extensions/third-party` | Third-party client extensions |
 
+##### Configuration ownership and idempotency
+
+Ansible manages ten leaves in `config/config.yaml`: `dataRoot`, `listen`,
+`listenAddress.ipv4`, `listenAddress.ipv6`, `protocol.ipv4`, `protocol.ipv6`,
+`port`, `whitelistMode`, `basicAuthMode`, and `securityOverride`. The existing
+`sillytavern_config.yaml.j2` defines their values. The container's internal port
+remains `8000`; `sillytavern_port` controls the host-published port separately.
+All other settings, including nested siblings and legacy keys, are preserved.
+This differs from Web Gallery's complete-file configuration ownership.
+
+The role uses native Ansible tasks: `stat`/`slurp` read the target file,
+`from_yaml` parses it, `combine(recursive=true)` overlays the managed settings,
+and `copy` writes the merged YAML atomically. A semantic comparison guards the
+write, so matching settings leave the file byte-for-byte untouched, with no backup
+or restart. No custom module, JavaScript helper, parser container, or host dependency
+is added. A missing file receives the managed subset; the application may add its
+defaults on startup. Existing empty/null/non-mapping files, invalid YAML, symlinks,
+and incompatible managed parent mappings fail before a write.
+
+A real rewrite preserves unmanaged settings as parsed by Ansible, but may change
+comments, ordering and quoting. Ansible's parser uses PyYAML semantics, which can
+differ from the application's YAML parser for ambiguous scalars such as unquoted
+`yes`/`on` and dates. Quote intended strings; duplicate-key handling follows the
+controller's Ansible configuration (`duplicate_dict_key`). This native approach
+replaces the earlier application-parser proposal; it does not promise preservation
+of every YAML dialect or ambiguous document.
+
+Before each substantive rewrite of an existing file, `tempfile` and `copy` save
+its original bytes to a unique `config.yaml.backup-*` file, mode `0600`, in the
+same directory. Existing config ownership and permissions are retained; new files
+use `0644`. Logs/diffs for configuration contents are suppressed. No automatic
+backup pruning is added. A changed config notifies the existing restart handler.
+Check mode reads and compares configuration but creates no backup and writes no
+config; the copy module predicts the change without executing a service restart.
+
+Operational acceptance remains separate: retain the matching image/config backup
+and prevent concurrent writers in an approved window. After application startup
+normalization finishes, repeat deployment and verify no SillyTavern config change
+or restart. Source reversion alone cannot restore runtime config/image state; use
+the approved operator restore procedure. Other services are outside this fix.
+
 ##### Migrating Data from Existing SillyTavern Instances
 
 To migrate characters, chats, and settings from a standalone Docker Compose instance:

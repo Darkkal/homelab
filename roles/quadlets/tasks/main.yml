@@ -2,13 +2,9 @@
   ansible.builtin.include_tasks: webgallery.yml
   when: "'webgallery' in quadlet_services"
 
-- name: Deploy SillyTavern configuration file
-  ansible.builtin.template:
-    src: sillytavern_config.yaml.j2
-    dest: "{{ st_data_dir }}/config/config.yaml"
-    mode: "0644"
+- name: Manage SillyTavern configuration
+  ansible.builtin.include_tasks: sillytavern.yml
   when: "'sillytavern' in quadlet_services"
-  notify: Restart sillytavern service
 
 - name: Deploy llama-swap configuration file
   ansible.builtin.template:
