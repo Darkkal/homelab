@@ -1,0 +1,80 @@
+---
+# Controller-only render fixture, not a deployment or API reconciliation test.
+# Use an empty temporary inventory; commands and limits are in docs/configuration.md.
+- name: Render the LAN namespace with non-secret inputs
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  become: false
+  vars_files:
+    - ../../roles/quadlets/defaults/main.yml
+    - ../../roles/caddy/defaults/main.yml
+    - ../../inventory/group_vars/all/vars.yml
+    - ../../inventory/group_vars/inference_hosts.yml
+    - ../../inventory/group_vars/service_hosts.yml
+  tasks:
+    - name: Supply dummy paths and secrets without loading Vault or creating passwords
+      ansible.builtin.include_vars: lan_domain_dummy.yml
+
+    - name: Require a temporary destination and one of the two validation suffixes
+      ansible.builtin.assert:
+        that:
+          - validation_output_dir is match('^/tmp/[^.][^\n]*\Z')
+          - lan_domain in ['home', 'lab.test']
+
+    - name: Create the temporary render directory
+      ansible.builtin.file:
+        path: "{{ validation_output_dir }}"
+        state: directory
+        mode: '0700'
+
+    - name: Render the actual LAN-domain consumers
+      ansible.builtin.template:
+        src: "../../{{ item }}"
+        dest: "{{ validation_output_dir }}/{{ item | basename | regex_replace('\\.j2$', '') }}"
+        mode: '0600'
+      loop: &lan_templates
+        - roles/caddy/templates/Caddyfile.j2
+        - roles/quadlets/templates/forgejo.container.j2
+        - roles/quadlets/templates/glances.container.j2
+        - roles/quadlets/templates/homepage.container.j2
+        - roles/quadlets/templates/llama-swap.container.j2
+        - roles/quadlets/templates/open-webui.container.j2
+        - roles/quadlets/templates/piclaw.container.j2
+        - roles/quadlets/templates/searxng.container.j2
+        - roles/quadlets/templates/sillytavern.container.j2
+        - roles/quadlets/templates/swarmui.container.j2
+        - roles/quadlets/templates/uptrace.container.j2
+        - roles/quadlets/templates/webgallery.container.j2
+        - roles/quadlets/templates/homepage.custom.js.j2
+        - roles/quadlets/templates/homepage.widgets.yaml.j2
+        - roles/quadlets/templates/otel-collector.yaml.j2
+        - roles/quadlets/templates/uptrace.yml.j2
+
+    - name: Check suffix propagation without freezing whole-artifact contents
+      ansible.builtin.assert:
+        that:
+          - ('.' ~ lan_domain) in rendered
+          - lan_domain == 'home' or '.home' not in rendered
+          - "'.local' not in (rendered | replace('admin@homelab.local', ''))"
+      vars:
+        rendered: "{{ lookup('ansible.builtin.file', validation_output_dir ~ '/' ~ (item | basename | regex_replace('\\.j2$', ''))) }}"
+      loop: *lan_templates
+      when: not ansible_check_mode
+
+    - name: Check application URL overrides and telemetry routing forms
+      ansible.builtin.assert:
+        that:
+          - ('ROOT_URL=' ~ forgejo_root_url) in forgejo
+          - ('DOMAIN=forgejo.' ~ lan_domain) in forgejo
+          - ('SSH_DOMAIN=forgejo.' ~ lan_domain) in forgejo
+          - "('Host: homepage.' ~ lan_domain) in otel"
+          - "('server_name_override: homepage.' ~ lan_domain) in otel"
+          - ('@uptrace.' ~ lan_domain ~ '?grpc=14317') in otel
+          - "('url: https://uptrace.' ~ lan_domain) in uptrace"
+          - "('ingest_url: http://uptrace.' ~ lan_domain ~ '?grpc=14317') in uptrace"
+      vars:
+        forgejo: "{{ lookup('ansible.builtin.file', validation_output_dir ~ '/forgejo.container') }}"
+        otel: "{{ lookup('ansible.builtin.file', validation_output_dir ~ '/otel-collector.yaml') }}"
+        uptrace: "{{ lookup('ansible.builtin.file', validation_output_dir ~ '/uptrace.yml') }}"
+      when: not ansible_check_mode

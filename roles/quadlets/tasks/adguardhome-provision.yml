@@ -2,7 +2,7 @@
 # Provisions AdGuard Home via its HTTP API. Idempotent: the initial
 # install/configure is skipped once the admin user exists (detected from the
 # generated AdGuardHome.yaml), the upstream DNS is POSTed as declared, and the
-# *.home DNS rewrite is reconciled against the live rewrite list. Skipped
+# configured LAN wildcard is reconciled against the live rewrite list. Skipped
 # entirely in --check mode so dry runs make no API calls.
 - name: Read AdGuard Home config for install detection
   ansible.builtin.set_fact:
@@ -73,7 +73,7 @@
 
 - name: Build existing wildcard rewrite entry
   ansible.builtin.set_fact:
-    adguard_wildcard_entry: "{{ (adguard_rewrites.json | default([])) | selectattr('domain', 'equalto', '*.home') | list | first | default('') }}"
+    adguard_wildcard_entry: "{{ (adguard_rewrites.json | default([])) | selectattr('domain', 'equalto', '*.' ~ lan_domain) | list | first | default('') }}"
   when:
     - adguard_rewrite_answer is defined
     - adguard_rewrites.json is defined
@@ -84,7 +84,7 @@
     method: POST
     body_format: json
     body:
-      domain: "*.home"
+      domain: "*.{{ lan_domain }}"
       answer: "{{ adguard_wildcard_entry.answer }}"
     url_username: "{{ adguardhome_username }}"
     url_password: "{{ adguardhome_password }}"
@@ -96,13 +96,13 @@
     - adguard_wildcard_entry.answer != adguard_rewrite_answer
   no_log: true
 
-- name: Add AdGuard Home wildcard rewrite for .home hostnames
+- name: Add AdGuard Home wildcard rewrite for LAN hostnames
   ansible.builtin.uri:
     url: "http://localhost:{{ adguardhome_port | default(8090) }}/control/rewrite/add"
     method: POST
     body_format: json
     body:
-      domain: "*.home"
+      domain: "*.{{ lan_domain }}"
       answer: "{{ adguard_rewrite_answer }}"
     url_username: "{{ adguardhome_username }}"
     url_password: "{{ adguardhome_password }}"

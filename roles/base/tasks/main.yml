@@ -1,4 +1,16 @@
 ---
+- name: Validate the LAN DNS suffix before configuration writes
+  ansible.builtin.assert:
+    that:
+      - lan_domain is string
+      - lan_domain | length <= 253
+      - lan_domain is match('^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*\Z')
+      - lan_domain is search('[a-z]')
+    fail_msg: >-
+      lan_domain must be a bare lowercase DNS suffix (for example home or
+      lab.test), with labels of 1–63 characters and no scheme, wildcard,
+      port, whitespace, or leading/trailing dot.
+
 - name: Ensure common homelab directories exist
   ansible.builtin.file:
     path: "{{ item }}"

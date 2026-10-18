@@ -57,9 +57,10 @@ When persisting data for containerized services, follow this strategy to disting
 
 
 ### Network & Routing
-- Services publish LAN hostnames (`*.home`) resolved via the AdGuard Home DNS server (the legacy Avahi mDNS publishing role was removed).
+- New generated LAN names must derive their suffix from `lan_domain`; never hardcode `.home` in executable configuration. Use the single inventory default and validate with the controller-only `tests/validation/lan_domain.yml` playbook (commands and limits in `docs/configuration.md#lan-hostname-suffix`). Documentation may show default `.home` examples.
+- Services publish LAN hostnames (`*.<lan_domain>`) resolved via the AdGuard Home DNS server (the legacy Avahi mDNS publishing role was removed). The default `lan_domain` is `home`, so `.home` is the usual example.
 - Web services are reverse-proxied through **Caddy** bound to unprivileged host port `80`.
-- **New Service `.home` Routing Requirement**: Every new web-accessible service must be configured for `.home` routing (the `.home` hostname is served automatically by AdGuard Home's wildcard rewrite — no per-service DNS entry is needed):
+- **New Service LAN routing requirement**: Every new web-accessible service must be configured for the configured `lan_domain` suffix (the default `.home` hostname is served automatically by AdGuard Home's wildcard rewrite — no per-service DNS entry is needed):
   1. Define default upstream target (e.g. `swarmui_upstream: "swarmui:7821"`) in `roles/caddy/defaults/main.yml`.
   2. Add the `reverse_proxy` block to `roles/caddy/templates/Caddyfile.j2`.
 - Multi-host overrides should be configured cleanly in `inventory/group_vars/service_hosts.yml`.
@@ -70,15 +71,11 @@ When persisting data for containerized services, follow this strategy to disting
 
 
 
----
-
 ## 3. Ansible Conventions & Role Patterns
 
 - **Idempotency**: All playbooks and role tasks must be strictly idempotent. Re-running `site.yml` multiple times should produce zero unexpected state mutations (`changed=0`).
 - **Role Structure**: Keep roles modular (`base`, `nvidia`, `quadlets`, `caddy`).
 - **Secrets**: Never commit unencrypted sensitive credentials. Use `ansible-vault` for `inventory/group_vars/all/vault.yml`.
-
----
 
 ## 4. Verification Workflow
 
@@ -102,7 +99,6 @@ Before committing any playbook, role, or template changes, verify your changes:
 
 > **Note:** Build verification is not strictly required when solely modifying markdown documentation files.
 
----
 
 ## 5. GitHub Repository Details
 

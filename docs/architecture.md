@@ -137,7 +137,7 @@ Every web-accessible container carries `homepage.*` labels in its quadlet templa
 | `homepage.group` | `Label=homepage.group="Web Services"` |
 | `homepage.name` | `Label=homepage.name="Open WebUI"` |
 | `homepage.icon` | `Label=homepage.icon=open-webui.png` |
-| `homepage.href` | `Label=homepage.href=https://openwebui.home` |
+| `homepage.href` | `Label=homepage.href=https://openwebui.{{ lan_domain }}` |
 | `homepage.description` | `Label=homepage.description="Chat & RAG frontend"` |
 
 Optional widget labels use dot notation (`homepage.widget.type=...`, `homepage.widget.url=...`, `homepage.widget.fields=...`). Multiple widgets use an index, e.g. `homepage.widgets[0].type=...`.
@@ -288,3 +288,7 @@ homelab/
 ├── LICENSE                      # MIT license file
 └── README.md                    # Project overview & Quick Start guide
 ```
+
+Generated LAN names share the inventory `lan_domain` suffix (default `home`).
+See [configuration](configuration.md#lan-hostname-suffix) for precedence,
+intentional literal exceptions and the separately approved cutover boundary.

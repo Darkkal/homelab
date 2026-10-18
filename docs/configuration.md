@@ -4,6 +4,76 @@ This document provides a detailed reference for all configuration variables acro
 
 ---
 
+## LAN hostname suffix
+
+`lan_domain: home` is defined once in `inventory/group_vars/all/vars.yml`.
+Use a bare lowercase DNS suffix, without a leading/trailing dot, URL scheme,
+port or wildcard. Multi-label values such as `lab.test` are supported. DNS
+labels must contain 1–63 letters/digits/hyphens, start and end with a letter or
+digit, and the suffix must contain a letter and be at most 253 characters.
+The base role rejects malformed values before configuration writes.
+
+Normal Ansible inventory precedence applies; a group/host override or `-e`
+can override the default. This is one deployment-wide namespace: configure the
+same value for service and inference hosts. Independent per-host namespaces
+are not supported by the shared routing/DNS design. No play variable masks
+inventory overrides.
+
+Generated Caddy names, application defaults, Homepage links/search/rewrite map,
+AdGuard wildcard and telemetry LAN names follow the suffix. Explicit settings
+such as `forgejo_root_url` and `homepage_allowed_hosts_extra` retain operator
+values. Protected application dictionaries, OAuth/webhook configuration, stored
+user data and runner host-binding/allow-list policy are separate operator-owned
+settings and are not rewritten. Container DNS, public domains and account email
+addresses such as `admin@homelab.local` are independent of the LAN suffix.
+
+The `.home` URLs in this documentation are examples of the default deployment;
+historical issue links and Avahi retirement fixtures intentionally retain their
+original names. New generated LAN endpoints must use `lan_domain`.
+
+This refactor performs no live rename. Before deploying a different suffix,
+inventory protected overrides and client dependencies, check the actual provider
+version and separately approve cutover and reachable rollback. AdGuard retains
+its first-exact-wildcard reconciliation: a new suffix manages a new wildcard
+without deleting the old suffix or cleaning duplicates. A changed answer is
+still deleted before it is added; this is not an atomic DNS cutover. Source
+reversion alone cannot restore externally stored DNS/application state.
+
+A thin controller-only render fixture uses the actual templates and non-secret
+variable files, with explicit dummy paths/secrets. It loads no Vault and runs no
+service roles, handlers or API calls. Use an empty temporary inventory and config
+so production inventory, automatic group variables and callbacks are not loaded:
+
+```bash
+validation_work=$(mktemp -d /tmp/lan-domain.XXXXXX)
+printf '[defaults]\nretry_files_enabled=False\n' > "$validation_work/ansible.cfg"
+export ANSIBLE_CONFIG="$validation_work/ansible.cfg"
+export ANSIBLE_LOCAL_TEMP="$validation_work/local"
+export ANSIBLE_REMOTE_TEMP="$validation_work/remote"
+ansible-playbook -i localhost, tests/validation/lan_domain.yml -e "validation_output_dir=$validation_work/home"
+ansible-playbook -i localhost, tests/validation/lan_domain.yml -e "validation_output_dir=$validation_work/lab.test" -e lan_domain=lab.test
+ansible-playbook -i localhost, tests/validation/lan_domain.yml -e "validation_output_dir=$validation_work/override" -e lan_domain=lab.test -e forgejo_root_url=https://git.example.org/custom/
+ansible-playbook -i localhost, tests/validation/lan_domain.yml -e "validation_output_dir=$validation_work/home" --check --diff
+```
+
+The fixture checks suffix propagation, Forgejo URL overrides, and OTel Host/SNI
+and Uptrace URL/DSN forms. Check/diff only predicts changes to these local rendered
+files. This is a limited render context, not the full deployment or proof of
+service/DNS idempotence. It does not discover/extract provisioning tasks, simulate
+AdGuard guards, or retain whole-artifact fingerprints or a duplicate service map.
+
+For a change to the suffix behavior, also record a one-time comparison of default
+renders with the pre-change source, representative valid/invalid admission checks,
+and a bounded Homepage LAN/direct-host URL check (including suffix boundaries and
+path/query/fragment preservation). Validate generated YAML and JavaScript syntax;
+where Caddy is available, validate both Caddyfiles natively with temporary
+`XDG_DATA_HOME`/`XDG_CONFIG_HOME`. Record unavailable checks as not run.
+
+Review AdGuard's source for the same derived wildcard in selection/delete/add and
+unchanged guards. Production check mode skips its provisioning; rendering is not
+proof of API reconciliation or live DNS idempotence. Repository-wide test tooling
+and policy are separate follow-up work; this fixture does not choose a framework.
+
 ## Inventory & Group Variables
 
 Customizing deployment options is done by editing files under `inventory/group_vars/` and host-specific overrides under `inventory/host_vars/<host>/`.
@@ -209,7 +279,7 @@ To register a new containerized service on the Homepage dashboard:
    Label=homepage.group="Web Services"
    Label=homepage.name="SearXNG"
    Label=homepage.icon=searxng.png
-   Label=homepage.href=https://searxng.home
+   Label=homepage.href=https://searxng.{{ lan_domain }}
    Label=homepage.description="Self-hosted search aggregator"
    ```
 

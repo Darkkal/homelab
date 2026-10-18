@@ -1,5 +1,5 @@
 # Automatic HTTPS is enabled for all sites below (no scheme in the site address).
-# Local-only names (*.home) are served certificates from Caddy's internal CA
+# Local-only names (*.{{ lan_domain }}) are served certificates from Caddy's internal CA
 # (see https://caddyserver.com/docs/automatic-https#local-https), and HTTP is
 # redirected to HTTPS automatically.
 {
@@ -7,46 +7,46 @@
     skip_install_trust
 }
 
-sillytavern.home {
+sillytavern.{{ lan_domain }} {
     reverse_proxy {{ sillytavern_upstream }}
 }
 
-forgejo.home {
+forgejo.{{ lan_domain }} {
     reverse_proxy {{ forgejo_upstream }}
 }
 
-llamaswap.home {
+llamaswap.{{ lan_domain }} {
     reverse_proxy {{ llama_swap_upstream }}
 }
 
-openwebui.home {
+openwebui.{{ lan_domain }} {
     reverse_proxy {{ openwebui_upstream }}
 }
 
-swarmui.home {
+swarmui.{{ lan_domain }} {
     reverse_proxy {{ swarmui_upstream }}
 }
 
-homepage.home {
+homepage.{{ lan_domain }} {
     reverse_proxy {{ homepage_upstream }}
 }
 
-glances.home {
+glances.{{ lan_domain }} {
     reverse_proxy {{ glances_upstream }}
 }
 
-searxng.home {
+searxng.{{ lan_domain }} {
     reverse_proxy {{ searxng_upstream }}
 }
 
-piclaw.home {
+piclaw.{{ lan_domain }} {
     reverse_proxy {{ piclaw_upstream }}
 }
 
-uptrace.home {
+uptrace.{{ lan_domain }} {
     reverse_proxy {{ uptrace_upstream }}
 }
 
-webgallery.home {
+webgallery.{{ lan_domain }} {
     reverse_proxy {{ webgallery_upstream }}
 }

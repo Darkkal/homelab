@@ -1,0 +1,16 @@
+---
+# Explicit fixture inputs only; these take precedence over secret-generating defaults.
+homelab_user_home: /tmp/lan-domain-fixture
+ansible_default_ipv4:
+  address: 192.0.2.10
+glances_password: dummy
+uptrace_secret: dummy
+uptrace_pg_password: dummy
+uptrace_ch_password: dummy
+uptrace_project_token: dummy
+piclaw_api_token: dummy
+searxng_secret_key: dummy
+adguardhome_password: dummy
+webgallery_data_dir: /tmp/lan-domain-fixture/gallery
+webgallery_media_dir: /tmp/lan-domain-fixture/media
+webgallery_browser_dir: /tmp/lan-domain-fixture/browser

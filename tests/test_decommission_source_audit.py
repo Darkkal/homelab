@@ -30,13 +30,16 @@ USER_ROLES = {"base", "caddy", "quadlets", "forgejo_runner"}
 ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # Canonical YAML hashes cover module arguments, loops, block context, destinations,
 # notifications, includes and opaque non-unit actions (CDI, HTTP APIs, firewall).
+# #64: base adds a controller-only suffix assertion; AdGuard only derives its
+# exact wildcard. Unit templates only derive LAN names/labels (no scope,
+# destination, command, volume or service-manager changes).
 TASK_PINS = {
     "roles/quadlets/tasks/webgallery.yml": "c743cc6eebe43b238d8796bc9a2ffbf753baf11f89b3079eee2a07f7c024bfdf",
     "roles/decommissioned_services/tasks/network.yml": "4a4777dcf41e50a71208ebcb57724f454592a8602fb3845825e6dffdc24b5cfd",
     "roles/decommissioned_services/tasks/converge.yml": "d08a3d1f6ad5951630a27ad5ac32338860b27310e9963ec828b5b0a918fbad0c",
     "roles/decommissioned_services/tasks/validate.yml": "f6bad3bc257c5d6371bda6e1967627fdf6c376b2b808523a341dad8a380d29f1",
     "roles/base/handlers/main.yml": "faa1d0329f442797c8fb25f93c8736604e9f75f8a69b7a3707254a82beea4db2",
-    "roles/base/tasks/main.yml": "6756c80c892db305a48db51e9efc11124a6582d463aa6f361dcda314941d78e5",
+    "roles/base/tasks/main.yml": "8fbbd5c623c7729938e2f6b702cb25ea71493a1f36f95fabcbe60bb89bcc94a7",
     "roles/caddy/handlers/main.yml": "837289bc4d0a75dd1626b6e4cdd76f27c8ecf12465e54663ec2f249080148f54",
     "roles/caddy/tasks/main.yml": "5c937923825f517ef7c33cf10d85f222daf84a52d4e775f6575f1d28cbf618ce",
     "roles/decommissioned_services/handlers/main.yml": "0314a5e7443e9185914f96a521594f441174e7ed4c8c11803013b3f3ac2b5ffc",
@@ -46,7 +49,7 @@ TASK_PINS = {
     "roles/forgejo_runner/tasks/main.yml": "a11982da4ee4568959c48269d66fb34e88cd74ac27f3b7fd8dd6bee227599410",
     "roles/nvidia/tasks/main.yml": "a0ed3021381db3336eadeb85c84ec6cf27314e2871eee35ad26a1ccac6095934",
     "roles/quadlets/handlers/main.yml": "6736dafbd91bda161858422a5880547a01b7549ce029017df8758021cd4cc9f9",
-    "roles/quadlets/tasks/adguardhome-provision.yml": "8bd383d320e13ed8f6993ae5148f7b1c203ae50baed2df894d6954aabe28b28b",
+    "roles/quadlets/tasks/adguardhome-provision.yml": "d3aa363abcc18fe1028d9ace8da51ef29d7744d01b18e376a021a10596175f1a",
     "roles/quadlets/tasks/main.yml": "9710958699f281313f19d5c11b01577e2aa2150d138b8b8351a10f0627cb9c10",
     "roles/quadlets/tasks/uptrace-dashboards.yml": "7099f6693d1f83af164bba7b76750af6f3e209302e2729689fad3a1c5d131361",
 }
@@ -54,7 +57,7 @@ TASK_PINS = {
 # Generated units plus the two executed source scripts: commands and references
 # are pinned too; task pins alone cannot detect a changed ExecStartPre payload.
 ARTIFACT_PINS = {
-    "roles/quadlets/templates/webgallery.container.j2": "d3408eec69302071643dce36b90445026abeb6421595a4813b0634dd24fab9b8",
+    "roles/quadlets/templates/webgallery.container.j2": "ec117ebfb37c8498f0c1ca7864e4c9936a2b8269a24077bd69b2bde150e808bc",
     "roles/base/files/homelab.network": "3dd7bab39fe946ce1e1abf7ef4d92c6d769895504698dbecc04bae7e6637a243",
     "roles/base/templates/homelab-auto-rebuild-check.sh.j2": "c63835f4616af90634f51d9a8108f94a7c68129397959f8ae71db55761c3c617",
     "roles/base/templates/podman-auto-update.service.override.conf.j2": "1c607259b53854a6784edcb8cdf6d7c364fb20a52323d234a1a60e05687f90d6",
@@ -62,23 +65,23 @@ ARTIFACT_PINS = {
     "roles/forgejo_runner/templates/forgejo-runner.container.j2": "d5db3ee9cbc3222edf055e51f10a9632dc2d9daddb561eed5eed95694f9de721",
     "roles/quadlets/templates/adguardhome.container.j2": "4b553804187d615f49f15e6382736a4466e0b57f564cebb43ef8c155f37f5efa",
     "roles/quadlets/templates/caddy.container.j2": "eedffbee7476e3cfd497ae6ac18d837e80f870f1106bac6d6a8882c2eccc83b4",
-    "roles/quadlets/templates/forgejo.container.j2": "4d28139eb2e384dcfde97d07ee185aa8ca34b6e2c1abc020b7404b071e14d1a7",
-    "roles/quadlets/templates/glances.container.j2": "49e6d657efad46d491fc5c60e288d9bdc9352b6e09a1eb1990d4fcabb96f8ed0",
-    "roles/quadlets/templates/homepage.container.j2": "4d9dd0b125558f50e447eb16116b707b0baae08db14f2b9aae0cd7d7621855d6",
-    "roles/quadlets/templates/llama-swap.container.j2": "511803a2eda6c7c039ea3223cf1a0c3e5869ad666d2d77edb033c4f7c74f14b7",
-    "roles/quadlets/templates/open-webui.container.j2": "be418db3c6532a4266223aa8be2fee5d992f0c39007dc1bd312c37d08772c4aa",
-    "roles/quadlets/templates/piclaw.container.j2": "f8c6a5305d1ae889e3ee93eedfeceacf6dcb651ff26fa7c479d8610f99ca07bc",
+    "roles/quadlets/templates/forgejo.container.j2": "a04f4ac87b2fd9b229a8d2838696cbba87a5e55c79f94ef8764a6afcabaeeda8",
+    "roles/quadlets/templates/glances.container.j2": "6890fa35e88b427ef26fa214a6cd965ea7c1e78185ec048dd26f0b14c0d1e611",
+    "roles/quadlets/templates/homepage.container.j2": "eba90afdfc383f7708ce57430c2bcd9b0b131e57b180c24a2dd0b13696d4149a",
+    "roles/quadlets/templates/llama-swap.container.j2": "3daa13d9b25dd7b1762ddbab3c32fce580e56d7717530062be789816d69732dd",
+    "roles/quadlets/templates/open-webui.container.j2": "bd14b8fb86b089b7466c61710d84338551d60497025aed6347528e6f44fc7d70",
+    "roles/quadlets/templates/piclaw.container.j2": "503582e02414bd636a286dba68e1b3580c0888d6e1f288c06ca9504c8f8f0a02",
     "roles/quadlets/templates/playwright.container.j2": "953fcd273fc2ddbe49e3c4096fe0331d0cc47271960bb14919dc25ecc146948e",
-    "roles/quadlets/templates/searxng.container.j2": "078b7893983b933f6050337ff87b9a24759bd31cfa56df3702e0b7136f13364f",
-    "roles/quadlets/templates/sillytavern.container.j2": "c8415324fccafeae3b99ef2145f157dbba7951439b311e49197d2a59695b606b",
+    "roles/quadlets/templates/searxng.container.j2": "b6c1b66033814774e52218d3333278e36b315f6fd8459bce497aeed35a37a566",
+    "roles/quadlets/templates/sillytavern.container.j2": "b135fe99d4a3a2d1a8a2e676bf6d433965d79410bfdcc68a7dc57151b7615930",
     "roles/quadlets/templates/swarmui.build.j2": "3468504aee5df5e3dd1fbb571e6af56cfc3e54f95bc90249e311c1a163d4567b",
-    "roles/quadlets/templates/swarmui.container.j2": "5a07321d864fa0c2d72f918da3d8fc95533b8309e0b21e1b0c8e1eccbaec08c1",
+    "roles/quadlets/templates/swarmui.container.j2": "0be22cf34fb2ee0371d6719bc7169382cc0bccdcca2e55368e343dc6ed934f3a",
     "roles/quadlets/templates/sync_openwebui_db.py.j2": "e59458d5258e52a3b327ce2e7110d8a9f0c763eeebae05f77bcbb8a6d59e1abc",
     "roles/quadlets/templates/uptrace-clickhouse.container.j2": "da2dc11192ce90b811b81d33a25da7ac210925cf2f7b030c6ed37ecbcec9605d",
     "roles/quadlets/templates/uptrace-otelcol.container.j2": "05c6533352146bae6c68fdefa6b2f936d16b42addea1ee22e8282eab0f55103e",
     "roles/quadlets/templates/uptrace-postgres.container.j2": "c0654b99cfcf760b4e282b2891a360ebaba427319a31b0b0164f5990a8a3e2d9",
     "roles/quadlets/templates/uptrace-redis.container.j2": "76ae9a959222a052bb256918eb72954ab38524cad375f9ff2f292f62b97679df",
-    "roles/quadlets/templates/uptrace.container.j2": "d1aacf9f775aa8df0733c617d74580f4558b319f3bbc3bd2e5e9c408f2844dcc",
+    "roles/quadlets/templates/uptrace.container.j2": "853928e54a7085d87443157bc9ff7970932a8614e01c9e83b658243589383909",
 }
 
 

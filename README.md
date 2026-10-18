@@ -8,6 +8,8 @@ An automated, declarative homelab infrastructure managed with **Ansible** and **
 
 This repository automates the deployment and configuration of self-hosted homelab services. Services run as rootless Podman containers defined via Podman Quadlet systemd unit files, orchestrated centrally through Ansible playbooks.
 
+The shared `lan_domain` inventory variable defaults to `home` and controls generated LAN names. See [LAN hostname suffix](docs/configuration.md#lan-hostname-suffix) for overrides, validation and cutover limits. The URLs below show that default.
+
 Services are accessible on your local network (LAN) via `*.home` hostnames resolved by the AdGuard Home DNS server and routed through a Caddy reverse proxy. This works on every device, including Android, which cannot use mDNS/`.local` names in browsers.
 
 ### Documentation Quick Links
