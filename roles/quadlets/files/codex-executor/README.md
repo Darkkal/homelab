@@ -19,19 +19,27 @@ The npm lock selects Hatchet SDK **1.38.0**, Codex SDK/CLI **0.163.0** and YAML
 OS packages remain dependent on the selected base's apt repositories; the npm lock
 does not claim to pin those repositories or prove a byte-identical image rebuild.
 
-Use a separate rootless Podman container and dedicated private state volume for
+Use a separate rootless Podman container and dedicated private state volumes for
 each instance. Container UID 0 runs trusted preparation/control; the launcher uses
 `setpriv` to drop to outer UID/GID 10001, clears supplementary groups, sets
 no-new-privileges, then creates mandatory Bubblewrap user/mount/PID/IPC namespaces.
 The child UID is also 10001, with all capabilities dropped. Rootless compatibility
-is **pending**, including fd bind support and nested Codex sandbox support. A
+is **pending**, including ordinary path binds and nested Codex sandbox support. A
 namespace/permission failure refuses the run; do not enable privileged mode,
 disable security profiles, add a host socket, or bypass Codex approval/sandboxing.
 
 B must mount `/etc/codex-executor` as private, container-root-owned mode 0700,
 containing `policy.json` mode 0600. Mount `/var/lib/codex-executor` as a dedicated
 root-owned mode 0700 persistent volume, using rootless SELinux relabeling `:Z`.
-Never share that volume across instances/replicas or mount other roles' state.
+It contains only trusted source/preparation state, locks and the prepared-run record.
+Separately mount `/var/lib/codex-agent` as a dedicated root-owned mode **0711**
+persistent volume with `:Z`. This parent contains only agent-visible data: each
+instance parent is root-owned 0711; home/workspace are owned by UID/GID 10001,
+mode 0700; published config and skills are root-owned, readable and not agent-writable.
+Never place source/control credentials in this second tree. Explicit publication
+modes permit Bubblewrap's dropped UID to resolve/stat the ordinary bind paths,
+including under a restrictive launcher umask. The control parent remains 0700.
+Never share either volume across instances/replicas or mount other roles' state.
 No control credentials may be installed beneath `/usr`, `/bin`, `/lib`, `/lib64`
 or `/opt/executor`: those immutable image paths are visible to the child. B must
 also bound container memory, process count and persistent storage externally.
@@ -105,9 +113,10 @@ The shared `skill-source-sync` entry is replaced only in this deployment's view.
 The prepared SHA and generated run/role/instance identities are saved in protected
 `prepared.json` before launch and returned with bounded outcome metadata.
 
-Only preopened descriptors for that instance's home, scratch workspace, configuration,
-skills and empty skill roots cross the UID boundary. The agent cannot traverse the
-private source/control parent. Managed config/skills and alternative native skill
+Only that instance's home, scratch workspace, published configuration, skills and
+empty skill roots are bound into the agent namespace. No extra descriptors cross
+the UID boundary. The agent cannot traverse the private source/control parent.
+Managed config/skills and alternative native skill
 roots are mounted read-only. Each run starts a fresh SDK thread; resume is unsupported.
 The managed view remains unchanged until the slot finishes; the next run refreshes it.
 Workspace is scratch, deleted on completion/refusal/cancellation. This package returns
@@ -119,6 +128,9 @@ retry or exactly-once guarantee. No SDK event bodies, prompts, commands, raw err
 or engine diagnostics are forwarded. Local subprocesses have time/output bounds;
 timeouts/cancellation kill the outer process group and Bubblewrap's PID namespace
 contains descendants. Shutdown has a ten-second bound. Native cleanup proof is pending.
+Work admission stays closed until readiness succeeds and closes immediately on
+shutdown. Readiness/start failures abort, stop and await the resident worker before
+reporting refusal; a hard deadline remains armed through cleanup and process exit.
 A crash can leave a lock; an operator must establish that no run remains before
 removing it. Failed initial preparation may leave an unborn source repository;
 inspect/reset only that private source directory while stopped, never use stale skills.

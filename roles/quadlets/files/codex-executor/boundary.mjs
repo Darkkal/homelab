@@ -5,6 +5,8 @@ import path from 'node:path';
 import { parseDocument } from 'yaml';
 
 const ROOT = '/var/lib/codex-executor';
+// Contains only data deliberately exposed to this instance's agent, never control state.
+const AGENT_ROOT = '/var/lib/codex-agent';
 const APP = '/opt/executor';
 const UID = 10001;
 export const profiles = { planner: 'read-only', worker: 'workspace-write', reviewer: 'read-only' };
@@ -13,10 +15,11 @@ const cleanEnv = { PATH: '/usr/local/bin:/usr/bin:/bin', HOME: '/nonexistent',
   GIT_TERMINAL_PROMPT: '0', GIT_ATTR_NOSYSTEM: '1', GIT_NO_REPLACE_OBJECTS: '1' };
 const requireThat = (ok) => { if (!ok) throw new Error('boundary_refused'); };
 
-async function protectedPath(file, directory = false) {
+async function protectedPath(file, directory = false, allowedOtherBits = 0) {
   const stat = await fs.lstat(file);
-  requireThat(!stat.isSymbolicLink() && stat.uid === 0 && !(stat.mode & 0o077)
+  requireThat(!stat.isSymbolicLink() && stat.uid === 0 && !(stat.mode & (0o077 & ~allowedOtherBits))
     && (directory ? stat.isDirectory() : stat.isFile()));
+  return stat;
 }
 
 export async function policy() {
@@ -43,16 +46,17 @@ export async function policy() {
   requireThat(url.protocol === 'https:' && !url.username && !url.password && !url.hash && !url.search);
   requireThat(typeof p.skillsBranch === 'string' && /^[a-zA-Z0-9][a-zA-Z0-9/_-]{0,99}$/.test(p.skillsBranch));
   await protectedPath(ROOT, true);
+  requireThat(((await protectedPath(AGENT_ROOT, true, 0o011)).mode & 0o777) === 0o711);
   return Object.freeze(p);
 }
 
 // Bounds apply to subprocesses too; output/errors are never copied to logs.
 export function execute(command, args, { input = '', signal, timeout = 30000,
-  limit = 8 * 1024 * 1024, env = cleanEnv, cwd = APP, fds = [] } = {}) {
+  limit = 8 * 1024 * 1024, env = cleanEnv, cwd = APP } = {}) {
   return new Promise((resolve, reject) => {
     if (signal?.aborted) return reject(new Error('cancelled'));
     const child = spawn(command, args, { cwd, env, detached: true,
-      stdio: ['pipe', 'pipe', 'ignore', ...fds] });
+      stdio: ['pipe', 'pipe', 'ignore'] });
     let output = Buffer.alloc(0);
     let refusal = false;
     const kill = () => {
@@ -78,7 +82,7 @@ export function execute(command, args, { input = '', signal, timeout = 30000,
   });
 }
 
-async function skills(p, base, signal) {
+async function skills(p, base, view, signal) {
   const repo = `${base}/source`;
   const git = (...args) => execute('/usr/bin/git', ['-C', repo,
     '-c', `core.hooksPath=${APP}/empty-hooks`, '-c', 'core.fsmonitor=false',
@@ -106,7 +110,7 @@ async function skills(p, base, signal) {
   requireThat(Buffer.from(treeBytes.toString()).equals(treeBytes));
   const tree = treeBytes.toString().split('\0').filter(Boolean);
   requireThat(tree.length > 0 && tree.length <= 2000);
-  const snapshot = `${base}/skills`;
+  const snapshot = `${view}/skills`;
   await fs.rm(snapshot, { recursive: true, force: true });
   await fs.mkdir(snapshot, { mode: 0o755 });
   const names = new Set();
@@ -118,7 +122,7 @@ async function skills(p, base, signal) {
     const [, , blob, name] = match;
     requireThat(!name.startsWith('/') && name.split('/').every(v => v && v !== '.' && v !== '..')
       && !name.split('/').some(v => ['.git', '.gitattributes', '.gitmodules'].includes(v)));
-    const body = await git('cat-file', 'blob', blob);
+    let body = await git('cat-file', 'blob', blob);
     total += body.length;
     requireThat(total <= 8 * 1024 * 1024);
     if (name.endsWith('/SKILL.md') || name === 'SKILL.md') {
@@ -134,19 +138,26 @@ async function skills(p, base, signal) {
       skillCount++;
       if (meta.name === 'skill-source-sync') {
         // Deployment-local replacement; the shared collection is never modified.
-        await fs.mkdir(path.dirname(`${snapshot}/${name}`), { recursive: true });
-        await fs.writeFile(`${snapshot}/${name}`, '---\nname: skill-source-sync\ndescription: Runner-managed skill preparation status.\n---\nThe runner prepared this immutable view before launch. Do not update shared skills during a run.\n');
-        continue;
+        body = Buffer.from('---\nname: skill-source-sync\ndescription: Runner-managed skill preparation status.\n---\nThe runner prepared this immutable view before launch. Do not update shared skills during a run.\n');
       }
     }
     await fs.mkdir(path.dirname(`${snapshot}/${name}`), { recursive: true });
     await fs.writeFile(`${snapshot}/${name}`, body, { mode: match[1] === '100755' ? 0o755 : 0o644 });
+    await fs.chmod(`${snapshot}/${name}`, match[1] === '100755' ? 0o755 : 0o644);
   }
   requireThat(skillCount > 0);
   // Checkout only after rejecting filters/attributes and malformed tracked paths.
   await git('checkout', '--quiet', '--detach', sha);
   requireThat((await git('rev-parse', 'HEAD')).toString().trim() === sha);
   requireThat(!(await git('status', '--porcelain=v1', '--untracked-files=all')).length);
+  // Explicit modes keep published paths traversable even with a restrictive launcher umask.
+  async function exposeDirectories(dir) {
+    for (const entry of await fs.readdir(dir, { withFileTypes: true })) {
+      if (entry.isDirectory()) await exposeDirectories(path.join(dir, entry.name));
+    }
+    await fs.chmod(dir, 0o755);
+  }
+  await exposeDirectories(snapshot);
   return sha;
 }
 
@@ -159,18 +170,21 @@ export async function run(p, task, signal, login = false) {
     return { ...identity, outcome: 'refused' };
   }
   const base = `${ROOT}/${p.instance}`;
+  const view = `${AGENT_ROOT}/${p.instance}`;
   await fs.mkdir(base, { mode: 0o700 }).catch(e => { if (e.code !== 'EEXIST') throw e; });
   await protectedPath(base, true);
   let locked = false;
   let launched = false;
-  const handles = [];
   try {
     await fs.mkdir(`${base}/lock`, { mode: 0o700 });
     locked = true;
-    identity.skills = await skills(p, base, signal);
+    await fs.mkdir(view, { mode: 0o711 }).catch(e => { if (e.code !== 'EEXIST') throw e; });
+    await protectedPath(view, true, 0o011);
+    await fs.chmod(view, 0o711);
+    identity.skills = await skills(p, base, view, signal);
     await fs.writeFile(`${base}/prepared.json`, JSON.stringify(identity), { mode: 0o600 });
     // Dedicated writable home persists auth/session/cache, never shared with another instance.
-    const home = `${base}/home`;
+    const home = `${view}/home`;
     await fs.mkdir(home, { mode: 0o700 }).catch(e => { if (e.code !== 'EEXIST') throw e; });
     const h = await fs.lstat(home);
     requireThat(h.isDirectory() && !h.isSymbolicLink() && [0, UID].includes(h.uid) && !(h.mode & 0o077));
@@ -184,11 +198,13 @@ export async function run(p, task, signal, login = false) {
     await fs.rm(`${codexHome}/config.toml`, { force: true });
     await fs.writeFile(`${codexHome}/config.toml`, '');
     const config = `forced_login_method = "chatgpt"\ncli_auth_credentials_store = "file"\nmodel_provider = "openai"\ndeveloper_instructions = ${JSON.stringify(p.instructions)}\n`;
-    await fs.writeFile(`${base}/config.toml`, config, { mode: 0o644 });
-    await fs.rm(`${base}/workspace`, { recursive: true, force: true });
-    await fs.mkdir(`${base}/workspace`, { mode: 0o700 });
-    await fs.chown(`${base}/workspace`, UID, UID);
-    await fs.mkdir(`${base}/empty`, { mode: 0o755 }).catch(e => { if (e.code !== 'EEXIST') throw e; });
+    await fs.writeFile(`${view}/config.toml`, config, { mode: 0o644 });
+    await fs.chmod(`${view}/config.toml`, 0o644);
+    await fs.rm(`${view}/workspace`, { recursive: true, force: true });
+    await fs.mkdir(`${view}/workspace`, { mode: 0o700 });
+    await fs.chown(`${view}/workspace`, UID, UID);
+    await fs.mkdir(`${view}/empty`, { mode: 0o755 }).catch(e => { if (e.code !== 'EEXIST') throw e; });
+    await fs.chmod(`${view}/empty`, 0o755);
     const args = ['--unshare-all', '--share-net', '--die-with-parent', '--new-session',
       '--uid', `${UID}`, '--gid', `${UID}`, '--cap-drop', 'ALL', '--clearenv',
       '--setenv', 'PATH', cleanEnv.PATH, '--setenv', 'HOME', '/home/agent',
@@ -199,26 +215,23 @@ export async function run(p, task, signal, login = false) {
     args.push('--proc', '/proc', '--dev', '/dev', '--tmpfs', '/tmp', '--tmpfs', '/run',
       '--dir', '/etc', '--ro-bind', '/etc/ssl/certs', '/etc/ssl/certs',
       '--ro-bind', '/etc/resolv.conf', '/etc/resolv.conf',
-      '--bind-fd', '3', '/home/agent', '--bind-fd', '4', '/workspace',
-      '--ro-bind-fd', '5', '/home/agent/.codex/config.toml',
-      '--ro-bind-fd', '6', '/etc/codex/skills',
-      '--ro-bind-fd', '7', '/home/agent/.agents',
-      '--ro-bind-fd', '8', '/home/agent/.codex/skills',
-      '--ro-bind-fd', '9', '/workspace/.agents',
-      '--ro-bind-fd', '10', '/workspace/.codex', '--chdir', '/workspace', '--');
+      '--bind', home, '/home/agent', '--bind', `${view}/workspace`, '/workspace',
+      '--ro-bind', `${view}/config.toml`, '/home/agent/.codex/config.toml',
+      '--ro-bind', `${view}/skills`, '/etc/codex/skills',
+      '--ro-bind', `${view}/empty`, '/home/agent/.agents',
+      '--ro-bind', `${view}/empty`, '/home/agent/.codex/skills',
+      '--ro-bind', `${view}/empty`, '/workspace/.agents',
+      '--ro-bind', `${view}/empty`, '/workspace/.codex', '--chdir', '/workspace', '--');
     args.push(...(login ? [`${APP}/codex`, 'login', '--device-auth'] : [`${APP}/node`, `${APP}/agent.mjs`]));
-    for (const file of [home, `${base}/workspace`, `${base}/config.toml`, `${base}/skills`,
-      ...Array(4).fill(`${base}/empty`)]) handles.push(await fs.open(file, 'r'));
-    const fds = handles.map(h => h.fd);
     const launcher = ['--reuid=10001', '--regid=10001', '--clear-groups', '--no-new-privs',
       '/usr/bin/bwrap', ...args];
-    // Drop the outer UID too. Only explicitly opened state/view descriptors cross this boundary.
+    // Drop the outer UID before Bubblewrap resolves the agent-visible source paths.
     requireThat(!signal.aborted);
     launched = true;
     if (login) {
       // Only the operator login command displays the native device URL/code.
       const child = spawn('/usr/bin/setpriv', launcher, { env: cleanEnv,
-        stdio: ['inherit', 'inherit', 'inherit', ...fds] });
+        stdio: 'inherit' });
       const stop = () => child.kill('SIGKILL');
       signal.addEventListener('abort', stop, { once: true });
       const timer = setTimeout(stop, 300000);
@@ -228,7 +241,7 @@ export async function run(p, task, signal, login = false) {
       }); } finally { clearTimeout(timer); signal.removeEventListener('abort', stop); }
       return { ...identity, outcome: 'login_exited' };
     }
-    const output = await execute('/usr/bin/setpriv', launcher, { signal, fds, timeout: p.timeoutSeconds * 1000,
+    const output = await execute('/usr/bin/setpriv', launcher, { signal, timeout: p.timeoutSeconds * 1000,
       limit: 1024, input: JSON.stringify({ text: task.text, model: p.model,
         reasoning: p.reasoning, sandbox: profiles[p.role] }) });
     const result = JSON.parse(output);
@@ -238,9 +251,8 @@ export async function run(p, task, signal, login = false) {
     return { ...identity, outcome: deadline.aborted ? 'timed_out' : signal.aborted ? 'cancelled'
       : launched ? 'unknown' : 'refused' };
   } finally {
-    await Promise.all(handles.map(h => h.close()));
     if (locked) {
-      await fs.rm(`${base}/workspace`, { recursive: true, force: true });
+      await fs.rm(`${view}/workspace`, { recursive: true, force: true });
       await fs.rmdir(`${base}/lock`);
     }
   }

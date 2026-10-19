@@ -13,7 +13,8 @@ RUN npm ci --omit=dev --ignore-scripts \
 COPY agent.mjs boundary.mjs worker.mjs ./
 COPY empty-hooks/ ./empty-hooks/
 RUN npm run check && chmod -R go-w /opt/executor \
-    && install -d -m 0700 /etc/codex-executor /var/lib/codex-executor
+    && install -d -m 0700 /etc/codex-executor /var/lib/codex-executor \
+    && install -d -m 0711 /var/lib/codex-agent
 ENTRYPOINT ["/opt/executor/node", "/opt/executor/worker.mjs"]
 # No listener, webhook, timer, job consumption or model call until explicitly invoked.
 CMD ["disabled"]

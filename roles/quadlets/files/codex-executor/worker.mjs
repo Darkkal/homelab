@@ -5,8 +5,24 @@ import { policy, run } from './boundary.mjs';
 const silentLogger = () => ({ debug() {}, info() {}, green() {}, warn() {}, error() {} });
 const shutdown = new AbortController();
 let worker;
+let running;
+let stopping;
+let accepting = false;
 let busy = false;
 const emit = result => process.stdout.write(`${JSON.stringify(result)}\n`);
+function stopWorker() {
+  accepting = false;
+  shutdown.abort();
+  if (!stopping) {
+    // Keep this deadline armed until process exit, including if stop/start never settle.
+    setTimeout(() => process.exit(1), 10000);
+    stopping = (async () => {
+      await worker?.stop();
+      await running?.catch(() => {});
+    })();
+  }
+  return stopping;
+}
 async function main() {
   const p = await policy();
   if (process.argv[2] === 'login') {
@@ -33,6 +49,7 @@ async function main() {
   const task = hatchet.task({ name: `codex-${p.role}`, retries: 0,
     executionTimeout: `${p.timeoutSeconds + 15}s`, scheduleTimeout: '5m',
     fn: async (input, ctx) => {
+      if (!accepting || shutdown.signal.aborted) return { outcome: 'refused' };
       // Local guard supplements slots:1; duplicate deliveries have no exactly-once promise.
       if (busy) return { outcome: 'busy' };
       busy = true;
@@ -52,19 +69,29 @@ async function main() {
   try {
     worker = await hatchet.worker(`codex-${p.instance}`, { slots: 1, durableSlots: 0,
       workflows: [task], labels: { role: p.role, instance: p.instance }, handleKill: false });
-    const running = worker.start();
+    running = worker.start();
     running.catch(() => shutdown.abort());
     await worker.waitUntilReady(25000);
+    if (shutdown.signal.aborted) throw new Error('startup_aborted');
+    accepting = true;
     clearTimeout(startup);
     await running;
-  } finally { clearTimeout(startup); }
+    await stopWorker();
+    process.exit(0);
+  } catch (error) {
+    // Do not clear the startup deadline until the resident worker has been stopped/awaited.
+    await stopWorker().catch(() => {});
+    throw error;
+  } finally { accepting = false; clearTimeout(startup); }
 }
 for (const sig of ['SIGTERM', 'SIGINT']) {
-  process.on(sig, () => {
-    shutdown.abort();
-    const timer = setTimeout(() => process.exit(1), 10000);
-    timer.unref();
-    worker?.stop().catch(() => {});
+  process.on(sig, async () => {
+    await stopWorker().catch(() => {});
+    process.exit(0);
   });
 }
-main().catch(() => { emit({ outcome: 'startup_or_input_refused' }); process.exitCode = 1; });
+main().catch(async () => {
+  await stopWorker().catch(() => {});
+  process.stdout.write(`${JSON.stringify({ outcome: 'startup_or_input_refused' })}\n`,
+    () => process.exit(1));
+});
