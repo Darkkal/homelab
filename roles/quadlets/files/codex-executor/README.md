@@ -131,6 +131,8 @@ contains descendants. Shutdown has a ten-second bound. Native cleanup proof is p
 Work admission stays closed until readiness succeeds and closes immediately on
 shutdown. Readiness/start failures abort, stop and await the resident worker before
 reporting refusal; a hard deadline remains armed through cleanup and process exit.
+Manual/login runs are tracked through subprocess close, asynchronous workspace/lock
+cleanup and result-output flush; signal shutdown awaits that operation before exit.
 A crash can leave a lock; an operator must establish that no run remains before
 removing it. Failed initial preparation may leave an unborn source repository;
 inspect/reset only that private source directory while stopped, never use stale skills.

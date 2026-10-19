@@ -6,6 +6,7 @@ const silentLogger = () => ({ debug() {}, info() {}, green() {}, warn() {}, erro
 const shutdown = new AbortController();
 let worker;
 let running;
+let activeRun;
 let stopping;
 let accepting = false;
 let busy = false;
@@ -19,14 +20,25 @@ function stopWorker() {
     stopping = (async () => {
       await worker?.stop();
       await running?.catch(() => {});
+      await activeRun?.catch(() => {});
     })();
   }
   return stopping;
 }
+function foregroundRun(p, task, login = false) {
+  activeRun = (async () => {
+    const result = await run(p, task, shutdown.signal, login);
+    // Include run()'s finally and result flush in the operation awaited by signal shutdown.
+    await new Promise((resolve, reject) => {
+      process.stdout.write(`${JSON.stringify(result)}\n`, error => error ? reject(error) : resolve());
+    });
+  })();
+  return activeRun;
+}
 async function main() {
   const p = await policy();
   if (process.argv[2] === 'login') {
-    emit(await run(p, null, shutdown.signal, true));
+    await foregroundRun(p, null, true);
     return;
   }
   if (process.argv[2] === 'manual') {
@@ -40,7 +52,7 @@ async function main() {
         chunks.push(chunk);
       }
     } finally { clearTimeout(inputDeadline); }
-    emit(await run(p, JSON.parse(Buffer.concat(chunks)), shutdown.signal));
+    await foregroundRun(p, JSON.parse(Buffer.concat(chunks)));
     return;
   }
   if (process.argv[2] !== 'worker') throw new Error('invalid_mode');
