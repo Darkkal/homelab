@@ -1,0 +1,13 @@
+{
+  "name": "homelab-codex-executor",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "engines": { "node": ">=22" },
+  "scripts": { "check": "node --check worker.mjs && node --check boundary.mjs && node --check agent.mjs" },
+  "dependencies": {
+    "@hatchet-dev/typescript-sdk": "1.38.0",
+    "@openai/codex-sdk": "0.163.0",
+    "yaml": "2.8.1"
+  }
+}
