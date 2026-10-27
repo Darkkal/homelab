@@ -1,5 +1,7 @@
 # Configuration Reference
 
+Use the [service onboarding checklist](service-onboarding.md) to connect these settings to placement, access and monitoring decisions.
+
 This document provides a detailed reference for all configuration variables across Ansible group variable files, role defaults, and Ansible Vault secrets.
 
 ---

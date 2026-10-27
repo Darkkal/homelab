@@ -1,5 +1,7 @@
 # Contributing Guidelines
 
+Use the [service onboarding checklist](docs/service-onboarding.md) when adding a service.
+
 Welcome to the **homelab** repository! Whether you are a human developer or an AI agent, please follow these conventions and patterns to maintain high code quality, consistency, and clean git history.
 
 ---

@@ -1,5 +1,7 @@
 # Architecture & Repository Structure
 
+Use the [service onboarding checklist](service-onboarding.md) for new-service integration decisions.
+
 This document describes the architectural layout, host group design, networking topology, and directory structure of the homelab infrastructure.
 
 ---
@@ -98,8 +100,8 @@ file locations and credential setup.
 1. **Host Name Resolution**:
    - The AdGuard Home DNS server answers every `*.home` hostname with the host's LAN IP, and forwards all other queries upstream to Quad9.
    - Clients resolve `*.home` by pointing their DNS at the host's port `53` — on Linux, macOS, Windows, and Android alike.
-2. **Port 80 Routing**:
-   - System parameter `net.ipv4.ip_unprivileged_port_start = 53` allows the unprivileged Caddy container to bind directly to host port `80` (and AdGuard Home to bind DNS port `53`).
+2. **HTTP and HTTPS routing**:
+   - System parameter `net.ipv4.ip_unprivileged_port_start = 53` allows the unprivileged Caddy container to bind host ports `80` and `443` (and AdGuard Home to bind DNS port `53`). Caddy uses its local CA; clients need the appropriate trust.
 3. **Upstream Forwarding**:
    - Caddy inspects the incoming HTTP `Host` header and forwards traffic to the corresponding container service port.
 4. **Unified LLM Inference Routing**:
@@ -107,9 +109,9 @@ file locations and credential setup.
    - `Open WebUI` connects to `http://llama-swap:8080/v1` for raw model completions over `homelab.network`.
    - `llama-swap` handles model swapping, VRAM allocation, and TTL-based model auto-unloading dynamically.
 5. **Direct Port Exposure**:
-   - Every web-accessible service publishes a direct host port (see the README service table) so it can be reached at `http://<host-ip>:<port>` without DNS or the reverse proxy.
+   - Services with a published host port (see the README service table) can be reached at `http://<host-ip>:<port>` without DNS or the reverse proxy.
    - Forgejo binds web port `3003` and SSH port `222` directly to the host for non-proxied or SSH access.
-   - The Homepage dashboard rewrites service links to the direct `host:port` form when it is accessed via IP instead of a hostname (see `homepage.custom.js`). The rewrite map is templated from the same port variables as the Quadlet `PublishPort` directives, so every discovered service is covered.
+   - When Homepage is accessed via IP, `homepage.custom.js` rewrites links for services in its explicit map using their port variables. Web Gallery is not currently in that map.
 
 > [!NOTE]
 > Direct host-port access and the Homepage IP-aware link rewriting assume a **single-host deployment** (both `inference_hosts` and `service_hosts` on the same machine, the default topology). On a split-host topology, the direct port of each service belongs to its own host, so `<host-ip>:<port>` links must be resolved per-host. This is a known limitation to be addressed in a future release.
@@ -166,7 +168,7 @@ Uptrace is the homelab's centralized OpenTelemetry observability platform (trace
 The OTel Collector (`uptrace-otelcol`) is the integration hub and gathers telemetry through four paths:
 
 1. **Host metrics** — the `hostmetrics` receiver with `root_path: /host`, `--pid=host`, and read-only `/sys` + `/:/host` mounts (same pattern as Glances) reports host CPU/memory/disk/network/load.
-2. **Synthetic checks** — the `httpcheck` receiver polls each web service's health endpoint (e.g. `open-webui:8081/health`, `searxng:8080/healthz`, `llama-swap:8080/health`, `homepage:3000/`, `forgejo:3003/`, `sillytavern:8000/`, `caddy:443/` with a `Host` header) for availability/latency, using vault basic-auth credentials for the auth-protected services (`glances`).
+2. **Synthetic checks** — the `httpcheck` receiver polls its configured endpoints (e.g. `open-webui:8081/health`, `searxng:8080/healthz`, `llama-swap:8080/health`, `homepage:3000/`, `forgejo:3003/`, `sillytavern:8000/`, `caddy:443/` with a `Host` header) for availability/latency, using vault basic-auth credentials for the auth-protected services (`glances`). Web Gallery is not currently an HTTP-check target.
 3. **Prometheus scrape → remote write** — the `prometheus` receiver scrapes llama-swap's `/metrics` (GPU temp, VRAM, util %, power draw), Forgejo's `/metrics` (enabled via `FORGEJO__metrics__ENABLED=true`), ClickHouse's Prometheus endpoint (enabled via a `config.d/prometheus.xml` drop-in on port `9363`), and the collector's own telemetry, exported to Uptrace via `prometheusremotewrite`.
 4. **Database receivers** — the `postgresql` and `redis` receivers monitor Uptrace's own PostgreSQL and Redis.
 

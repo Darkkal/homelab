@@ -13,6 +13,7 @@ The shared `lan_domain` inventory variable defaults to `home` and controls gener
 Services are accessible on your local network (LAN) via `*.home` hostnames resolved by the AdGuard Home DNS server and routed through a Caddy reverse proxy. This works on every device, including Android, which cannot use mDNS/`.local` names in browsers.
 
 ### Documentation Quick Links
+- **[Service onboarding checklist](docs/service-onboarding.md)**: Placement, access, discovery, telemetry and acceptance decisions for a new service.
 - **[System service lifecycle](docs/system-service-lifecycle.md)**: Source ownership, retirement, isolated tests and separately authorised deployment/rollback.
 - 📐 **[System Architecture & Structure](docs/architecture.md)**: Host groups (`inference_hosts`, `service_hosts`), network topology, and repository tree.
 - ⚙️ **[Configuration Reference](docs/configuration.md)**: Ansible variables, Caddy upstreams, and Ansible Vault setup.
