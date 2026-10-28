@@ -1,0 +1,14 @@
+host: hatchet-postgres
+port: 5432
+username: hatchet
+password: {{ hatchet_effective_settings.database_password | to_json }}
+dbName: hatchet
+sslMode: disable
+enforceUtcTimezone: true
+logQueries: false
+seed:
+  adminEmail: {{ hatchet_effective_settings.admin_email | to_json }}
+  adminPassword: {{ hatchet_effective_settings.admin_password | to_json }}
+  defaultTenantId: {{ hatchet_effective_settings.tenant_id | to_json }}
+  defaultTenantName: {{ hatchet_effective_settings.tenant_name | to_json }}
+  defaultTenantSlug: {{ hatchet_effective_settings.tenant_slug | to_json }}

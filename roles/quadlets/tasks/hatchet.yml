@@ -1,0 +1,56 @@
+---
+- name: Validate Hatchet placement and package policy
+  ansible.builtin.assert:
+    that:
+      - "'hatchet' in quadlet_services and 'hatchet-postgres' in quadlet_services"
+      - "'service_hosts' in group_names"
+      - hatchet_data_dir is match('^/[A-Za-z0-9_./-]+\\Z')
+      - "'..' not in hatchet_data_dir.split('/')"
+      - hatchet_image is match('^ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0\\.110\\.5(@sha256:[a-f0-9]{64})?\\Z')
+      - hatchet_postgres_image is match('^docker.io/library/postgres:17-bookworm(@sha256:[a-f0-9]{64})?\\Z')
+      - hatchet_autoupdate | default('registry') in ['registry', 'disabled']
+      - hatchet_postgres_autoupdate | default('registry') in ['registry', 'disabled']
+    fail_msg: Hatchet requires its paired PostgreSQL service and reviewed package policy.
+
+- name: Validate optional initial Hatchet overrides
+  ansible.builtin.assert:
+    that:
+      - (hatchet_settings | default({})) is mapping
+      - >-
+        (hatchet_settings | default({})).keys() | difference(
+        ['admin_email', 'admin_password', 'cookie_block_key', 'cookie_hash_key',
+         'database_password', 'grpc_ca', 'grpc_cert', 'grpc_key', 'master_keyset',
+         'private_jwt_keyset', 'public_jwt_keyset', 'tenant_id', 'tenant_name', 'tenant_slug']) | length == 0
+      - >-
+        (hatchet_settings | default({})).values() | select('string') | list | length ==
+        (hatchet_settings | default({})) | length
+      - >-
+        ['grpc_cert', 'grpc_key', 'grpc_ca'] | intersect(
+        (hatchet_settings | default({})).keys() | list) | length in [0, 3]
+      - >-
+        ['master_keyset', 'private_jwt_keyset', 'public_jwt_keyset'] | intersect(
+        (hatchet_settings | default({})).keys() | list) | length in [0, 3]
+    fail_msg: Initial overrides must use known string keys and complete TLS/keyset bundles.
+  no_log: true
+  diff: false
+
+- name: Load or generate initial Hatchet settings
+  ansible.builtin.include_tasks: hatchet-initialize.yml
+
+- name: Validate and render effective Hatchet settings
+  ansible.builtin.include_tasks: hatchet-config.yml
+  when: hatchet_effective_settings is defined
+
+- name: Report deferred first-run configuration during check mode
+  ansible.builtin.debug:
+    msg: Hatchet initialization and secret-dependent rendering would run during apply; no values generated in check mode.
+  when:
+    - ansible_check_mode
+    - not _hatchet_initial.stat.exists
+
+- name: Deploy Hatchet bounded native launcher
+  ansible.builtin.copy:
+    src: hatchet-start.sh
+    dest: "{{ hatchet_data_dir }}/start.sh"
+    mode: '0755'
+  notify: Restart hatchet service

@@ -15,3 +15,5 @@ piclaw_upstream: "piclaw:8080"
 uptrace_upstream: "uptrace:80"
 
 webgallery_upstream: "webgallery:3000"
+
+hatchet_upstream: "hatchet:8888"

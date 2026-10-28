@@ -209,6 +209,18 @@ These settings apply to target hosts in the `service_hosts` group:
 | `adguardhome_username` | `admin` | AdGuard Home admin UI username (from `vault_adguard_username`). |
 | `adguardhome_password` | auto-generated (`~/homelab/.adguardhome_password`) | AdGuard Home admin UI password (from `vault_adguard_password`). The playbook seeds it on first install via AdGuard's `install/configure` API. |
 
+#### Hatchet control plane
+
+`service_hosts` normally deploys `hatchet` and `hatchet-postgres` together.
+The first apply generates and retains passwords, tenant identity, keysets and
+private TLS material automatically. No `hatchet_settings` mapping is required;
+protected external inventory may supply optional initial overrides. Later applies
+reuse the private `initial-settings.json` record under `hatchet_data_dir`.
+See the [initialization, backup and #110 handoff](hatchet-control-plane.md).
+The UI is available through Caddy at `https://hatchet.{{ lan_domain }}`;
+backend ports remain private to the container network. Uptrace checks readiness
+and receives native Hatchet traces and metrics through its collector. Source merge does not run the playbook or authorize installation.
+
 #### Web Gallery
 
 Web Gallery runs as `webgallery.service` on `service_hosts`, available at

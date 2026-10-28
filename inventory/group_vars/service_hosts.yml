@@ -47,6 +47,13 @@ uptrace_project_id: 1
 
 adguardhome_data_dir: "{{ homelab_data_dir }}/adguardhome"
 adguardhome_port: 8090
+
+# Hatchet is an ordinary service on service_hosts. Supply hatchet_settings from
+# protected, untracked operator inventory only when initial overrides are wanted.
+# The first apply generates and privately retains all other initial values.
+hatchet_data_dir: "{{ homelab_data_dir }}/hatchet"
+hatchet_image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.110.5
+hatchet_postgres_image: docker.io/library/postgres:17-bookworm
 adguardhome_upstream_dns:
   - 1.1.1.1
   - 8.8.8.8

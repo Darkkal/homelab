@@ -1,0 +1,110 @@
+---
+- name: Validate required protected Hatchet input schema
+  ansible.builtin.assert:
+    that:
+      - hatchet_effective_settings is defined
+      - hatchet_effective_settings is mapping
+      - >-
+        hatchet_effective_settings.keys() | sort ==
+        ['admin_email', 'admin_password', 'cookie_block_key', 'cookie_hash_key',
+         'database_password', 'grpc_ca', 'grpc_cert', 'grpc_key', 'master_keyset',
+         'private_jwt_keyset', 'public_jwt_keyset', 'tenant_id', 'tenant_name', 'tenant_slug']
+      - hatchet_effective_settings.values() | select('string') | list | length == 14
+      - hatchet_effective_settings.values() | map('trim') | select('equalto', '') | list | length == 0
+      - hatchet_effective_settings.database_password is match('^[A-Za-z0-9_-]{32,128}\\Z')
+      - hatchet_effective_settings.admin_email is match('^[A-Za-z0-9_.+-]+@[A-Za-z0-9.-]+\\Z')
+      - hatchet_effective_settings.admin_password | length >= 8
+      - hatchet_effective_settings.admin_password | length <= 64
+      - hatchet_effective_settings.admin_password is search('[A-Z]')
+      - hatchet_effective_settings.admin_password is search('[a-z]')
+      - hatchet_effective_settings.admin_password is search('[0-9]')
+      - hatchet_effective_settings.admin_password != 'Admin123!!'
+      - hatchet_effective_settings.tenant_id is match('^[a-f0-9]{8}-[a-f0-9]{4}-[1-5][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}\\Z')
+      - hatchet_effective_settings.tenant_slug is match('^[a-z][a-z0-9-]{0,62}\\Z')
+      - hatchet_effective_settings.tenant_name | length <= 128
+      - hatchet_effective_settings.cookie_hash_key is match('^[A-Za-z0-9_-]{32}\\Z')
+      - hatchet_effective_settings.cookie_block_key is match('^[A-Za-z0-9_-]{32}\\Z')
+      - hatchet_effective_settings.cookie_hash_key != hatchet_effective_settings.cookie_block_key
+      - hatchet_effective_settings.master_keyset is match('^[A-Za-z0-9+/=_-]+\\Z')
+      - hatchet_effective_settings.private_jwt_keyset is match('^[A-Za-z0-9+/=_-]+\\Z')
+      - hatchet_effective_settings.public_jwt_keyset is match('^[A-Za-z0-9+/=_-]+\\Z')
+      - "'-----BEGIN CERTIFICATE-----' in hatchet_effective_settings.grpc_ca"
+      - "'-----BEGIN CERTIFICATE-----' in hatchet_effective_settings.grpc_cert"
+      - "'PRIVATE KEY-----' in hatchet_effective_settings.grpc_key"
+    fail_msg: The retained or generated Hatchet settings must satisfy the complete schema.
+  no_log: true
+  diff: false
+
+- name: Reject changes to retained Hatchet identity through startup overrides
+  ansible.builtin.assert:
+    that:
+      - item.value == hatchet_effective_settings[item.key]
+    fail_msg: Existing initialization is immutable; use the stopped credential/identity rotation procedure.
+  loop: "{{ (hatchet_settings | default({})) | dict2items }}"
+  when: _hatchet_initial.stat.exists
+  no_log: true
+  diff: false
+
+- name: Publish the complete private initialization record without replacement
+  ansible.builtin.command:
+    argv:
+      - "{{ ansible_facts['python']['executable'] }}"
+      - -c
+      - |
+        import json, os, pathlib, sys, tempfile
+        destination = pathlib.Path(sys.argv[1])
+        record = json.load(sys.stdin)
+        fd, temporary = tempfile.mkstemp(prefix='.initial-settings-', dir=destination.parent)
+        try:
+            with os.fdopen(fd, 'w') as output:
+                json.dump(record, output)
+                output.write('\n')
+                output.flush()
+                os.fsync(output.fileno())
+            # Atomic no-replace publication: a concurrent initializer cannot
+            # replace retained credentials or continue rendering its own values.
+            os.link(temporary, destination)
+            directory = os.open(destination.parent, os.O_RDONLY | os.O_DIRECTORY)
+            try:
+                os.fsync(directory)
+            finally:
+                os.close(directory)
+        finally:
+            os.unlink(temporary)
+      - "{{ hatchet_data_dir }}/initial-settings.json"
+    stdin: "{{ {'version': 1, 'settings': hatchet_effective_settings, 'generated_ca_private_key': _hatchet_generated_ca_private_key | default('')} | to_json }}"
+  changed_when: true
+  when: not _hatchet_initial.stat.exists
+  no_log: true
+  diff: false
+
+- name: Deploy Hatchet protected configuration and retained identity
+  ansible.builtin.template:
+    src: "hatchet.{{ item }}.j2"
+    dest: "{{ hatchet_data_dir }}/config/{{ item }}"
+    mode: '0600'
+  loop:
+    - server.yaml
+    - database.yaml
+    - database-url
+    - master.key
+    - private-jwt.key
+    - public-jwt.key
+    - grpc.crt
+    - grpc.key
+    - grpc-ca.crt
+  no_log: true
+  diff: false
+  notify: Restart hatchet service
+
+# Separate files avoid sharing a private SELinux :Z label across containers.
+- name: Deploy Hatchet PostgreSQL password file
+  ansible.builtin.template:
+    src: hatchet.postgres-password.j2
+    dest: "{{ hatchet_data_dir }}/postgres-password"
+    mode: '0600'
+  no_log: true
+  diff: false
+  notify:
+    - Restart hatchet-postgres service
+    - Restart hatchet service

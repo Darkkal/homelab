@@ -1,3 +1,7 @@
+- name: Manage Hatchet protected configuration
+  ansible.builtin.include_tasks: hatchet.yml
+  when: "'hatchet' in quadlet_services or 'hatchet-postgres' in quadlet_services"
+
 - name: Manage Web Gallery configuration
   ansible.builtin.include_tasks: webgallery.yml
   when: "'webgallery' in quadlet_services"

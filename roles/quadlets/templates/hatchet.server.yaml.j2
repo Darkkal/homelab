@@ -1,0 +1,55 @@
+# Caddy terminates LAN HTTPS; backend listeners stay on the container network.
+runtime:
+  port: 8080
+  url: https://hatchet.{{ lan_domain }}
+  grpcBindAddress: 0.0.0.0
+  grpcPort: 7070
+  grpcBroadcastAddress: hatchet:7070
+  grpcInsecure: false
+  allowSignup: false
+  healthcheck: true
+  healthcheckPort: 8733
+  allowedOriginsString: https://hatchet.{{ lan_domain }}
+msgQueue:
+  kind: postgres
+  pubSub:
+    kind: postgres
+tls:
+  tlsStrategy: tls
+  tlsMinVersion: '1.3'
+  tlsCertFile: /config/grpc.crt
+  tlsKeyFile: /config/grpc.key
+  tlsRootCAFile: /config/grpc-ca.crt
+internalClient:
+  inheritBase: false
+  tlsServerName: hatchet
+  base:
+    tlsStrategy: tls
+    tlsMinVersion: '1.3'
+    tlsRootCAFile: /config/grpc-ca.crt
+auth:
+  basicAuthEnabled: true
+  cookie:
+    domain: hatchet.{{ lan_domain }}
+    insecure: false
+    secrets: {{ (hatchet_effective_settings.cookie_hash_key ~ ' ' ~ hatchet_effective_settings.cookie_block_key) | to_json }}
+encryption:
+  masterKeysetFile: /config/master.key
+  jwt:
+    privateJWTKeysetFile: /config/private-jwt.key
+    publicJWTKeysetFile: /config/public-jwt.key
+# Disable outbound reporting; this is separate from authentication/TLS/updates.
+securityCheck:
+  enabled: false
+analytics:
+  aggregateEnabled: false
+  posthog:
+    enabled: false
+alerting:
+  sentry:
+    enabled: false
+otel:
+  serviceName: hatchet
+  collectorURL: uptrace-otelcol:4317
+  insecure: true
+  metricsEnabled: true

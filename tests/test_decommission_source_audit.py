@@ -39,14 +39,23 @@ ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # #71: Uptrace API/state work is live-only; cookie parsing uses the uri cookie jar.
 # Runner previews read real identity and avoid user buses, including handlers;
 # absent accounts defer dependent work. Live destinations and user scope persist.
+# #109: normal service selection adds two user Quadlets. Private Hatchet
+# directories/config and the launcher remain under hatchet_data_dir; paired
+# restart handlers retain scope=user. The one-shot native initialization container
+# and atomic private record publisher stay within that user-owned data directory;
+# neither starts the engine/database nor introduces system provisioning. Caddy
+# adds the LAN UI upstream; the user Quadlet adds discovery and collector settings.
 TASK_PINS = {
+    "roles/quadlets/tasks/hatchet-config.yml": "7d8dbdd0620fab806448675478346c0003b2a9842a4591dbf41e76b99143226a",
+    "roles/quadlets/tasks/hatchet-initialize.yml": "3f83a5216ceadb2cee3a7c97d8c479a02c8c96a84c472719bcd10a7bb362b465",
+    "roles/quadlets/tasks/hatchet.yml": "1fbda49a09c61a1f8c5762b75124e965116668d966fde0db819a1b2571e7aa68",
     "roles/quadlets/tasks/sillytavern.yml": "a4ca5bd483dc20958a6dcc2229dd91286aafcaa297329ac731f6a2aaad2507b7",
     "roles/quadlets/tasks/webgallery.yml": "c743cc6eebe43b238d8796bc9a2ffbf753baf11f89b3079eee2a07f7c024bfdf",
     "roles/decommissioned_services/tasks/network.yml": "4a4777dcf41e50a71208ebcb57724f454592a8602fb3845825e6dffdc24b5cfd",
     "roles/decommissioned_services/tasks/converge.yml": "d08a3d1f6ad5951630a27ad5ac32338860b27310e9963ec828b5b0a918fbad0c",
     "roles/decommissioned_services/tasks/validate.yml": "f6bad3bc257c5d6371bda6e1967627fdf6c376b2b808523a341dad8a380d29f1",
     "roles/base/handlers/main.yml": "faa1d0329f442797c8fb25f93c8736604e9f75f8a69b7a3707254a82beea4db2",
-    "roles/base/tasks/main.yml": "8fbbd5c623c7729938e2f6b702cb25ea71493a1f36f95fabcbe60bb89bcc94a7",
+    "roles/base/tasks/main.yml": "2d955dc3192b96f1244aa4d396739b73995c6889a15769d8b406a0f03f3459d0",
     "roles/caddy/handlers/main.yml": "837289bc4d0a75dd1626b6e4cdd76f27c8ecf12465e54663ec2f249080148f54",
     "roles/caddy/tasks/main.yml": "5c937923825f517ef7c33cf10d85f222daf84a52d4e775f6575f1d28cbf618ce",
     "roles/decommissioned_services/handlers/main.yml": "0314a5e7443e9185914f96a521594f441174e7ed4c8c11803013b3f3ac2b5ffc",
@@ -55,15 +64,30 @@ TASK_PINS = {
     "roles/forgejo_runner/tasks/job_policy.yml": "84ebab5f7ca0c4b907d33ccf34f7fa7720dc878d83d138ccf09836fce57fe366",
     "roles/forgejo_runner/tasks/main.yml": "23c3f761c5a7a232773ee09c2f869a30369f6c3e065416367ef8a61a470ab69e",
     "roles/nvidia/tasks/main.yml": "a0ed3021381db3336eadeb85c84ec6cf27314e2871eee35ad26a1ccac6095934",
-    "roles/quadlets/handlers/main.yml": "6736dafbd91bda161858422a5880547a01b7549ce029017df8758021cd4cc9f9",
+    "roles/quadlets/handlers/main.yml": "2324cffb005a3581e705eb07d2f72f2dea3e5f21c094da38acd24758cb49c7c5",
     "roles/quadlets/tasks/adguardhome-provision.yml": "d3aa363abcc18fe1028d9ace8da51ef29d7744d01b18e376a021a10596175f1a",
-    "roles/quadlets/tasks/main.yml": "5e47bf5859dd74d57733a375146264ad11435646c9daf5d621c975eec29b742f",
+    "roles/quadlets/tasks/main.yml": "a415867554bcbde18c32fc9e25efadbec43f2aaf9a57315c41ed58fb1edeacd9",
     "roles/quadlets/tasks/uptrace-dashboards.yml": "676f2e0e6df0c2bb1fdb3642a32e3d516b73e992b5334f98b2c74072322f323b",
 }
 
-# Generated units plus the two executed source scripts: commands and references
+# Generated units plus executed source scripts: commands and references
 # are pinned too; task pins alone cannot detect a changed ExecStartPre payload.
 ARTIFACT_PINS = {
+    "roles/quadlets/files/hatchet-generate.sh": "00f4e30f2ab35649170050c8488c6c00262bf0c919229b9b06afd6c5e83093a7",
+    "roles/quadlets/files/hatchet-start.sh": "a4a2ad0f03378b53478f271ab58985772be87e47f7b8ab56af4a07acf2897f74",
+    "roles/quadlets/templates/hatchet-postgres.container.j2": "41467abc33e7e839486a3b61847f86a16bfa7cd678e0aba3c48bbdb8665edbd3",
+    "roles/quadlets/templates/hatchet.container.j2": "5f23473311a87622e6d61643c7cb8f303b3b55f0710c7b0df11ac9c8278d8dd6",
+    "roles/quadlets/templates/hatchet.database-url.j2": "bf3cd7c29a9a8863756b8255581d520eaf7c0d1bca255ce408e02d53ccf5e629",
+    "roles/quadlets/templates/hatchet.database.yaml.j2": "f522f7ca5d43dcef0bf3dc057e9d6d7925c7b27e459859daa018518050039b7d",
+    "roles/quadlets/templates/hatchet.grpc-ca.crt.j2": "22872510a97c048415a140700b010cb912aff8f0cff8befb77458638d3f004e6",
+    "roles/quadlets/templates/hatchet.grpc.crt.j2": "39de25b2209a697bbbca7965b2e254e372156182f9ce979489a24664fddde523",
+    "roles/quadlets/templates/hatchet.grpc.key.j2": "baffcc0b2a4cb2e5d7bb3e01257518117e0eca081ad3ec07eebc970280c84bf7",
+    "roles/quadlets/templates/hatchet.master.key.j2": "38f8fb113a71ce7930b5f09af37775e12383251d6295043103041adc2d87bf49",
+    "roles/quadlets/templates/hatchet.postgres-password.j2": "7109d12634ab39b2442268b44d188d8d58343ed7368597ed8a06d4ee90c800e4",
+    "roles/quadlets/templates/hatchet.private-jwt.key.j2": "1a4a3088768801b878f70fabeeaf34ea56a22b80ebae74517c823f92cfc4588b",
+    "roles/quadlets/templates/hatchet.public-jwt.key.j2": "d035020fe6956cd7f8a162e91fea5f2001b06fe0d9b25ad3006568c407c25f90",
+    "roles/quadlets/templates/hatchet.server.yaml.j2": "d60f61ca7496a9f8b0d64da06644ea00fab2a01e9bef8894bc2712bb14983925",
+
     "roles/quadlets/templates/webgallery.container.j2": "ec117ebfb37c8498f0c1ca7864e4c9936a2b8269a24077bd69b2bde150e808bc",
     "roles/base/files/homelab.network": "3dd7bab39fe946ce1e1abf7ef4d92c6d769895504698dbecc04bae7e6637a243",
     "roles/base/templates/homelab-auto-rebuild-check.sh.j2": "c63835f4616af90634f51d9a8108f94a7c68129397959f8ae71db55761c3c617",
@@ -100,14 +124,14 @@ PLAY_CONTEXT_PINS = (
     "5d70c1aef94195dda9bd2c7b372e3e7b2095baa99a6552b151f126c5f002b83e",
     "14b60b6622801dba90e46164758b8807ada1b74c96b5109d277feff4f6979090",
     "ff5d3bc1ad87c57c8c4af624a3b5447b6740266495fcf4c741b865a4db3e1a98",
-    "7401325ef57aadc72231fa02c1c8b07d46e2bd36e12a7a466937507da3912520",
+    "32fb18ae4c3b78d8021b2b69c9ee121ceab6c374ed182a55a8873e26db0d85d4",
     "9eb370969a4c52a057ca944f60ff2a7b12409c29f7d484d26813fc27b2976af0",
     "84e7c18c26a7f16a77870aa6e6ae62cb503f8e0ff0beeef8a02fd99495ae0ec8",
 )
 SOURCE_CONTEXT_PINS = {
     "roles/quadlets/defaults/main.yml": "2eafedd02cd658b9bd868d478534a25961960045fdfc053ca154ce83ef50ed34",
     "roles/caddy/defaults/main.yml":
-        "0f3ce6a831ffebcea54089b746186e54ac24d155e323367a7eb73e337e04a27b",
+        "8c49384a14861e1ab59e8889397e78709bec42b5a6e76fe2c4129b58fe255970",
     "roles/decommissioned_services/defaults/main.yml":
         "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a",
 }
@@ -396,6 +420,8 @@ def audit(source):
     # Fixed helper outputs and commands are reachable through pinned tasks.
     artifacts |= {p for p in ARTIFACT_PINS if "/quadlets/templates/" not in p}
     artifacts.add("roles/quadlets/templates/sync_openwebui_db.py.j2")
+    if "hatchet" in services:
+        artifacts |= {p for p in ARTIFACT_PINS if p.startswith("roles/quadlets/templates/hatchet.")}
     if "swarmui" in services:
         artifacts.add("roles/quadlets/templates/swarmui.build.j2")
     for path in artifacts:
@@ -524,7 +550,8 @@ class SourceAuditTests(unittest.TestCase):
         self.assertEqual(result["roles"], ROLES)
         self.assertEqual(result["tasks"], set(TASK_PINS))
         self.assertEqual(result["artifacts"], set(ARTIFACT_PINS))
-        self.assertEqual(len(result["quadlets"]), 18)
+        self.assertEqual(len(result["quadlets"]), 20)
+        self.assertTrue({"hatchet", "hatchet-postgres"} <= result["quadlets"])
 
     def test_each_task_and_handler_requires_explicit_user_scope(self):
         for path in TASK_PINS:

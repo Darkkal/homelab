@@ -63,3 +63,15 @@
     name: webgallery.service
     state: restarted
     scope: user
+
+- name: Restart hatchet-postgres service
+  ansible.builtin.systemd:
+    name: hatchet-postgres.service
+    state: restarted
+    scope: user
+
+- name: Restart hatchet service
+  ansible.builtin.systemd:
+    name: hatchet.service
+    state: restarted
+    scope: user

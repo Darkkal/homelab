@@ -74,6 +74,8 @@
           - uptrace
           - uptrace-otelcol
           - webgallery
+          - hatchet-postgres
+          - hatchet
 
 - name: Deploy Caddy reverse proxy
   hosts: service_hosts

@@ -58,6 +58,17 @@
     - "{{ webgallery_media_dir }}"
   when: "'service_hosts' in group_names"
 
+- name: Ensure private Hatchet state and configuration directories exist
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0700'
+  loop:
+    - "{{ hatchet_data_dir }}"
+    - "{{ hatchet_data_dir }}/config"
+    - "{{ hatchet_data_dir }}/pg"
+  when: "'service_hosts' in group_names"
+
 - name: Ensure inference host data directories exist
   ansible.builtin.file:
     path: "{{ item }}"

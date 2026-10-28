@@ -1,0 +1,45 @@
+[Unit]
+Description=Hatchet native control plane
+Requires=hatchet-postgres.service
+After=hatchet-postgres.service
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Container]
+ContainerName=hatchet
+Image={{ hatchet_image }}
+AutoUpdate={{ hatchet_autoupdate | default('registry') }}
+Network={{ network_name }}
+UserNS=keep-id
+User={{ ansible_facts['user_uid'] }}
+Group={{ ansible_facts['user_gid'] }}
+ReadOnly=true
+NoNewPrivileges=true
+DropCapability=all
+Tmpfs=/tmp:rw,noexec,nosuid,nodev,size=64m
+Volume={{ hatchet_data_dir }}/config:/config:ro,Z
+Volume={{ hatchet_data_dir }}/start.sh:/opt/hatchet-start.sh:ro,Z
+Entrypoint=/usr/bin/env
+Exec=-i PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin HOME=/tmp TZ=UTC /bin/sh /opt/hatchet-start.sh
+Notify=healthy
+HealthCmd=curl --fail --silent --output /dev/null http://127.0.0.1:8733/ready
+HealthInterval=10s
+HealthTimeout=5s
+HealthStartPeriod=120s
+HealthRetries=3
+LogDriver=journald
+
+Label=homepage.group="Infrastructure"
+Label=homepage.name=Hatchet
+Label=homepage.icon=mdi-axe
+Label=homepage.href=https://hatchet.{{ lan_domain }}
+Label=homepage.description="Workflow orchestration"
+
+[Service]
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=180
+TimeoutStopSec=45
+
+[Install]
+WantedBy=default.target

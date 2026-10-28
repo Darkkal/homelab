@@ -10,6 +10,7 @@ receivers:
   otlp:
     protocols:
       grpc:
+        endpoint: 0.0.0.0:4317
       http:
 
   hostmetrics:
@@ -48,6 +49,8 @@ receivers:
         tls:
           insecure_skip_verify: true
           server_name_override: homepage.{{ lan_domain }}
+      - method: GET
+        endpoint: http://hatchet:8733/ready
       - method: GET
         endpoint: http://sillytavern:8000/
 {% if glances_password %}

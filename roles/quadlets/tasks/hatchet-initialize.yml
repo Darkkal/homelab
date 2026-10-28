@@ -1,0 +1,188 @@
+---
+- name: Inspect the retained Hatchet initialization record
+  ansible.builtin.stat:
+    path: "{{ hatchet_data_dir }}/initial-settings.json"
+    follow: false
+    get_checksum: false
+    get_mime: false
+  register: _hatchet_initial
+
+- name: Admit the private retained initialization record
+  ansible.builtin.assert:
+    that:
+      - _hatchet_initial.stat.isreg | default(false)
+      - not (_hatchet_initial.stat.islnk | default(false))
+      - _hatchet_initial.stat.mode == '0600'
+      - _hatchet_initial.stat.uid == ansible_facts['user_uid']
+    fail_msg: Hatchet initialization must be a private regular file owned by the service account.
+  when: _hatchet_initial.stat.exists
+
+- name: Read retained Hatchet initialization without exposing values
+  ansible.builtin.slurp:
+    src: "{{ hatchet_data_dir }}/initial-settings.json"
+  register: _hatchet_initial_bytes
+  when: _hatchet_initial.stat.exists
+  no_log: true
+
+- name: Decode retained Hatchet initialization
+  ansible.builtin.set_fact:
+    _hatchet_record: "{{ _hatchet_initial_bytes.content | b64decode | from_json }}"
+  when: _hatchet_initial.stat.exists
+  no_log: true
+
+- name: Validate the initialization record version
+  ansible.builtin.assert:
+    that:
+      - _hatchet_record is mapping
+      - _hatchet_record.keys() | sort == ['generated_ca_private_key', 'settings', 'version']
+      - _hatchet_record.version == 1
+      - _hatchet_record.settings is mapping
+      - _hatchet_record.generated_ca_private_key is string
+    fail_msg: Restore a valid version-1 initialization record; do not regenerate identities beside existing state.
+  when: _hatchet_initial.stat.exists
+  no_log: true
+
+- name: Reuse retained Hatchet settings
+  ansible.builtin.set_fact:
+    hatchet_effective_settings: "{{ _hatchet_record.settings }}"
+  when: _hatchet_initial.stat.exists
+  no_log: true
+
+- name: Inspect prior Hatchet state before any generation
+  ansible.builtin.stat:
+    path: "{{ item }}"
+    follow: false
+    get_checksum: false
+    get_mime: false
+  loop:
+    - "{{ hatchet_data_dir }}/pg/pgdata"
+    - "{{ hatchet_data_dir }}/config/server.yaml"
+  register: _hatchet_prior_state
+  when: not _hatchet_initial.stat.exists
+
+- name: Inspect existing Hatchet configuration names before generation
+  ansible.builtin.find:
+    paths: "{{ hatchet_data_dir }}/config"
+    file_type: any
+    hidden: true
+    recurse: false
+  register: _hatchet_prior_config
+  when: not _hatchet_initial.stat.exists
+
+- name: Refuse identity regeneration beside existing Hatchet state
+  ansible.builtin.assert:
+    that:
+      - _hatchet_prior_state.results | selectattr('stat.exists') | list | length == 0
+      - _hatchet_prior_config.matched == 0
+    fail_msg: Existing Hatchet state has no initialization record. Restore the matching record before applying.
+  when: not _hatchet_initial.stat.exists
+
+- name: Generate first-run Hatchet material only during apply
+  when:
+    - not _hatchet_initial.stat.exists
+    - not ansible_check_mode
+  block:
+    - name: Create private temporary initialization directory
+      ansible.builtin.tempfile:
+        state: directory
+        path: "{{ hatchet_data_dir }}"
+        prefix: .initialize-
+      register: _hatchet_material_dir
+
+    - name: Install the bounded native material generator
+      ansible.builtin.copy:
+        src: hatchet-generate.sh
+        dest: "{{ _hatchet_material_dir.path }}/generate.sh"
+        mode: '0700'
+
+    - name: Generate keysets and certificates in the pinned native image
+      ansible.builtin.command:
+        argv:
+          - podman
+          - run
+          - --rm
+          - --timeout=60
+          - --network=none
+          - --log-driver=none
+          - --userns=keep-id
+          - "--user={{ ansible_facts['user_uid'] }}:{{ ansible_facts['user_gid'] }}"
+          - --cap-drop=all
+          - --security-opt=no-new-privileges
+          - --read-only
+          - --tmpfs=/tmp:rw,noexec,nosuid,nodev,size=64m
+          - "--volume={{ _hatchet_material_dir.path }}:/bootstrap:Z"
+          - --entrypoint=/usr/bin/env
+          - "{{ hatchet_image }}"
+          - -i
+          - PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+          - HOME=/tmp
+          - /bin/sh
+          - /bootstrap/generate.sh
+          - "{{ '0' if 'master_keyset' in (hatchet_settings | default({})) else '1' }}"
+          - "{{ '0' if 'grpc_cert' in (hatchet_settings | default({})) else '1' }}"
+      changed_when: true
+      no_log: true
+      diff: false
+
+    - name: Read native quickstart configuration
+      ansible.builtin.slurp:
+        src: "{{ _hatchet_material_dir.path }}/generated/server.yaml"
+      register: _hatchet_quickstart_bytes
+      when: "'master_keyset' not in (hatchet_settings | default({}))"
+      no_log: true
+
+    - name: Parse native quickstart keysets
+      ansible.builtin.set_fact:
+        _hatchet_quickstart: "{{ _hatchet_quickstart_bytes.content | b64decode | from_yaml }}"
+      when: "'master_keyset' not in (hatchet_settings | default({}))"
+      no_log: true
+
+    - name: Read generated private TLS material
+      ansible.builtin.slurp:
+        src: "{{ _hatchet_material_dir.path }}/{{ item }}"
+      loop:
+        - server.crt
+        - server.key
+        - ca.crt
+        - ca.key
+      register: _hatchet_native_tls
+      when: "'grpc_cert' not in (hatchet_settings | default({}))"
+      no_log: true
+
+    - name: Assemble generated cryptographic settings
+      ansible.builtin.set_fact:
+        _hatchet_crypto_settings: >-
+          {{ ({'master_keyset': _hatchet_quickstart.encryption.masterKeyset | trim,
+               'private_jwt_keyset': _hatchet_quickstart.encryption.jwt.privateJWTKeyset | trim,
+               'public_jwt_keyset': _hatchet_quickstart.encryption.jwt.publicJWTKeyset | trim}
+              if 'master_keyset' not in (hatchet_settings | default({})) else {}) |
+             combine({'grpc_cert': _hatchet_native_tls.results[0].content | b64decode,
+                      'grpc_key': _hatchet_native_tls.results[1].content | b64decode,
+                      'grpc_ca': _hatchet_native_tls.results[2].content | b64decode}
+              if 'grpc_cert' not in (hatchet_settings | default({})) else {}) }}
+        _hatchet_generated_ca_private_key: >-
+          {{ _hatchet_native_tls.results[3].content | b64decode
+             if 'grpc_cert' not in (hatchet_settings | default({})) else '' }}
+      no_log: true
+
+    - name: Generate initial passwords and tenant identity
+      ansible.builtin.set_fact:
+        hatchet_effective_settings: >-
+          {{ {'admin_email': 'admin@hatchet.local',
+              'admin_password': 'Aa1' ~ lookup('ansible.builtin.password', '/dev/null', length=45, chars=['ascii_letters', 'digits']),
+              'database_password': lookup('ansible.builtin.password', '/dev/null', length=48, chars=['ascii_letters', 'digits']),
+              'cookie_hash_key': lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']),
+              'cookie_block_key': lookup('ansible.builtin.password', '/dev/null', length=32, chars=['ascii_letters', 'digits']),
+              'tenant_id': lookup('ansible.builtin.password', '/dev/null', length=48, chars=['ascii_letters', 'digits']) | to_uuid,
+              'tenant_name': 'Default', 'tenant_slug': 'default'} |
+             combine(_hatchet_crypto_settings) | combine(hatchet_settings | default({})) }}
+      no_log: true
+
+  always:
+    - name: Remove only this attempt's temporary initialization files
+      ansible.builtin.file:
+        path: "{{ _hatchet_material_dir.path }}"
+        state: absent
+      when: _hatchet_material_dir.path is defined
+      no_log: true
+      diff: false
