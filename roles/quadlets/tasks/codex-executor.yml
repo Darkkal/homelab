@@ -144,7 +144,7 @@
 
 - name: Read selected worker states before replacing protected files
   ansible.builtin.command:
-    argv: [systemctl, --user, show, --property=ActiveState, --value, "codex-executor-{{ item }}.service"]
+    argv: [systemctl, --user, show, --property=ActiveState, --value, "{{ item }}.service"]
   loop: "{{ codex_executor_instances | map(attribute='instance') | list }}"
   register: codex_executor_states
   changed_when: false
@@ -152,7 +152,7 @@
 
 - name: Stop selected workers before replacing protected files
   ansible.builtin.systemd:
-    name: "codex-executor-{{ item.item }}.service"
+    name: "{{ item.item }}.service"
     state: stopped
     scope: user
   loop: "{{ codex_executor_states.results | default([]) }}"
@@ -162,7 +162,7 @@
 
 - name: Confirm selected workers are stopped before replacement
   ansible.builtin.command:
-    argv: [systemctl, --user, show, --property=ActiveState, --value, "codex-executor-{{ item }}.service"]
+    argv: [systemctl, --user, show, --property=ActiveState, --value, "{{ item }}.service"]
   loop: "{{ codex_executor_instances | map(attribute='instance') | list }}"
   register: codex_executor_stopped_state
   changed_when: false
@@ -255,7 +255,7 @@
 - name: Deploy instance units
   ansible.builtin.template:
     src: codex-executor.container.j2
-    dest: "{{ quadlet_dir }}/codex-executor-{{ item.instance }}.container"
+    dest: "{{ quadlet_dir }}/{{ item.instance }}.container"
     mode: '0644'
   loop: "{{ codex_executor_instances }}"
   loop_control:
@@ -291,7 +291,7 @@
 
 - name: Restart instances after protected configuration changes
   ansible.builtin.systemd:
-    name: "codex-executor-{{ item.instance }}.service"
+    name: "{{ item.instance }}.service"
     state: restarted
     scope: user
   loop: "{{ codex_executor_instances }}"
@@ -306,7 +306,7 @@
 
 - name: Start selected instances
   ansible.builtin.systemd:
-    name: "codex-executor-{{ item.instance }}.service"
+    name: "{{ item.instance }}.service"
     state: started
     scope: user
   loop: "{{ codex_executor_instances }}"

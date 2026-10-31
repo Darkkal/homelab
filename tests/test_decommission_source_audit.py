@@ -49,7 +49,7 @@ ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # private instance files and an update-service drop-in. The build context is a
 # fixed list of reviewed package files; its unit, container and updater are pinned.
 TASK_PINS = {
-    "roles/quadlets/tasks/codex-executor.yml": "d0e4b820243068557f5b8918eece655d658ccff478251868c12b563743a6e5d6",
+    "roles/quadlets/tasks/codex-executor.yml": "9573dcb25df59163e6659706901e7d4260f0ee6bed15e8e3ffa8c0f3518035e2",
     "roles/quadlets/tasks/hatchet-config.yml": "7d8dbdd0620fab806448675478346c0003b2a9842a4591dbf41e76b99143226a",
     "roles/quadlets/tasks/hatchet-initialize.yml": "3f83a5216ceadb2cee3a7c97d8c479a02c8c96a84c472719bcd10a7bb362b465",
     "roles/quadlets/tasks/hatchet.yml": "1fbda49a09c61a1f8c5762b75124e965116668d966fde0db819a1b2571e7aa68",

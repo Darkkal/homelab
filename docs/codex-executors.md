@@ -5,6 +5,12 @@ one private container per entry in `codex_executor_instances` on the service hos
 The owner must review and merge the source before the separately authorised #103
 installation. No login, task execution or host validation is performed by this source.
 
+Each instance renders as `<instance>.container` and `<instance>.service`, for
+example `hatchet-planner.service`. Before applying, check for both these names and
+the older `codex-executor-<instance>` units. If older units or artifacts exist,
+stop and use a separately approved stopped migration before starting replacements.
+Do not allow both units to use the same private state, delete state, or clear guards.
+
 Set protected inventory values for every selected instance. The following is a
 shape only; replace all placeholders in protected inventory and keep tokens out of
 tracked files and command lines:
