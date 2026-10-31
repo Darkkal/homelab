@@ -1,5 +1,6 @@
 import { Hatchet } from '@hatchet-dev/typescript-sdk';
-import { policy, run } from './boundary.mjs';
+import { Agent as HttpsAgent } from 'node:https';
+import { policy, connection, quarantined, run } from './boundary.mjs';
 
 // Do not let SDK diagnostic exceptions serialize task input, engine headers or responses.
 const silentLogger = () => ({ debug() {}, info() {}, green() {}, warn() {}, error() {} });
@@ -62,8 +63,15 @@ async function main() {
     return;
   }
   if (process.argv[2] !== 'worker') throw new Error('invalid_mode');
-  const hatchet = Hatchet.init({ logger: silentLogger, log_level: 'OFF',
-    cancellation_grace_period: 5, cancellation_warning_threshold: 4 });
+  if (await quarantined(p)) {
+    // A successful exit prevents Restart=on-failure from looping on quarantine.
+    emit({ instance: p.instance, role: p.role, outcome: 'quarantined' });
+    return;
+  }
+  const { config, apiCa } = await connection();
+  const hatchet = Hatchet.init({ ...config, logger: silentLogger, log_level: 'OFF',
+    cancellation_grace_period: 5, cancellation_warning_threshold: 4 }, undefined,
+    { httpsAgent: new HttpsAgent({ ca: apiCa, rejectUnauthorized: true }) });
   const task = hatchet.task({ name: `codex-${p.role}`, retries: 0,
     executionTimeout: `${p.timeoutSeconds + 15}s`, scheduleTimeout: '5m',
     fn: async (input, ctx) => {

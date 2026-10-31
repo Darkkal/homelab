@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+# Rebuild only the reviewed local context; never fetch application source here.
+set -euo pipefail
+if ! timeout --kill-after=30s 30m podman build --pull=always \
+    --build-arg BASE_IMAGE={{ codex_executor_base_image }} \
+    --tag localhost/codex-executor:{{ codex_executor_image_id }} \
+    --file {{ codex_executor_data_dir }}/contexts/{{ codex_executor_context_id }}/Containerfile \
+    {{ codex_executor_data_dir }}/contexts/{{ codex_executor_context_id }}; then
+    echo 'Codex executor base refresh failed; existing image remains in use.' >&2
+    exit 1
+fi

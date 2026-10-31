@@ -2,6 +2,17 @@
 webgallery_image: ghcr.io/darkkal/web-gallery:latest
 webgallery_uid: 1000
 webgallery_gid: 1000
+codex_executor_instances: []
+codex_executor_data_dir: "{{ homelab_data_dir }}/codex-executor"
+codex_executor_base_image: docker.io/docker/sandbox-templates:codex
+codex_executor_build_files:
+  - Containerfile
+  - package.json
+  - package-lock.json
+  - worker.mjs
+  - boundary.mjs
+  - agent.mjs
+  - empty-hooks/.keep
 webgallery_timezone: UTC
 webgallery_port: 8084
 # Full preserved dictionaries and existing host paths are required inputs.

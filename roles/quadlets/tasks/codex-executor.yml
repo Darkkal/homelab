@@ -1,0 +1,315 @@
+---
+- name: Validate executor selection and trusted base channel
+  ansible.builtin.assert:
+    that:
+      - codex_executor_instances is sequence and codex_executor_instances is not string
+      - codex_executor_build_files == ['Containerfile', 'package.json', 'package-lock.json', 'worker.mjs', 'boundary.mjs', 'agent.mjs', 'empty-hooks/.keep']
+      - codex_executor_instances | map(attribute='instance') | unique | list | length == codex_executor_instances | length
+      - codex_executor_base_image is match('^docker\\.io/docker/sandbox-templates:codex(@sha256:[a-f0-9]{64})?\\Z')
+      - codex_executor_data_dir is match('^/[A-Za-z0-9_./-]+\\Z')
+      - "'..' not in codex_executor_data_dir.split('/')"
+  no_log: true
+
+- name: Validate each protected executor policy
+  ansible.builtin.assert:
+    that:
+      - item.instance is match('^[a-z][a-z0-9-]{0,47}\\Z')
+      - item.policy.instance == item.instance
+      - item.policy is mapping
+      - item.policy.keys() | list | sort == ['instance', 'instructions', 'model', 'reasoning', 'role', 'skillsBranch', 'skillsUrl', 'timeoutSeconds']
+      - item.policy.role in ['planner', 'worker', 'reviewer']
+      - item.policy.model is match('^[a-zA-Z0-9._-]{1,100}\\Z')
+      - item.policy.reasoning in ['low', 'medium', 'high', 'xhigh']
+      - item.policy.instructions is string and item.policy.instructions | length > 0 and item.policy.instructions | length <= 16384
+      - item.policy.timeoutSeconds is integer and 30 <= item.policy.timeoutSeconds <= 3600
+      - item.policy.skillsUrl is match('^https://[^/@?#]+(?:/[^?#]*)?\\Z')
+      - item.policy.skillsBranch is match('^[a-zA-Z0-9][a-zA-Z0-9/_-]{0,99}\\Z')
+      - item.memory is match('^[1-9][0-9]*[mMgG]\\Z')
+      - item.pids is integer and item.pids >= 32
+      - item.hatchet_token is string and item.hatchet_token | length > 0
+      - item.hatchet_ca is string and item.hatchet_ca | length > 0
+      - item.hatchet_api_ca is string and item.hatchet_api_ca | length > 0
+      - item.hatchet_host_port is match('^[a-zA-Z0-9.-]+:[0-9]{1,5}\\Z')
+      - item.hatchet_api_url is match('^https://[^/@?#]+(?:/[^?#]*)?\\Z')
+  loop: "{{ codex_executor_instances }}"
+  no_log: true
+
+- name: Initialize build context identity
+  ansible.builtin.set_fact:
+    codex_executor_context_hashes: ""
+
+- name: Hash reviewed build files
+  ansible.builtin.set_fact:
+    codex_executor_context_hashes: "{{ codex_executor_context_hashes }}{{ lookup('file', role_path + '/files/codex-executor/' + item, rstrip=False) | hash('sha256') }}"
+  loop: "{{ codex_executor_build_files }}"
+
+- name: Identify reviewed build context
+  ansible.builtin.set_fact:
+    codex_executor_context_id: "{{ codex_executor_context_hashes | hash('sha256') }}"
+
+- name: Identify reviewed image channel
+  ansible.builtin.set_fact:
+    codex_executor_image_id: "{{ (codex_executor_context_id + codex_executor_base_image) | hash('sha256') }}"
+
+- name: Create immutable context and instance roots
+  ansible.builtin.file:
+    path: "{{ item.path }}"
+    state: directory
+    mode: "{{ item.mode }}"
+  loop:
+    - {path: "{{ codex_executor_data_dir }}", mode: '0700'}
+    - {path: "{{ codex_executor_data_dir }}/contexts", mode: '0700'}
+    - {path: "{{ codex_executor_data_dir }}/contexts/{{ codex_executor_context_id }}", mode: '0700'}
+    - {path: "{{ codex_executor_data_dir }}/contexts/{{ codex_executor_context_id }}/empty-hooks", mode: '0700'}
+    - {path: "{{ codex_executor_data_dir }}/instances", mode: '0700'}
+
+- name: Copy reviewed build files only
+  ansible.builtin.copy:
+    src: "codex-executor/{{ item }}"
+    dest: "{{ codex_executor_data_dir }}/contexts/{{ codex_executor_context_id }}/{{ item }}"
+    mode: '0600'
+  loop: "{{ codex_executor_build_files }}"
+  register: codex_executor_context_copy
+
+- name: Create private instance roots
+  ansible.builtin.file:
+    path: "{{ codex_executor_data_dir }}/instances/{{ item.instance }}"
+    state: directory
+    mode: '0700'
+  loop: "{{ codex_executor_instances }}"
+  loop_control:
+    label: "{{ item.instance }}"
+  no_log: true
+
+- name: Create private instance directories
+  ansible.builtin.file:
+    path: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/{{ item.1.name }}"
+    state: directory
+    mode: "{{ item.1.mode }}"
+  loop: "{{ codex_executor_instances | product([{'name': 'config', 'mode': '0700'}, {'name': 'control', 'mode': '0700'}, {'name': 'agent', 'mode': '0711'}]) | list }}"
+  loop_control:
+    label: "{{ item.0.instance }}/{{ item.1.name }}"
+  no_log: true
+
+- name: Preview required protected files without exposing their contents
+  ansible.builtin.copy:
+    content: >-
+      {{ item.0.policy | to_nice_json if item.1.key == 'policy' else
+         ({'token': item.0.hatchet_token, 'hostPort': item.0.hatchet_host_port,
+           'apiUrl': item.0.hatchet_api_url} | to_nice_json) if item.1.key == 'connection' else
+         item.0[item.1.key] }}
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
+    mode: '0600'
+  loop: "{{ codex_executor_instances | product([{'key': 'policy', 'name': 'policy.json'}, {'key': 'connection', 'name': 'connection.json'}, {'key': 'hatchet_ca', 'name': 'hatchet-ca.pem'}, {'key': 'hatchet_api_ca', 'name': 'hatchet-api-ca.pem'}]) | list }}"
+  check_mode: true
+  register: codex_executor_required_preview
+  no_log: true
+  diff: false
+
+- name: Preview optional protected file replacements
+  ansible.builtin.copy:
+    content: "{{ item.0[item.1.key] }}"
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
+    mode: '0600'
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  when: item.0[item.1.key] is defined and item.0[item.1.key] | length > 0
+  check_mode: true
+  register: codex_executor_optional_preview
+  no_log: true
+  diff: false
+
+- name: Preview optional protected file removals
+  ansible.builtin.file:
+    path: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
+    state: absent
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  when: item.0[item.1.key] is not defined or item.0[item.1.key] | length == 0
+  check_mode: true
+  register: codex_executor_removal_preview
+  no_log: true
+  diff: false
+
+- name: Check for interrupted protected configuration changes
+  ansible.builtin.stat:
+    path: "{{ codex_executor_data_dir }}/instances/{{ item }}/config/.updating"
+  loop: "{{ codex_executor_instances | map(attribute='instance') | list }}"
+  register: codex_executor_update_markers
+
+- name: Determine whether protected configuration must be reconciled
+  ansible.builtin.set_fact:
+    codex_executor_replacement_required: >-
+      {{ codex_executor_required_preview.changed or codex_executor_optional_preview.changed or
+         codex_executor_removal_preview.changed or
+         (codex_executor_update_markers.results | selectattr('stat.exists') | list | length > 0) }}
+
+- name: Read selected worker states before replacing protected files
+  ansible.builtin.command:
+    argv: [systemctl, --user, show, --property=ActiveState, --value, "codex-executor-{{ item }}.service"]
+  loop: "{{ codex_executor_instances | map(attribute='instance') | list }}"
+  register: codex_executor_states
+  changed_when: false
+  when: codex_executor_replacement_required
+
+- name: Stop selected workers before replacing protected files
+  ansible.builtin.systemd:
+    name: "codex-executor-{{ item.item }}.service"
+    state: stopped
+    scope: user
+  loop: "{{ codex_executor_states.results | default([]) }}"
+  when:
+    - not item.skipped | default(false)
+    - item.stdout not in ['inactive', 'failed']
+
+- name: Confirm selected workers are stopped before replacement
+  ansible.builtin.command:
+    argv: [systemctl, --user, show, --property=ActiveState, --value, "codex-executor-{{ item }}.service"]
+  loop: "{{ codex_executor_instances | map(attribute='instance') | list }}"
+  register: codex_executor_stopped_state
+  changed_when: false
+  failed_when: codex_executor_stopped_state.stdout not in ['inactive', 'failed']
+  when: codex_executor_replacement_required
+
+- name: Guard selected instances during protected configuration replacement
+  ansible.builtin.copy:
+    content: "Configuration replacement is incomplete.\n"
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item }}/config/.updating"
+    mode: '0600'
+  loop: "{{ codex_executor_instances | map(attribute='instance') | list }}"
+  when: codex_executor_replacement_required
+
+- name: Write protected executor policy
+  ansible.builtin.copy:
+    content: "{{ item.policy | to_nice_json }}"
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item.instance }}/config/policy.json"
+    mode: '0600'
+  loop: "{{ codex_executor_instances }}"
+  register: codex_executor_policy_result
+  no_log: true
+  diff: false
+
+- name: Write protected Hatchet connection
+  ansible.builtin.copy:
+    content: "{{ {'token': item.hatchet_token, 'hostPort': item.hatchet_host_port, 'apiUrl': item.hatchet_api_url} | to_nice_json }}"
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item.instance }}/config/connection.json"
+    mode: '0600'
+  loop: "{{ codex_executor_instances }}"
+  register: codex_executor_connection_result
+  no_log: true
+  diff: false
+
+- name: Write protected Hatchet CA
+  ansible.builtin.copy:
+    content: "{{ item.hatchet_ca }}"
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item.instance }}/config/hatchet-ca.pem"
+    mode: '0600'
+  loop: "{{ codex_executor_instances }}"
+  register: codex_executor_ca_result
+  no_log: true
+  diff: false
+
+- name: Write protected Hatchet API CA
+  ansible.builtin.copy:
+    content: "{{ item.hatchet_api_ca }}"
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item.instance }}/config/hatchet-api-ca.pem"
+    mode: '0600'
+  loop: "{{ codex_executor_instances }}"
+  register: codex_executor_api_ca_result
+  no_log: true
+  diff: false
+
+- name: Write optional role credential files
+  ansible.builtin.copy:
+    content: "{{ item.0[item.1.key] }}"
+    dest: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
+    mode: '0600'
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  when: item.0[item.1.key] is defined and item.0[item.1.key] | length > 0
+  register: codex_executor_credentials_result
+  no_log: true
+  diff: false
+
+- name: Remove unselected optional role credentials
+  ansible.builtin.file:
+    path: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
+    state: absent
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  when: item.0[item.1.key] is not defined or item.0[item.1.key] | length == 0
+  register: codex_executor_removed_credentials
+  no_log: true
+
+- name: Clear completed protected configuration replacement guards
+  ansible.builtin.file:
+    path: "{{ codex_executor_data_dir }}/instances/{{ item }}/config/.updating"
+    state: absent
+  loop: "{{ codex_executor_instances | map(attribute='instance') | list }}"
+  when: codex_executor_replacement_required
+
+- name: Deploy shared build unit
+  ansible.builtin.template:
+    src: codex-executor.build.j2
+    dest: "{{ quadlet_dir }}/codex-executor.build"
+    mode: '0644'
+  register: codex_executor_build_unit
+  notify: Reload user systemd
+
+- name: Deploy instance units
+  ansible.builtin.template:
+    src: codex-executor.container.j2
+    dest: "{{ quadlet_dir }}/codex-executor-{{ item.instance }}.container"
+    mode: '0644'
+  loop: "{{ codex_executor_instances }}"
+  loop_control:
+    label: "{{ item.instance }}"
+  register: codex_executor_units
+  no_log: true
+  notify: Reload user systemd
+
+- name: Install trusted base refresh command
+  ansible.builtin.template:
+    src: codex-executor-refresh.sh.j2
+    dest: "{{ codex_executor_data_dir }}/refresh.sh"
+    mode: '0700'
+
+- name: Add executor refresh to the existing update service
+  ansible.builtin.copy:
+    content: |
+      [Service]
+      ExecStartPre=-{{ codex_executor_data_dir }}/refresh.sh
+    dest: "{{ homelab_user_home }}/.config/systemd/user/podman-auto-update.service.d/codex-executor.conf"
+    mode: '0644'
+  notify: Reload user systemd
+
+- name: Reload generated units before building or starting
+  ansible.builtin.meta: flush_handlers
+
+- name: Rebuild after reviewed context or build policy changes
+  ansible.builtin.systemd:
+    name: codex-executor-build.service
+    state: restarted
+    scope: user
+  when: codex_executor_build_unit.changed or codex_executor_context_copy.changed
+
+- name: Restart instances after protected configuration changes
+  ansible.builtin.systemd:
+    name: "codex-executor-{{ item.instance }}.service"
+    state: restarted
+    scope: user
+  loop: "{{ codex_executor_instances }}"
+  loop_control:
+    label: "{{ item.instance }}"
+  when: >-
+    codex_executor_build_unit.changed or codex_executor_context_copy.changed or
+    codex_executor_units.changed or codex_executor_policy_result.changed or
+    codex_executor_connection_result.changed or codex_executor_ca_result.changed or
+    codex_executor_api_ca_result.changed or codex_executor_credentials_result.changed or codex_executor_removed_credentials.changed
+  no_log: true
+
+- name: Start selected instances
+  ansible.builtin.systemd:
+    name: "codex-executor-{{ item.instance }}.service"
+    state: started
+    scope: user
+  loop: "{{ codex_executor_instances }}"
+  loop_control:
+    label: "{{ item.instance }}"
+  no_log: true

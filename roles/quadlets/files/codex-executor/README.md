@@ -8,9 +8,9 @@ directory. Preserve operator state independently of source rollback.
 
 ## Interface for deployment
 
-Build with `podman build --build-arg BASE_IMAGE=<immutable-reference> -f Containerfile .`.
-The base must be the approved `docker.io/docker/sandbox-templates:codex` candidate
-resolved to a digest, with Node >=22 and an apt-based filesystem. No image build
+Build with `podman build --build-arg BASE_IMAGE=<reviewed-channel-or-pin> -f Containerfile .`.
+The base must be the approved `docker.io/docker/sandbox-templates:codex` channel
+or a digest pin on that channel, with Node >=22 and an apt-based filesystem. No image build
 was run for this source change. Record that digest, resulting image digest,
 architecture, Node, Git, Bubblewrap and util-linux versions during owner validation.
 The npm lock selects Hatchet SDK **1.38.0**, Codex SDK/CLI **0.163.0** and YAML
@@ -79,12 +79,13 @@ zero retries, no events/cron, and role/instance scheduling labels. Planner/revie
 use `read-only`; worker uses `workspace-write`. All use `untrusted` approvals and
 disable tool network access/web search. Labels and task text cannot select a role.
 
-The engine SDK uses its normal protected Hatchet connection settings in the
-trusted worker environment. Optional private skill-source authentication uses only
+The engine SDK receives explicit protected connection settings from
+`connection.json`, the gRPC CA in `hatchet-ca.pem`, and a separate HTTPS API
+issuer in `hatchet-api-ca.pem`. Optional private skill-source authentication uses only
 `/etc/codex-executor/git-credentials`, root-owned mode 0600, via Git's noninteractive
 store helper. Never put credentials into the policy URL or task. B owns engine TLS
-and source CA configuration. The runner forwards only an optional `FORGEJO_TOKEN`
-for this instance's own role to the agent and CLI; B must provide that value through
+and source CA configuration. The runner forwards only the optional protected
+`forgejo-token` file as `FORGEJO_TOKEN` for this instance's own role; B must provide that value through
 protected operator configuration, never a task. Hatchet, Git-preparation and other
 roles' credentials are omitted from the child environment. This does not prove that
 a trusted agent cannot reach them by other means. There is no credential broker.
@@ -154,6 +155,11 @@ and shutdown awaits their cleanup and result handling under the same hard deadli
 A crash can leave a lock; an operator must establish that no run remains before
 removing it. Failed initial preparation may leave an unborn source repository;
 inspect/reset only that private source directory while stopped, never use stale skills.
+Worker mode checks for a retained lock before connecting to Hatchet and exits
+successfully with a bounded `quarantined` outcome. This avoids a restart loop with
+`Restart=on-failure`; it does not remove the lock or resolve uncertain work. The
+operator must stop the instance, establish that no run remains, and explicitly
+recover the retained lock and workspace before restarting it.
 
 ## Verification status
 

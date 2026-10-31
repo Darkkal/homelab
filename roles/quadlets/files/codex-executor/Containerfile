@@ -1,4 +1,4 @@
-# Keep Docker's approved template candidate; require an operator-selected immutable digest.
+# Keep the approved vendor channel; the operator can pin its digest when needed.
 ARG BASE_IMAGE
 FROM ${BASE_IMAGE}
 USER root

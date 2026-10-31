@@ -45,7 +45,11 @@ ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # and atomic private record publisher stay within that user-owned data directory;
 # neither starts the engine/database nor introduces system provisioning. Caddy
 # adds the LAN UI upstream; the user Quadlet adds discovery and collector settings.
+# #102: opt-in executor tasks manage user-scoped build and instance services,
+# private instance files and an update-service drop-in. The build context is a
+# fixed list of reviewed package files; its unit, container and updater are pinned.
 TASK_PINS = {
+    "roles/quadlets/tasks/codex-executor.yml": "d0e4b820243068557f5b8918eece655d658ccff478251868c12b563743a6e5d6",
     "roles/quadlets/tasks/hatchet-config.yml": "7d8dbdd0620fab806448675478346c0003b2a9842a4591dbf41e76b99143226a",
     "roles/quadlets/tasks/hatchet-initialize.yml": "3f83a5216ceadb2cee3a7c97d8c479a02c8c96a84c472719bcd10a7bb362b465",
     "roles/quadlets/tasks/hatchet.yml": "1fbda49a09c61a1f8c5762b75124e965116668d966fde0db819a1b2571e7aa68",
@@ -55,7 +59,7 @@ TASK_PINS = {
     "roles/decommissioned_services/tasks/converge.yml": "d08a3d1f6ad5951630a27ad5ac32338860b27310e9963ec828b5b0a918fbad0c",
     "roles/decommissioned_services/tasks/validate.yml": "f6bad3bc257c5d6371bda6e1967627fdf6c376b2b808523a341dad8a380d29f1",
     "roles/base/handlers/main.yml": "faa1d0329f442797c8fb25f93c8736604e9f75f8a69b7a3707254a82beea4db2",
-    "roles/base/tasks/main.yml": "2d955dc3192b96f1244aa4d396739b73995c6889a15769d8b406a0f03f3459d0",
+    "roles/base/tasks/main.yml": "40058c841e1014b3518f9a74dcbfe3f45cfb0ef5ebee16415361ee26ff1c0c7c",
     "roles/caddy/handlers/main.yml": "837289bc4d0a75dd1626b6e4cdd76f27c8ecf12465e54663ec2f249080148f54",
     "roles/caddy/tasks/main.yml": "5c937923825f517ef7c33cf10d85f222daf84a52d4e775f6575f1d28cbf618ce",
     "roles/decommissioned_services/handlers/main.yml": "0314a5e7443e9185914f96a521594f441174e7ed4c8c11803013b3f3ac2b5ffc",
@@ -66,13 +70,23 @@ TASK_PINS = {
     "roles/nvidia/tasks/main.yml": "a0ed3021381db3336eadeb85c84ec6cf27314e2871eee35ad26a1ccac6095934",
     "roles/quadlets/handlers/main.yml": "2324cffb005a3581e705eb07d2f72f2dea3e5f21c094da38acd24758cb49c7c5",
     "roles/quadlets/tasks/adguardhome-provision.yml": "d3aa363abcc18fe1028d9ace8da51ef29d7744d01b18e376a021a10596175f1a",
-    "roles/quadlets/tasks/main.yml": "a415867554bcbde18c32fc9e25efadbec43f2aaf9a57315c41ed58fb1edeacd9",
+    "roles/quadlets/tasks/main.yml": "587d7dee8ffe2a031503358438f098d49d9e213bbac611f328f8a1007e063df8",
     "roles/quadlets/tasks/uptrace-dashboards.yml": "676f2e0e6df0c2bb1fdb3642a32e3d516b73e992b5334f98b2c74072322f323b",
 }
 
 # Generated units plus executed source scripts: commands and references
 # are pinned too; task pins alone cannot detect a changed ExecStartPre payload.
 ARTIFACT_PINS = {
+    "roles/quadlets/templates/codex-executor.build.j2": "485bd986ed05e637e7c78b43f49def3a286eecffb42f1ad83aacc905de5bb51d",
+    "roles/quadlets/templates/codex-executor.container.j2": "876f33e6feb3854d42ab195705cb572187cd7b7d7ccdb82b18a7bc1f0a16915f",
+    "roles/quadlets/templates/codex-executor-refresh.sh.j2": "7c0bf7275ce1417fb5880873f3b7c4c5a2a61acadf9f996d310d5795362fc12d",
+    "roles/quadlets/files/codex-executor/Containerfile": "9c24bd5f180ebc8baea2b7c046066e7688bbff7d53b5988826f59d8881ba9555",
+    "roles/quadlets/files/codex-executor/package.json": "233ab6bedab647b261f7782fb9e150d8ec8e226aa661b053d6b6791765e23edb",
+    "roles/quadlets/files/codex-executor/package-lock.json": "5a20bce65b86b1d1a34f56d5ea063443746bd28e6150abf28522e98a77b153b8",
+    "roles/quadlets/files/codex-executor/worker.mjs": "33ac03ce3e2e6c623e7077a3b16b3874a99430513e973931d54bbe747141889b",
+    "roles/quadlets/files/codex-executor/boundary.mjs": "1ea921767b5879d40f67bf408f16a88f5706564f09fc5395e59b80242f8e4f6a",
+    "roles/quadlets/files/codex-executor/agent.mjs": "3908160c53836a1e36fc148cdf8e4e391e8aad95a3cdbfae62ebad21f754727b",
+    "roles/quadlets/files/codex-executor/empty-hooks/.keep": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
     "roles/quadlets/files/hatchet-generate.sh": "00f4e30f2ab35649170050c8488c6c00262bf0c919229b9b06afd6c5e83093a7",
     "roles/quadlets/files/hatchet-start.sh": "a4a2ad0f03378b53478f271ab58985772be87e47f7b8ab56af4a07acf2897f74",
     "roles/quadlets/templates/hatchet-postgres.container.j2": "41467abc33e7e839486a3b61847f86a16bfa7cd678e0aba3c48bbdb8665edbd3",
@@ -129,7 +143,7 @@ PLAY_CONTEXT_PINS = (
     "84e7c18c26a7f16a77870aa6e6ae62cb503f8e0ff0beeef8a02fd99495ae0ec8",
 )
 SOURCE_CONTEXT_PINS = {
-    "roles/quadlets/defaults/main.yml": "2eafedd02cd658b9bd868d478534a25961960045fdfc053ca154ce83ef50ed34",
+    "roles/quadlets/defaults/main.yml": "e1c5f43fea7c647af4955b5ef46c0b2fa2c3f9d7072ff8a24863e2aad63d45bf",
     "roles/caddy/defaults/main.yml":
         "8c49384a14861e1ab59e8889397e78709bec42b5a6e76fe2c4129b58fe255970",
     "roles/decommissioned_services/defaults/main.yml":
@@ -424,6 +438,10 @@ def audit(source):
         artifacts |= {p for p in ARTIFACT_PINS if p.startswith("roles/quadlets/templates/hatchet.")}
     if "swarmui" in services:
         artifacts.add("roles/quadlets/templates/swarmui.build.j2")
+    if "roles/quadlets/tasks/codex-executor.yml" in visited:
+        artifacts |= {p for p in ARTIFACT_PINS
+                      if p.startswith("roles/quadlets/templates/codex-executor")
+                      or p.startswith("roles/quadlets/files/codex-executor/")}
     for path in artifacts:
         digest = hashlib.sha256(source.text(path).encode()).hexdigest()
         require(digest == ARTIFACT_PINS[path], "unclassified generated output/command: " + path)

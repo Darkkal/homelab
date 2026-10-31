@@ -26,9 +26,17 @@ async function protectedPath(file, directory = false, allowedOtherBits = 0) {
 export async function policy() {
   requireThat(process.getuid() === 0);
   await protectedPath('/etc/codex-executor', true);
+  try {
+    await fs.lstat('/etc/codex-executor/.updating');
+    throw new Error('configuration_update_incomplete');
+  } catch (error) { if (error.code !== 'ENOENT') throw error; }
   await protectedPath('/etc/codex-executor/policy.json');
   try { await protectedPath('/etc/codex-executor/git-credentials'); }
   catch (error) { if (error.code !== 'ENOENT') throw error; }
+  try {
+    await protectedPath('/etc/codex-executor/skills-ca.pem');
+    cleanEnv.GIT_SSL_CAINFO = '/etc/codex-executor/skills-ca.pem';
+  } catch (error) { if (error.code !== 'ENOENT') throw error; }
   const raw = await fs.readFile('/etc/codex-executor/policy.json');
   requireThat(raw.length <= 32768);
   const p = JSON.parse(raw);
@@ -49,6 +57,41 @@ export async function policy() {
   await protectedPath(ROOT, true);
   requireThat(((await protectedPath(AGENT_ROOT, true, 0o011)).mode & 0o777) === 0o711);
   return Object.freeze(p);
+}
+
+// A retained run lock means a previous execution may still have effects.
+// Check before registering with Hatchet; only an operator may clear it.
+export async function quarantined(p) {
+  try {
+    await fs.lstat(`${ROOT}/${p.instance}/lock`);
+    return true;
+  } catch (error) {
+    if (error.code === 'ENOENT') return false;
+    throw error;
+  }
+}
+
+// Deployment supplies this separately from the role policy. Explicit SDK
+// options take precedence over ambient settings and token-advertised addresses.
+export async function connection() {
+  const file = '/etc/codex-executor/connection.json';
+  await protectedPath(file);
+  const raw = await fs.readFile(file);
+  requireThat(raw.length <= 32768);
+  const c = JSON.parse(raw);
+  requireThat(c && typeof c === 'object' && !Array.isArray(c)
+    && Object.keys(c).length === 3
+    && ['token', 'hostPort', 'apiUrl'].every(k => typeof c[k] === 'string' && c[k].length > 0));
+  requireThat(/^[a-zA-Z0-9.-]+:[0-9]{1,5}$/.test(c.hostPort));
+  const url = new URL(c.apiUrl);
+  requireThat(url.protocol === 'https:' && !url.username && !url.password && !url.search && !url.hash);
+  await protectedPath('/etc/codex-executor/hatchet-ca.pem');
+  const apiCaPath = '/etc/codex-executor/hatchet-api-ca.pem';
+  await protectedPath(apiCaPath);
+  const apiCa = await fs.readFile(apiCaPath);
+  requireThat(apiCa.length > 0 && apiCa.length <= 65536);
+  return { config: { token: c.token, host_port: c.hostPort, api_url: c.apiUrl,
+    tls_config: { tls_strategy: 'tls', ca_file: '/etc/codex-executor/hatchet-ca.pem' } }, apiCa };
 }
 
 // Bounds apply to subprocesses too; output/errors are never copied to logs.
@@ -252,10 +295,13 @@ export async function run(p, task, signal, login = false) {
     await fs.chown(temporary, UID, UID);
     const env = { PATH: cleanEnv.PATH, HOME: home, CODEX_HOME: codexHome,
       XDG_CACHE_HOME: `${home}/.cache`, TMPDIR: temporary };
-    if (process.env.FORGEJO_TOKEN !== undefined) {
-      requireThat(process.env.FORGEJO_TOKEN.length > 0 && process.env.FORGEJO_TOKEN.length <= 8192);
-      env.FORGEJO_TOKEN = process.env.FORGEJO_TOKEN;
-    }
+    try {
+      const tokenFile = '/etc/codex-executor/forgejo-token';
+      await protectedPath(tokenFile);
+      const token = await fs.readFile(tokenFile, 'utf8');
+      requireThat(token.length > 0 && token.length <= 8192 && !/[\r\n]/.test(token));
+      env.FORGEJO_TOKEN = token;
+    } catch (error) { if (error.code !== 'ENOENT') throw error; }
     const launcher = ['--reuid=10001', '--regid=10001', '--clear-groups', '--no-new-privs',
       '--inh-caps=-all', '--ambient-caps=-all', '--bounding-set=-all',
       ...(login ? [`${APP}/codex`, 'login', '--device-auth'] : [`${APP}/node`, `${APP}/agent.mjs`])];

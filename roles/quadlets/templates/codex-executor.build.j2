@@ -1,0 +1,12 @@
+[Unit]
+Description=Build reviewed Codex executor image
+
+[Build]
+ImageTag=localhost/codex-executor:{{ codex_executor_image_id }}
+File={{ codex_executor_data_dir }}/contexts/{{ codex_executor_context_id }}/Containerfile
+SetWorkingDirectory={{ codex_executor_data_dir }}/contexts/{{ codex_executor_context_id }}
+PodmanArgs=--build-arg BASE_IMAGE={{ codex_executor_base_image }}
+Pull=always
+
+[Service]
+TimeoutStartSec=1800

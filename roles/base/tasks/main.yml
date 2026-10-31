@@ -69,6 +69,24 @@
     - "{{ hatchet_data_dir }}/pg"
   when: "'service_hosts' in group_names"
 
+- name: Validate opt-in Codex executor data path
+  ansible.builtin.assert:
+    that:
+      - (codex_executor_data_dir | default(homelab_data_dir + '/codex-executor')) is match('^/[A-Za-z0-9_./-]+\\Z')
+      - "'..' not in (codex_executor_data_dir | default(homelab_data_dir + '/codex-executor')).split('/')"
+  when:
+    - "'service_hosts' in group_names"
+    - codex_executor_instances | default([]) | length > 0
+
+- name: Register opt-in Codex executor data directory
+  ansible.builtin.file:
+    path: "{{ codex_executor_data_dir | default(homelab_data_dir + '/codex-executor') }}"
+    state: directory
+    mode: '0700'
+  when:
+    - "'service_hosts' in group_names"
+    - codex_executor_instances | default([]) | length > 0
+
 - name: Ensure inference host data directories exist
   ansible.builtin.file:
     path: "{{ item }}"
