@@ -1,0 +1,20 @@
+# Keep Docker's approved template candidate; require an operator-selected immutable digest.
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
+USER root
+RUN apt-get update && apt-get install -y --no-install-recommends bubblewrap git ca-certificates util-linux \
+    && rm -rf /var/lib/apt/lists/* /etc/sudoers.d/* \
+    && chmod u-s /usr/bin/sudo
+WORKDIR /opt/executor
+COPY package.json package-lock.json ./
+RUN npm ci --omit=dev --ignore-scripts \
+    && ln -s "$(command -v node)" /opt/executor/node \
+    && ln -s /opt/executor/node_modules/@openai/codex/bin/codex.js /opt/executor/codex
+COPY agent.mjs boundary.mjs worker.mjs ./
+COPY empty-hooks/ ./empty-hooks/
+RUN npm run check && chmod -R go-w /opt/executor \
+    && install -d -m 0700 /etc/codex-executor /var/lib/codex-executor \
+    && install -d -m 0711 /var/lib/codex-agent
+ENTRYPOINT ["/opt/executor/node", "/opt/executor/worker.mjs"]
+# No listener, webhook, timer, job consumption or model call until explicitly invoked.
+CMD ["disabled"]
