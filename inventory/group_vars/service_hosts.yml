@@ -54,6 +54,10 @@ adguardhome_port: 8090
 hatchet_data_dir: "{{ homelab_data_dir }}/hatchet"
 hatchet_image: ghcr.io/hatchet-dev/hatchet/hatchet-lite:v0.110.5
 hatchet_postgres_image: docker.io/library/postgres:17-bookworm
+
+# Referenced only when executor instances are explicitly configured.
+codex_executor_hatchet_token: "{{ vault_executor_hatchet_token }}"
+
 adguardhome_upstream_dns:
   - 1.1.1.1
   - 8.8.8.8

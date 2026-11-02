@@ -478,6 +478,7 @@ Sensitive configuration values (passwords, API tokens) are encrypted in `invento
 | `vault_forgejo_api_token_piclaw_reviewer` | Forgejo API token for the `piclaw-reviewer` dispatcher account (`FORGEJO_REVIEWER_TOKEN`) | `""` |
 | `vault_forgejo_runner_uuid` | Forgejo Actions runner UUID created in the runner UI | required for runner deployment |
 | `vault_forgejo_runner_token` | Forgejo Actions runner connection token created in the runner UI | required for runner deployment |
+| `vault_executor_hatchet_token` | Hatchet tenant API token for explicitly selected Codex executor instances | required when an executor uses `codex_executor_hatchet_token` |
 | `vault_github_api_token_piclaw` | GitHub Personal Access Token for PiClaw container (`GH_TOKEN` / `GITHUB_TOKEN`) | `""` |
 | `vault_piclaw_api_token` | Bearer token API key for PiClaw state APIs (`/api/state`, `/api/state/events`) | Auto-generated unique 64-char hex secret (`~/homelab/.piclaw_api_token`) |
 | `vault_webgallery_pixiv_refresh_token` | Pixiv extractor refresh token for Web Gallery | Required; deployment fails if undefined or empty |

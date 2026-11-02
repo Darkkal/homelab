@@ -14,10 +14,12 @@ or a digest pin on that channel, with Node >=22 and an apt-based filesystem. No 
 was run for this source change. Record that digest, resulting image digest,
 architecture, Node, Git, Bubblewrap and util-linux versions during owner validation.
 The npm lock selects Hatchet SDK **1.38.0**, Codex SDK/CLI **0.163.0** and YAML
-**2.8.1**, including CLI platform packages. `npm ci --ignore-scripts` installs them;
+**2.9.1**, including CLI platform packages. `npm ci --ignore-scripts` installs them;
 `/opt/executor/codex` always selects this CLI rather than the template's CLI.
 OS packages remain dependent on the selected base's apt repositories; the npm lock
 does not claim to pin those repositories or prove a byte-identical image rebuild.
+The host build context remains private; the image makes the non-secret executor
+scripts and package metadata readable by the UID/GID 10001 agent.
 
 Use a separate rootless Podman container and dedicated private state volumes for
 each instance. Container UID 0 runs preparation/control; `setpriv` starts the role's
@@ -76,8 +78,10 @@ query or fragment; branch: bounded Git branch spelling. These values are read on
 at startup; changing policy requires restart. The selected role alone registers
 `codex-planner`, `codex-worker`, or `codex-reviewer`, respectively, with **slots: 1**,
 zero retries, no events/cron, and role/instance scheduling labels. Planner/reviewer
-use `read-only`; worker uses `workspace-write`. All use `untrusted` approvals and
-disable tool network access/web search. Labels and task text cannot select a role.
+use `read-only`; worker uses `workspace-write`. All use `on-request` approvals and
+disable tool network access/web search. The unattended executor has no approval
+responder; it must not grant requests to escape the configured sandbox. Labels and
+task text cannot select a role.
 
 The engine SDK receives explicit protected connection settings from
 `connection.json`, the gRPC CA in `hatchet-ca.pem`, and a separate HTTPS API
@@ -132,17 +136,24 @@ retain ordinary filesystem protections; this is not proof against hostile code i
 the role container. Managed skills are root-owned. Each run starts a fresh SDK thread;
 resume is unsupported.
 The managed view remains unchanged until the slot finishes; the next run refreshes it.
+The container runs a small init process to reap orphaned child processes after
+cancellation or a failed preparation subprocess.
 Workspace is scratch, deleted on completion/refusal/cancellation. This package returns
 status, not model text or repository artifacts; routing/durable work publication is D.
 
 Outcomes are `completed`, `failed`, `unknown`, `refused`, `cancelled`, `timed_out` or
 `busy`. An unknown outcome may already have caused effects: there is no automatic
 retry or exactly-once guarantee. No SDK event bodies, prompts, commands, raw errors
-or engine diagnostics are forwarded. Local subprocesses have time/output bounds;
-timeouts/cancellation signal the subprocess group. If the group is known to remain
+or engine diagnostics are forwarded. Failed agent results include only an
+allowlisted category, failure stage and fixed diagnostic signals; they are hints,
+not a confirmed cause. Local subprocesses have time/output bounds; timeouts/cancellation
+signal the subprocess group. After a forced stop, the runner allows up to one
+second for killed descendants to be reaped. If the group is known to remain
 or the child does not close within five seconds, the runner returns `unknown` with
 `stop_instance: true`, retains the lock/workspace and stops admitting work; the
 worker exits and #102 must prevent automatic relaunch of this quarantined instance.
+The stop reason is one of `close_timeout`, `signal_failed`, or
+`process_group_remains`; it does not include subprocess output or error text.
 Process-group checks do not detect a deliberately detached process, so whole-tree
 cleanup is not guaranteed. Shutdown has a ten-second bound; native behavior is pending.
 Work admission stays closed until readiness succeeds and closes immediately on

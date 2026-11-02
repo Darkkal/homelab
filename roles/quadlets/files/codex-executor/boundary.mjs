@@ -106,6 +106,8 @@ export function execute(command, args, { input = '', signal, timeout = 30000,
     let done = false;
     let killFailed = false;
     let stopTimer;
+    let reapTimer;
+    let reapDeadline;
     const groupExists = () => {
       if (!child.pid) return false;
       try { process.kill(-child.pid, 0); return true; }
@@ -131,18 +133,29 @@ export function execute(command, args, { input = '', signal, timeout = 30000,
     }
     const finish = (code, timedOutWaiting = false) => {
       if (done) return;
+      const groupRemains = groupExists();
+      // After a forced stop, init may need a moment to reap killed descendants.
+      // Keep the guard if the group is still present at the bounded deadline.
+      if (refusal && !timedOutWaiting && !killFailed && groupRemains) {
+        if (!reapDeadline) reapDeadline = Date.now() + 1000;
+        if (Date.now() < reapDeadline) {
+          if (!reapTimer) reapTimer = setTimeout(() => { reapTimer = undefined; finish(code); }, 50);
+          return;
+        }
+      }
       done = true;
       clearTimeout(timer);
       clearTimeout(stopTimer);
+      clearTimeout(reapTimer);
       signal?.removeEventListener('abort', kill);
-      if (timedOutWaiting || killFailed || groupExists()) {
+      if (timedOutWaiting || killFailed || groupRemains) {
         // Leave run state quarantined; an ordinary process-group check cannot
         // establish that deliberately detached descendants have exited.
         if (!refusal && child.pid) { try { process.kill(-child.pid, 'SIGKILL'); } catch {} }
         child.stdout?.destroy();
         child.stdin?.destroy();
         child.unref();
-        reject(new UnstoppedProcess('process_not_stopped'));
+        reject(new UnstoppedProcess(timedOutWaiting ? 'close_timeout' : killFailed ? 'signal_failed' : 'process_group_remains'));
       } else if (refusal || code !== 0) reject(new Error('subprocess_failed'));
       else resolve(output);
     };
@@ -319,11 +332,23 @@ export async function run(p, task, signal, login = false) {
         reasoning: p.reasoning, sandbox: profiles[p.role] }) });
     const result = JSON.parse(output);
     requireThat(['completed', 'failed', 'unknown'].includes(result.outcome));
+    if (result.outcome === 'failed') {
+      const categories = ['authentication', 'model_unavailable', 'rate_or_quota',
+        'sandbox_or_permission', 'network_or_tls', 'other'];
+      requireThat(categories.includes(result.failure_category));
+      requireThat(['turn_failed', 'stream_error', 'exception'].includes(result.failure_stage));
+      const signals = ['cli_exit', 'config', 'argument', 'model', 'auth', 'http', 'request',
+        'network', 'sandbox', 'filesystem', 'json', 'process'];
+      requireThat(Array.isArray(result.failure_signals) && result.failure_signals.length <= signals.length &&
+        result.failure_signals.every(s => signals.includes(s)) && new Set(result.failure_signals).size === result.failure_signals.length);
+      return { ...identity, outcome: result.outcome, failure_category: result.failure_category,
+        failure_stage: result.failure_stage, failure_signals: result.failure_signals };
+    }
     return { ...identity, outcome: result.outcome };
   } catch (error) {
     if (error instanceof UnstoppedProcess) {
       quarantined = true;
-      return { ...identity, outcome: 'unknown', stop_instance: true };
+      return { ...identity, outcome: 'unknown', stop_instance: true, stop_reason: error.message };
     }
     return { ...identity, outcome: deadline.aborted ? 'timed_out' : signal.aborted ? 'cancelled'
       : launched ? 'unknown' : 'refused' };

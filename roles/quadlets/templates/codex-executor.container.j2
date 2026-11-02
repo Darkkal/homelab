@@ -16,7 +16,7 @@ NoNewPrivileges=true
 Volume={{ codex_executor_data_dir }}/instances/{{ item.instance }}/config:/etc/codex-executor:ro,Z
 Volume={{ codex_executor_data_dir }}/instances/{{ item.instance }}/control:/var/lib/codex-executor:Z
 Volume={{ codex_executor_data_dir }}/instances/{{ item.instance }}/agent:/var/lib/codex-agent:Z
-PodmanArgs=--memory={{ item.memory }} --pids-limit={{ item.pids }}
+PodmanArgs=--init --memory={{ item.memory }} --pids-limit={{ item.pids }}
 Entrypoint=/usr/bin/env
 Exec=-i PATH=/usr/local/bin:/usr/bin:/bin HOME=/nonexistent LANG=C.UTF-8 /opt/executor/node /opt/executor/worker.mjs worker
 LogDriver=journald

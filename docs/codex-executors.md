@@ -22,7 +22,7 @@ codex_executor_instances:
     pids: 256
     hatchet_host_port: hatchet:7070
     hatchet_api_url: https://OWNER_SELECTED_PRIVATE_API
-    hatchet_token: "{{ vault_executor_hatchet_token }}"
+    hatchet_token: "{{ codex_executor_hatchet_token }}"
     hatchet_ca: "{{ vault_executor_hatchet_ca }}"
     hatchet_api_ca: "{{ vault_executor_hatchet_api_ca }}"
     # Optional; one instance's own role only.
@@ -51,6 +51,14 @@ are stored in separate per-instance `0700` configuration directories, with
 control directories are separate private mounts; the application creates the
 UID/GID 10001 home inside its private agent mount. Configure a persistent storage
 quota externally for each instance as well as the memory and PID limits above.
+
+Create the tenant token in Hatchet, then add `vault_executor_hatchet_token` to
+`inventory/group_vars/all/vault.yml` using `ansible-vault edit`; do not place the
+token in tracked inventory or a command line. The service-host variable
+`codex_executor_hatchet_token` references that vault entry for each explicitly
+selected instance. Adding the vault entry alone does not select or start an
+executor. Bind the token's tenant and permissions in the operator packet before use.
+
 When any protected bundle changes, Ansible stops and confirms all selected
 instances inactive before replacing files. An unchanged apply does not stop them.
 An interrupted replacement leaves a `.updating` guard in each affected
@@ -76,7 +84,7 @@ and `IMAGE` to the approved instance identity, executor data directory and exact
 built image tag, then use the service account's rootless Podman context:
 
 ```sh
-podman run --rm -it --network homelab --http-proxy=false --security-opt no-new-privileges \
+podman run --rm -it --init --network homelab --http-proxy=false --security-opt no-new-privileges \
   -v "$DATA_DIR/instances/$INSTANCE/config:/etc/codex-executor:ro,Z" \
   -v "$DATA_DIR/instances/$INSTANCE/control:/var/lib/codex-executor:Z" \
   -v "$DATA_DIR/instances/$INSTANCE/agent:/var/lib/codex-agent:Z" \
