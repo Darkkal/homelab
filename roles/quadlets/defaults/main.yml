@@ -12,6 +12,12 @@ codex_executor_build_files:
   - worker.mjs
   - boundary.mjs
   - agent.mjs
+  - forgejo-mapping.mjs
+  - forgejo-events.mjs
+  - forgejo-policy.mjs
+  - forgejo-read.mjs
+  - forgejo-runtime.mjs
+  - forgejo-workflows.mjs
   - empty-hooks/.keep
 webgallery_timezone: UTC
 webgallery_port: 8084

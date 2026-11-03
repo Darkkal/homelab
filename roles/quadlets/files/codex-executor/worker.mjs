@@ -1,6 +1,8 @@
 import { Hatchet } from '@hatchet-dev/typescript-sdk';
 import { Agent as HttpsAgent } from 'node:https';
-import { policy, connection, quarantined, run } from './boundary.mjs';
+import { policy, connection, quarantined, run, routingConfig } from './boundary.mjs';
+import { workflows as forgejoWorkflows } from './forgejo-workflows.mjs';
+import { forgejoReader } from './forgejo-read.mjs';
 
 // Do not let SDK diagnostic exceptions serialize task input, engine headers or responses.
 const silentLogger = () => ({ debug() {}, info() {}, green() {}, warn() {}, error() {} });
@@ -69,12 +71,11 @@ async function main() {
     return;
   }
   const { config, apiCa } = await connection();
-  const hatchet = Hatchet.init({ ...config, logger: silentLogger, log_level: 'OFF',
+  const route = await routingConfig(p);
+  const hatchet = Hatchet.init({ ...config, ...(route ? { retrier: { maxAttempts: 1 } } : {}), logger: silentLogger, log_level: 'OFF',
     cancellation_grace_period: 5, cancellation_warning_threshold: 4 }, undefined,
     { httpsAgent: new HttpsAgent({ ca: apiCa, rejectUnauthorized: true }) });
-  const task = hatchet.task({ name: `codex-${p.role}`, retries: 0,
-    executionTimeout: `${p.timeoutSeconds + 15}s`, scheduleTimeout: '5m',
-    fn: async (input, ctx) => {
+  const runTask = async (input, ctx) => {
       if (!accepting || shutdown.signal.aborted) return { outcome: 'refused' };
       // Local guard supplements slots:1; duplicate deliveries have no exactly-once promise.
       if (busy) return { outcome: 'busy' };
@@ -97,12 +98,21 @@ async function main() {
         return result;
       } finally { busy = false; } })();
       return await activeRun;
-    },
-  });
+    };
+  const task = hatchet.task({ name: `codex-${p.role}`, retries: 0,
+    executionTimeout: `${p.timeoutSeconds + 15}s`, scheduleTimeout: '5m', fn: runTask });
+  let registered = route && p.instance === route.controlInstance ? [] : [task];
+  if (route) {
+    const reader = forgejoReader({ origin: route.forgejoOrigin, ca: route.ca, token: route.token, signal: shutdown.signal });
+    registered = registered.concat(forgejoWorkflows({ hatchet, role: p.role, instance: p.instance, config: route, reader,
+      runRole: runTask, accepting: () => accepting && !shutdown.signal.aborted }));
+  }
   const startup = setTimeout(() => { shutdown.abort(); process.exit(1); }, 30000);
   try {
     worker = await hatchet.worker(`codex-${p.instance}`, { slots: 1, durableSlots: 0,
-      workflows: [task], labels: { role: p.role, instance: p.instance }, handleKill: false });
+      workflows: registered, labels: { role: p.role, instance: p.instance,
+        ...(route ? (p.instance === route.controlInstance
+          ? { forgejo_control: p.instance } : { forgejo_execution: 'enabled' }) : {}) }, handleKill: false });
     running = worker.start();
     running.catch(() => shutdown.abort());
     await worker.waitUntilReady(25000);

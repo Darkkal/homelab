@@ -3,7 +3,7 @@
   ansible.builtin.assert:
     that:
       - codex_executor_instances is sequence and codex_executor_instances is not string
-      - codex_executor_build_files == ['Containerfile', 'package.json', 'package-lock.json', 'worker.mjs', 'boundary.mjs', 'agent.mjs', 'empty-hooks/.keep']
+      - codex_executor_build_files == ['Containerfile', 'package.json', 'package-lock.json', 'worker.mjs', 'boundary.mjs', 'agent.mjs', 'forgejo-mapping.mjs', 'forgejo-events.mjs', 'forgejo-policy.mjs', 'forgejo-read.mjs', 'forgejo-runtime.mjs', 'forgejo-workflows.mjs', 'empty-hooks/.keep']
       - codex_executor_instances | map(attribute='instance') | unique | list | length == codex_executor_instances | length
       - codex_executor_base_image is match('^docker\\.io/docker/sandbox-templates:codex(@sha256:[a-f0-9]{64})?\\Z')
       - codex_executor_data_dir is match('^/[A-Za-z0-9_./-]+\\Z')
@@ -31,6 +31,8 @@
       - item.hatchet_api_ca is string and item.hatchet_api_ca | length > 0
       - item.hatchet_host_port is match('^[a-zA-Z0-9.-]+:[0-9]{1,5}\\Z')
       - item.hatchet_api_url is match('^https://[^/@?#]+(?:/[^?#]*)?\\Z')
+      - item.routing_policy is not defined or item.routing_policy | length == 0 or (hatchet_webhook_body_limit_enabled | default(false)) is sameas true
+      - item.routing_policy is not defined or item.routing_policy | length == 0 or (item.forgejo_ca | default('') | length > 0 and item.forgejo_token | default('') | length > 0)
   loop: "{{ codex_executor_instances }}"
   no_log: true
 
@@ -111,7 +113,7 @@
     content: "{{ item.0[item.1.key] }}"
     dest: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
     mode: '0600'
-  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}, {'key': 'routing_policy', 'name': 'routing-policy.json'}, {'key': 'forgejo_ca', 'name': 'forgejo-ca.pem'}]) | list }}"
   when: item.0[item.1.key] is defined and item.0[item.1.key] | length > 0
   check_mode: true
   register: codex_executor_optional_preview
@@ -122,7 +124,7 @@
   ansible.builtin.file:
     path: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
     state: absent
-  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}, {'key': 'routing_policy', 'name': 'routing-policy.json'}, {'key': 'forgejo_ca', 'name': 'forgejo-ca.pem'}]) | list }}"
   when: item.0[item.1.key] is not defined or item.0[item.1.key] | length == 0
   check_mode: true
   register: codex_executor_removal_preview
@@ -222,7 +224,7 @@
     content: "{{ item.0[item.1.key] }}"
     dest: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
     mode: '0600'
-  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}, {'key': 'routing_policy', 'name': 'routing-policy.json'}, {'key': 'forgejo_ca', 'name': 'forgejo-ca.pem'}]) | list }}"
   when: item.0[item.1.key] is defined and item.0[item.1.key] | length > 0
   register: codex_executor_credentials_result
   no_log: true
@@ -232,7 +234,7 @@
   ansible.builtin.file:
     path: "{{ codex_executor_data_dir }}/instances/{{ item.0.instance }}/config/{{ item.1.name }}"
     state: absent
-  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}]) | list }}"
+  loop: "{{ codex_executor_instances | product([{'key': 'forgejo_token', 'name': 'forgejo-token'}, {'key': 'git_credentials', 'name': 'git-credentials'}, {'key': 'skills_ca', 'name': 'skills-ca.pem'}, {'key': 'routing_policy', 'name': 'routing-policy.json'}, {'key': 'forgejo_ca', 'name': 'forgejo-ca.pem'}]) | list }}"
   when: item.0[item.1.key] is not defined or item.0[item.1.key] | length == 0
   register: codex_executor_removed_credentials
   no_log: true

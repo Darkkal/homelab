@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "engines": { "node": ">=22" },
-  "scripts": { "check": "node --check worker.mjs && node --check boundary.mjs && node --check agent.mjs" },
+  "scripts": { "check": "node --check worker.mjs && node --check boundary.mjs && node --check agent.mjs && node --check forgejo-mapping.mjs && node --check forgejo-events.mjs && node --check forgejo-policy.mjs && node --check forgejo-read.mjs && node --check forgejo-runtime.mjs && node --check forgejo-workflows.mjs" },
   "dependencies": {
     "@hatchet-dev/typescript-sdk": "1.38.0",
     "@openai/codex-sdk": "0.163.0",

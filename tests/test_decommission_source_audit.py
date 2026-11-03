@@ -48,8 +48,10 @@ ROLES = USER_ROLES | {"nvidia", "decommissioned_services"}
 # #102: opt-in executor tasks manage user-scoped build and instance services,
 # private instance files and an update-service drop-in. The build context is a
 # fixed list of reviewed package files; its unit, container and updater are pinned.
+# #104 adds opt-in native workflow source and private routing policy / CA files;
+# all destinations remain inside each executor instance configuration directory.
 TASK_PINS = {
-    "roles/quadlets/tasks/codex-executor.yml": "9573dcb25df59163e6659706901e7d4260f0ee6bed15e8e3ffa8c0f3518035e2",
+    "roles/quadlets/tasks/codex-executor.yml": "47d6a4ac096377163ae8d6d4d49911743c5c34e5e9680da66a2edea3db543a31",
     "roles/quadlets/tasks/hatchet-config.yml": "7d8dbdd0620fab806448675478346c0003b2a9842a4591dbf41e76b99143226a",
     "roles/quadlets/tasks/hatchet-initialize.yml": "3f83a5216ceadb2cee3a7c97d8c479a02c8c96a84c472719bcd10a7bb362b465",
     "roles/quadlets/tasks/hatchet.yml": "1fbda49a09c61a1f8c5762b75124e965116668d966fde0db819a1b2571e7aa68",
@@ -77,14 +79,20 @@ TASK_PINS = {
 # Generated units plus executed source scripts: commands and references
 # are pinned too; task pins alone cannot detect a changed ExecStartPre payload.
 ARTIFACT_PINS = {
+    "roles/quadlets/files/codex-executor/forgejo-mapping.mjs": "fea6b798741a3a17608a989dbdbdf4f4719804721cbbc5858e32f8be1255df11",
+    "roles/quadlets/files/codex-executor/forgejo-events.mjs": "72b437f201da4125ad0444858221c207a54837ae2cd2a2f29eac4d753a935b22",
+    "roles/quadlets/files/codex-executor/forgejo-policy.mjs": "e29bc9fc89afe16169f97021178aab54c82e797b7b9a1e767445f73f21335ef8",
+    "roles/quadlets/files/codex-executor/forgejo-read.mjs": "13698a51062cfd8ff098341247140d01f9a919fb042032c2702fb15496ac78e3",
+    "roles/quadlets/files/codex-executor/forgejo-runtime.mjs": "c6491d6358677d9eb46e9b4969f5384a45245c0ad20a242ec04f659743e7036e",
+    "roles/quadlets/files/codex-executor/forgejo-workflows.mjs": "c01ae5a0c9d4a24b149fe11cf64e011a41a2f868c5ba78274149a98c49ceee4e",
     "roles/quadlets/templates/codex-executor.build.j2": "485bd986ed05e637e7c78b43f49def3a286eecffb42f1ad83aacc905de5bb51d",
     "roles/quadlets/templates/codex-executor.container.j2": "64273b900ac7ac333d2e255d93d60c08d7a28a47507c73193c09a5ed2a862b67",
     "roles/quadlets/templates/codex-executor-refresh.sh.j2": "7c0bf7275ce1417fb5880873f3b7c4c5a2a61acadf9f996d310d5795362fc12d",
-    "roles/quadlets/files/codex-executor/Containerfile": "67dc04aca082675a09bc5bd8f8c5561a76b308e0d3a078d9c166dc67966b2f6f",
-    "roles/quadlets/files/codex-executor/package.json": "08d98d44a4f3465b81f1ce0d07ffa05d17e1aa3a9ba240f40955da244ae9af4b",
+    "roles/quadlets/files/codex-executor/Containerfile": "b44e4617d51fa94d673d1f100f1e417c2c76a05b87aab530fc46c3a7856322bd",
+    "roles/quadlets/files/codex-executor/package.json": "24b61e70e85bfa98080912f598529e6f13ef1676d132084af71c55a06898648c",
     "roles/quadlets/files/codex-executor/package-lock.json": "664cd28b9f9a44dceee05fd825767a5f28254c36eb4aeac04f1eab81e1cd2c7a",
-    "roles/quadlets/files/codex-executor/worker.mjs": "33ac03ce3e2e6c623e7077a3b16b3874a99430513e973931d54bbe747141889b",
-    "roles/quadlets/files/codex-executor/boundary.mjs": "b5ea92b8872530994c7e7111260b9fa36c60881ce1da9ccefac9090c1ab30bff",
+    "roles/quadlets/files/codex-executor/worker.mjs": "4fc9cfe5bc868e3aefa0c9e03506a32e935162735c5900e9d88b7191686e710a",
+    "roles/quadlets/files/codex-executor/boundary.mjs": "5098112902baff06f10b9b450482e3b44ca3a8911166755aea985501c017cf0c",
     "roles/quadlets/files/codex-executor/agent.mjs": "3774b503001964fc3bdfcea9a20926d618ff6ff359174ba7d789b98250f4221b",
     "roles/quadlets/files/codex-executor/empty-hooks/.keep": "01ba4719c80b6fe911b091a7c05124b64eeece964e09c058ef8f9805daca546b",
     "roles/quadlets/files/hatchet-generate.sh": "00f4e30f2ab35649170050c8488c6c00262bf0c919229b9b06afd6c5e83093a7",
@@ -143,7 +151,7 @@ PLAY_CONTEXT_PINS = (
     "84e7c18c26a7f16a77870aa6e6ae62cb503f8e0ff0beeef8a02fd99495ae0ec8",
 )
 SOURCE_CONTEXT_PINS = {
-    "roles/quadlets/defaults/main.yml": "e1c5f43fea7c647af4955b5ef46c0b2fa2c3f9d7072ff8a24863e2aad63d45bf",
+    "roles/quadlets/defaults/main.yml": "05bbe645018451d96f4d7013c2ee38ab20e4b0b31e798a57a4da3b59b82fd204",
     "roles/caddy/defaults/main.yml":
         "8c49384a14861e1ab59e8889397e78709bec42b5a6e76fe2c4129b58fe255970",
     "roles/decommissioned_services/defaults/main.yml":

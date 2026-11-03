@@ -114,3 +114,5 @@ behavior, update failure and pin behavior, resource/storage limits, reachability
 idempotence and the exact rollback. Revert the opt-in source for source rollback;
 later removal of installed units and state requires an operator packet. Do not
 claim source checks establish those native behaviors.
+
+For the separately selected Forgejo webhook integration, see [native Forgejo workflows](forgejo-native-workflows.md).

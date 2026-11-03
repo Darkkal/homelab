@@ -52,5 +52,11 @@ webgallery.{{ lan_domain }} {
 }
 
 hatchet.{{ lan_domain }} {
+{% if (hatchet_webhook_body_limit_enabled | default(false)) is sameas true %}
+    @hatchet_webhook path /api/v1/stable/tenants/*/webhooks/*
+    request_body @hatchet_webhook {
+        max_size 1048576
+    }
+{% endif %}
     reverse_proxy {{ hatchet_upstream }}
 }

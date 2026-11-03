@@ -10,10 +10,10 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts \
     && ln -s "$(command -v node)" /opt/executor/node \
     && ln -s /opt/executor/node_modules/@openai/codex/bin/codex.js /opt/executor/codex
-COPY agent.mjs boundary.mjs worker.mjs ./
+COPY agent.mjs boundary.mjs worker.mjs forgejo-mapping.mjs forgejo-events.mjs forgejo-policy.mjs forgejo-read.mjs forgejo-runtime.mjs forgejo-workflows.mjs ./
 COPY empty-hooks/ ./empty-hooks/
 RUN npm run check && chmod -R go-w /opt/executor \
-    && chmod 0644 /opt/executor/agent.mjs /opt/executor/boundary.mjs /opt/executor/worker.mjs /opt/executor/package.json \
+    && chmod 0644 /opt/executor/*.mjs /opt/executor/package.json \
     && install -d -m 0700 /etc/codex-executor /var/lib/codex-executor \
     && install -d -m 0711 /var/lib/codex-agent
 ENTRYPOINT ["/opt/executor/node", "/opt/executor/worker.mjs"]

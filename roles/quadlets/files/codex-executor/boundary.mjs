@@ -1,3 +1,6 @@
+import { validateMappingPolicy } from './forgejo-mapping.mjs';
+import { validateRoutePolicy } from './forgejo-policy.mjs';
+import { validateForgejoOrigin } from './forgejo-read.mjs';
 import fs from 'node:fs/promises';
 import { spawn } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
@@ -259,6 +262,8 @@ async function skills(p, base, view, signal) {
 }
 
 export async function run(p, task, signal, login = false) {
+  const routing = await routingConfig(p);
+  requireThat(!routing || routing.controlInstance !== p.instance);
   const deadline = AbortSignal.timeout((login ? 360 : p.timeoutSeconds) * 1000);
   signal = AbortSignal.any([signal, deadline]);
   const identity = { run: randomUUID(), instance: p.instance, role: p.role };
@@ -363,4 +368,27 @@ export async function run(p, task, signal, login = false) {
       }
     }
   }
+}
+
+// An absent routing policy preserves the manual-only worker.
+export async function routingConfig(p) {
+  const file = '/etc/codex-executor/routing-policy.json';
+  try { await protectedPath(file); } catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+  const raw = await fs.readFile(file);
+  requireThat(raw.length > 0 && raw.length <= 32768);
+  const config = JSON.parse(raw);
+  requireThat(config && typeof config === 'object' && !Array.isArray(config)
+    && Object.keys(config).sort().join(',') === 'controlInstance,dedupeSeconds,forgejoOrigin,mapping,routing,webhookName'
+    && typeof config.controlInstance === 'string' && /^[a-z][a-z0-9-]{0,47}$/.test(config.controlInstance)
+    && Number.isInteger(config.dedupeSeconds) && config.dedupeSeconds >= 60 && config.dedupeSeconds <= 604800
+    && typeof config.webhookName === 'string' && /^[a-zA-Z0-9_-]{1,100}$/.test(config.webhookName));
+  validateMappingPolicy(config.mapping);
+  validateRoutePolicy(config.routing);
+  validateForgejoOrigin(config.forgejoOrigin);
+  await protectedPath('/etc/codex-executor/forgejo-token');
+  await protectedPath('/etc/codex-executor/forgejo-ca.pem');
+  const token = await fs.readFile('/etc/codex-executor/forgejo-token', 'utf8');
+  const ca = await fs.readFile('/etc/codex-executor/forgejo-ca.pem');
+  requireThat(token.length > 0 && token.length <= 8192 && !/[\r\n]/.test(token) && ca.length > 0 && ca.length <= 65536);
+  return { ...config, token, ca, timeoutSeconds: p.timeoutSeconds };
 }
